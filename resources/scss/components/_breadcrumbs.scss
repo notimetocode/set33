@@ -1,0 +1,38 @@
+.app-breadcrumbs {
+  margin-bottom: 1rem;
+
+  .breadcrumb {
+    --bs-breadcrumb-divider: '／';
+    --bs-breadcrumb-font-size: 0.8125rem;
+    --bs-breadcrumb-item-padding-x: 0.5rem;
+    background: transparent;
+    padding: 0;
+  }
+
+  .breadcrumb-item {
+    a {
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 500;
+
+      &:hover {
+        color: var(--brand);
+      }
+    }
+
+    &.active {
+      color: $body-color;
+      font-weight: 600;
+    }
+
+    & + .breadcrumb-item::before {
+      color: rgba(18, 21, 26, 0.28);
+    }
+  }
+}
+
+.layout-admin {
+  .app-breadcrumbs .breadcrumb-item a:hover {
+    color: var(--brand-admin);
+  }
+}

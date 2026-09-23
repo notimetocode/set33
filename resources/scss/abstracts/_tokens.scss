@@ -1,0 +1,21 @@
+:root {
+  --brand: #{$brand};
+  --brand-admin: #{$admin-accent};
+  --surface: #{$surface};
+  --muted: #{$muted};
+  --ring: #{$ring};
+  --border: #{$border-color};
+  --body-bg: #{$body-bg};
+  --body-color: #{$body-color};
+  --font-sans: #{$font-sans};
+  --font-mono: #{$font-mono};
+  --input-bg: #{$input-bg};
+  --input-border: #{$input-border-color};
+  --input-focus-border: #{$input-focus-border-color};
+
+  // Dot-field background (subtle pattern; override locally to vary visibility)
+  --dot-color: rgba(18, 21, 26, 0.45);
+  --dot-size: 1.1px;
+  --dot-gap: 1.35rem;
+  --dot-opacity: 0.28;
+}

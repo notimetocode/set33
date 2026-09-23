@@ -1,0 +1,59 @@
+@mixin surface-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/// Barely-visible dot field. Tune with CSS vars:
+/// --dot-color, --dot-size, --dot-gap, --dot-opacity
+@mixin dot-field {
+  background-image: radial-gradient(
+    circle,
+    var(--dot-color, rgba(18, 21, 26, 0.45)) var(--dot-size, 1.1px),
+    transparent calc(var(--dot-size, 1.1px) + 0.45px)
+  );
+  background-size: var(--dot-gap, 1.35rem) var(--dot-gap, 1.35rem);
+  background-repeat: repeat;
+  opacity: var(--dot-opacity, 0.28);
+}
+
+/// Soft spatial fade for a dot layer (stronger mid-field, quieter edges)
+@mixin dot-field-fade($at: 50% 42%) {
+  -webkit-mask-image: radial-gradient(
+    ellipse 85% 75% at #{$at},
+    #000 0%,
+    rgba(0, 0, 0, 0.55) 48%,
+    transparent 78%
+  );
+  mask-image: radial-gradient(
+    ellipse 85% 75% at #{$at},
+    #000 0%,
+    rgba(0, 0, 0, 0.55) 48%,
+    transparent 78%
+  );
+}
+
+/// Full-page / shell surface with dotted backdrop via ::before
+@mixin dot-field-surface($fade-at: 50% 35%) {
+  position: relative;
+  isolation: isolate;
+  background-color: $body-bg;
+  --dot-opacity: 0.32;
+  --dot-gap: 1.4rem;
+  --dot-size: 1.15px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    @include dot-field;
+    @include dot-field-fade($fade-at);
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}

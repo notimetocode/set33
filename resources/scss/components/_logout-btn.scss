@@ -1,0 +1,37 @@
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  border: 0;
+  border-radius: $border-radius-sm;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    color: $body-color;
+    background: rgba(18, 21, 26, 0.05);
+  }
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 0.15rem var(--ring);
+  }
+
+  &__icon {
+    display: inline-flex;
+    font-size: 0.75rem;
+    opacity: 0.85;
+  }
+}

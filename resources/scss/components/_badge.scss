@@ -1,0 +1,8 @@
+.badge {
+  font-weight: 500;
+}
+
+.badge.text-bg-primary,
+.badge.bg-primary {
+  background-color: $primary !important;
+}

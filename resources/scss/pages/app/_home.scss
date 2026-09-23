@@ -1,0 +1,10 @@
+.page-app-home {
+    &__title {
+        margin-bottom: 0.5rem;
+    }
+
+    &__lead {
+        color: var(--bs-secondary-color);
+        margin-bottom: 0;
+    }
+}

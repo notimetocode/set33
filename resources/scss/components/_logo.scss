@@ -1,0 +1,76 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  line-height: 1;
+  color: $body-color;
+  text-decoration: none;
+
+  &--inverse {
+    color: #fff;
+  }
+
+  &__mark {
+    display: block;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+  }
+
+  &--sm &__mark {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  &--lg &__mark {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  &--xl &__mark {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: 700;
+    font-size: 1.0625rem;
+    letter-spacing: -0.04em;
+  }
+
+  &--sm &__name {
+    font-size: 1rem;
+  }
+
+  &--lg &__name {
+    font-size: 1.5rem;
+  }
+
+  &--xl &__name {
+    font-size: 1.85rem;
+  }
+
+  &__tagline {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--muted);
+  }
+
+  &--inverse &__tagline {
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  &--lg &__tagline,
+  &--xl &__tagline {
+    font-size: 0.8125rem;
+  }
+}

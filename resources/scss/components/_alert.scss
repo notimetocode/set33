@@ -1,0 +1,10 @@
+.alert {
+  border-width: 1px;
+  border-radius: 0.75rem;
+}
+
+.alert-success {
+  --bs-alert-color: #{$admin-accent};
+  --bs-alert-bg: rgba(11, 122, 75, 0.08);
+  --bs-alert-border-color: rgba(11, 122, 75, 0.2);
+}

@@ -1,0 +1,104 @@
+$font-sans: 'Instrument Sans', system-ui, sans-serif;
+// Single product font — keep $font-mono as an alias so Bootstrap/code tokens stay consistent.
+$font-mono: $font-sans;
+$font-family-sans-serif: $font-sans;
+$font-family-monospace: $font-sans;
+
+$primary: #0b7a4b;
+$body-bg: #fafbfa;
+$body-color: #12151a;
+$border-color: rgba(18, 21, 26, 0.08);
+$secondary: #5c6670;
+$success: #0b7a4b;
+$light: #f3f5f3;
+$dark: #12151a;
+
+$link-color: $primary;
+$focus-ring-color: rgba(11, 122, 75, 0.35);
+
+$app-accent: $primary;
+$admin-accent: #065f3c;
+
+$surface: #ffffff;
+$muted: #5c6670;
+$brand: $primary;
+$ring: rgba(11, 122, 75, 0.35);
+
+// SaaS CTAs (mint primary / soft secondary), close to product landing refs
+$cta-mint: #3ddc97;
+$cta-mint-hover: #2fce89;
+$cta-mint-active: #24bc7a;
+$btn-soft-bg: #f1f2f1;
+$btn-soft-border: rgba(18, 21, 26, 0.08);
+$btn-soft-hover-bg: #e8eae8;
+
+$border-radius: 0.625rem;
+$border-radius-sm: 0.5rem;
+$border-radius-lg: 0.75rem;
+$btn-border-radius: 0.625rem;
+$btn-border-radius-sm: 0.5rem;
+$btn-border-radius-lg: 0.75rem;
+$btn-padding-y: 0.5rem;
+$btn-padding-x: 1.05rem;
+$btn-padding-y-sm: 0.35rem;
+$btn-padding-x-sm: 0.8rem;
+$btn-padding-y-lg: 0.65rem;
+$btn-padding-x-lg: 1.2rem;
+$btn-font-size: 0.875rem;
+$btn-font-size-sm: 0.8125rem;
+$btn-font-size-lg: 0.9375rem;
+$btn-line-height: 1.25;
+$btn-font-weight: 500;
+
+// Form controls — soft filled fields (aligned with soft secondary buttons)
+$input-bg: #f1f3f1;
+$input-disabled-bg: #e8ebe8;
+$input-disabled-color: rgba(18, 21, 26, 0.45);
+$input-color: $body-color;
+$input-border-width: 1px;
+$input-border-color: rgba(18, 21, 26, 0.06);
+$input-box-shadow: none;
+$input-border-radius: $border-radius;
+$input-border-radius-sm: $border-radius-sm;
+$input-border-radius-lg: $border-radius-lg;
+$input-padding-y: 0.625rem;
+$input-padding-x: 0.9rem;
+$input-padding-y-sm: 0.4rem;
+$input-padding-x-sm: 0.7rem;
+$input-padding-y-lg: 0.75rem;
+$input-padding-x-lg: 1.05rem;
+$input-font-size: 0.9375rem;
+$input-font-size-sm: 0.8125rem;
+$input-font-size-lg: 1rem;
+$input-font-weight: 400;
+$input-line-height: 1.4;
+$input-focus-bg: #ffffff;
+$input-focus-border-color: rgba(11, 122, 75, 0.45);
+$input-focus-box-shadow: 0 0 0 3px rgba(11, 122, 75, 0.12);
+$input-placeholder-color: rgba(18, 21, 26, 0.38);
+$input-transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+
+$form-label-margin-bottom: 0.4rem;
+$form-label-font-size: 0.8125rem;
+$form-label-font-weight: 500;
+$form-label-color: $muted;
+
+$form-text-margin-top: 0.35rem;
+$form-text-font-size: 0.8125rem;
+$form-text-color: $muted;
+
+$form-select-indicator-color: #5c6670;
+$form-select-box-shadow: none;
+$form-select-focus-box-shadow: $input-focus-box-shadow;
+
+$form-check-input-bg: #ffffff;
+$form-check-input-border: 1.5px solid rgba(18, 21, 26, 0.18);
+$form-check-input-checked-bg-color: $primary;
+$form-check-input-checked-border-color: $primary;
+$form-check-input-focus-border: rgba(11, 122, 75, 0.55);
+$form-check-input-focus-box-shadow: 0 0 0 3px rgba(11, 122, 75, 0.12);
+$form-check-input-width: 1.1em;
+
+$form-file-button-color: $body-color;
+$form-file-button-bg: #e6ebe7;
+$form-file-button-hover-bg: #dce4de;

@@ -2,24 +2,48 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Gender;
+use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable([
+    'name',
+    'email',
+    'password',
+    'role',
+    'last_name',
+    'first_name',
+    'middle_name',
+    'gender',
+    'birth_date',
+    'phone',
+    'telegram',
+    'viber',
+    'avatar_path',
+    'city_id',
+    'profile_visibility',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * Get the attributes that should be cast.
-     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'profile_visibility' => '{"last_name":true,"birth_date":true,"phone":false,"telegram":false,"viber":false}',
+    ];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -27,6 +51,41 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => UserRole::class,
+            'gender' => Gender::class,
+            'birth_date' => 'date',
+            'profile_visibility' => 'array',
         ];
+    }
+
+    /**
+     * @return BelongsTo<City, $this>
+     */
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(City::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role->isAdmin();
+    }
+
+    /**
+     * @return array{last_name: bool, birth_date: bool, phone: bool, telegram: bool, viber: bool}
+     */
+    public function visibilityFlags(): array
+    {
+        $defaults = [
+            'last_name' => true,
+            'birth_date' => true,
+            'phone' => false,
+            'telegram' => false,
+            'viber' => false,
+        ];
+
+        $stored = is_array($this->profile_visibility) ? $this->profile_visibility : [];
+
+        return array_merge($defaults, array_intersect_key($stored, $defaults));
     }
 }
