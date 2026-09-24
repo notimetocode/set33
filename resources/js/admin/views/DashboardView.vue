@@ -10,7 +10,9 @@
                 </div>
             </div>
 
-            <div v-if="loading" class="page-admin-dashboard__loading">Загрузка статистики…</div>
+            <div v-if="loading" class="page-admin-dashboard__loading">
+                <AppLoader block label="Загрузка статистики…" />
+            </div>
             <div v-else-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
             <template v-else-if="stats">
@@ -63,6 +65,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import AppLoader from '../../shared/components/AppLoader.vue';
 import AdminLayout from '../layouts/AdminLayout.vue';
 import { getDashboardStats } from '../api/dashboard';
 

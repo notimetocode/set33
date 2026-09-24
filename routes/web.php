@@ -1,11 +1,19 @@
 <?php
 
 use App\Http\Controllers\Admin\SpaController as AdminSpaController;
+use App\Http\Controllers\App\GithubOAuthCallbackController;
+use App\Http\Controllers\App\GoogleOAuthCallbackController;
 use App\Http\Controllers\App\SpaController as AppSpaController;
 use App\Http\Controllers\PublicSite\HomeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('public.home');
+
+Route::get('/oauth/google/callback', GoogleOAuthCallbackController::class)
+    ->name('oauth.google.callback');
+
+Route::get('/oauth/github/callback', GithubOAuthCallbackController::class)
+    ->name('oauth.github.callback');
 
 Route::get('/app/{any?}', AppSpaController::class)
     ->where('any', '.*')

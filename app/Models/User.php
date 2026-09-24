@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -64,6 +66,38 @@ class User extends Authenticatable
     public function city(): BelongsTo
     {
         return $this->belongsTo(City::class);
+    }
+
+    /**
+     * @return HasMany<AiService, $this>
+     */
+    public function aiServices(): HasMany
+    {
+        return $this->hasMany(AiService::class);
+    }
+
+    /**
+     * @return HasMany<Site, $this>
+     */
+    public function sites(): HasMany
+    {
+        return $this->hasMany(Site::class);
+    }
+
+    /**
+     * @return HasOne<GoogleConnection, $this>
+     */
+    public function googleConnection(): HasOne
+    {
+        return $this->hasOne(GoogleConnection::class);
+    }
+
+    /**
+     * @return HasOne<GithubConnection, $this>
+     */
+    public function githubConnection(): HasOne
+    {
+        return $this->hasOne(GithubConnection::class);
     }
 
     public function isAdmin(): bool

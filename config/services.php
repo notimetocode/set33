@@ -35,4 +35,45 @@ return [
         ],
     ],
 
+    'gemini' => [
+        'base_url' => env('GEMINI_API_BASE_URL', 'https://generativelanguage.googleapis.com'),
+        'seed_api_key' => env('GEMINI_SEED_API_KEY'),
+        /*
+         * Preferred model IDs for new Gemini connections (first available wins).
+         * Keep in sync with Google's current recommendations for new API users.
+         */
+        'preferred_models' => [
+            'gemini-3.6-flash',
+            'gemini-3.5-flash',
+            'gemini-3.1-flash-lite',
+            'gemini-2.0-flash',
+        ],
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/oauth/google/callback'),
+        'scopes' => [
+            'openid',
+            'email',
+            'profile',
+            'https://www.googleapis.com/auth/analytics.readonly',
+            'https://www.googleapis.com/auth/webmasters.readonly',
+        ],
+        'metrics_backfill_days' => (int) env('GOOGLE_METRICS_BACKFILL_DAYS', 28),
+    ],
+
+    'github' => [
+        'client_id' => env('GITHUB_CLIENT_ID'),
+        'client_secret' => env('GITHUB_CLIENT_SECRET'),
+        'redirect' => env('GITHUB_REDIRECT_URI', env('APP_URL').'/oauth/github/callback'),
+        'scopes' => [
+            'read:user',
+            'user:email',
+            'repo',
+        ],
+        'api_base_url' => env('GITHUB_API_BASE_URL', 'https://api.github.com'),
+    ],
+
 ];

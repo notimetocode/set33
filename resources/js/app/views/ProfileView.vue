@@ -2,7 +2,11 @@
     <div class="page-app-profile">
         <h1 class="h4 mb-3">Личные данные</h1>
 
-        <div v-if="loading" class="text-muted">Загрузка…</div>
+        <AppLoader
+            v-if="loading"
+            block
+            label="Загрузка…"
+        />
         <div v-else-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
         <dl v-else-if="profile" class="row mb-0">
@@ -17,6 +21,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import AppLoader from '../../shared/components/AppLoader.vue';
 import { getProfile } from '../api/profile';
 import { formatUserFio } from '../../shared/userDisplay';
 

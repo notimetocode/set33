@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             CitySeeder::class,
             AdminUserSeeder::class,
             AppUserSeeder::class,
+            AiServiceSeeder::class,
         ]);
     }
 }

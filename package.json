@@ -23,6 +23,8 @@
         "@popperjs/core": "^2.11.8",
         "axios": "^1.20.0",
         "bootstrap": "^5.3.8",
+        "dompurify": "^3.4.15",
+        "marked": "^18.0.14",
         "vue": "^3.5.42",
         "vue-router": "^5.3.1"
     }

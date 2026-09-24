@@ -1,0 +1,39 @@
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.5rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.status-tag--ok {
+  color: #08653e;
+  background: rgba(11, 122, 75, 0.12);
+  border-color: rgba(11, 122, 75, 0.14);
+}
+
+.status-tag--muted {
+  color: #5c6670;
+  background: rgba(18, 21, 26, 0.06);
+  border-color: rgba(18, 21, 26, 0.06);
+}
+
+.status-tag--danger {
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.1);
+  border-color: rgba(180, 35, 24, 0.12);
+}
+
+.status-tag--warning {
+  color: #9a3412;
+  background: rgba(180, 83, 9, 0.12);
+  border-color: rgba(180, 83, 9, 0.14);
+}

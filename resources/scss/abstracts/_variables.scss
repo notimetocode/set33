@@ -50,13 +50,13 @@ $btn-font-size-lg: 0.9375rem;
 $btn-line-height: 1.25;
 $btn-font-weight: 500;
 
-// Form controls — soft filled fields (aligned with soft secondary buttons)
-$input-bg: #f1f3f1;
-$input-disabled-bg: #e8ebe8;
+// Form controls — white fields with hairline borders
+$input-bg: #ffffff;
+$input-disabled-bg: #f1f3f1;
 $input-disabled-color: rgba(18, 21, 26, 0.45);
 $input-color: $body-color;
 $input-border-width: 1px;
-$input-border-color: rgba(18, 21, 26, 0.06);
+$input-border-color: rgba(18, 21, 26, 0.04);
 $input-box-shadow: none;
 $input-border-radius: $border-radius;
 $input-border-radius-sm: $border-radius-sm;

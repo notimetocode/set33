@@ -114,6 +114,20 @@
     padding: 1.75rem 1.5rem 1.5rem;
   }
 
+  &__panel--start {
+    align-items: stretch;
+    text-align: left;
+
+    .app-modal__title {
+      max-width: none;
+      padding-right: 1.75rem;
+    }
+
+    .app-modal__message {
+      max-width: none;
+    }
+  }
+
   &__close {
     position: absolute;
     top: 0.95rem;

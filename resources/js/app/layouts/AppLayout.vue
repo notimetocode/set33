@@ -57,6 +57,8 @@
                 <span class="layout-app__tab-label">{{ item.label }}</span>
             </RouterLink>
         </nav>
+
+        <AppToastHost />
     </div>
 </template>
 
@@ -64,6 +66,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { logout, me } from '../api/auth';
+import AppToastHost from '../../shared/components/AppToastHost.vue';
 import Breadcrumbs from '../../shared/components/Breadcrumbs.vue';
 import LogoutButton from '../../shared/components/LogoutButton.vue';
 import NavUserCard from '../../shared/components/NavUserCard.vue';
@@ -84,10 +87,22 @@ const navItems = [
         isActive: (r) => r.name === 'home',
     },
     {
+        name: 'sites.index',
+        label: 'Сайты',
+        icon: ['fas', 'globe'],
+        isActive: (r) => String(r.name || '').startsWith('sites'),
+    },
+    {
         name: 'profile',
         label: 'Профиль',
         icon: ['fas', 'user'],
         isActive: (r) => r.name === 'profile',
+    },
+    {
+        name: 'ai-services.index',
+        label: 'AI-сервисы',
+        icon: ['fas', 'robot'],
+        isActive: (r) => String(r.name || '').startsWith('ai-services'),
     },
 ];
 

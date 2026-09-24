@@ -16,8 +16,8 @@
   caret-color: $primary;
 
   &:hover:not(:disabled):not(:focus):not([readonly]) {
-    background-color: #e9ece9;
-    border-color: rgba(18, 21, 26, 0.1);
+    background-color: $input-bg;
+    border-color: rgba(18, 21, 26, 0.08);
   }
 
   &:focus {
@@ -76,9 +76,9 @@ $form-select-chevron-focus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.
   transition: $input-transition;
 
   &:hover:not(:disabled):not(:focus) {
-    background-color: #e9ece9;
+    background-color: $input-bg;
     background-image: $form-select-chevron;
-    border-color: rgba(18, 21, 26, 0.1);
+    border-color: rgba(18, 21, 26, 0.08);
   }
 
   &:focus {

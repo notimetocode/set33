@@ -36,11 +36,13 @@
                 </div>
             </form>
 
-            <div v-if="loading" class="text-muted">Загрузка…</div>
+            <div v-if="loading">
+                <AppLoader block label="Загрузка…" />
+            </div>
             <div v-else-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
-            <div v-else class="table-responsive">
-                <table class="table table-sm align-middle">
+            <div v-else class="data-table">
+                <table class="table table-sm table-hover align-middle data-table__grid">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -70,6 +72,7 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
+import AppLoader from '../../../shared/components/AppLoader.vue';
 import AdminLayout from '../../layouts/AdminLayout.vue';
 import { getUsersMeta, listUsers } from '../../api/users';
 
