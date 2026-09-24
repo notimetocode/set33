@@ -3,22 +3,25 @@
 namespace App\Models;
 
 use Database\Factories\SiteEventFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable([
-    'site_id',
-    'occurred_on',
-    'title',
-    'description',
-    'url',
-])]
 class SiteEvent extends Model
 {
     /** @use HasFactory<SiteEventFactory> */
     use HasFactory;
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'site_id',
+        'occurred_on',
+        'title',
+        'description',
+        'url',
+    ];
 
     /**
      * @return array<string, string>

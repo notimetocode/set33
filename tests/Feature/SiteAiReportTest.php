@@ -170,7 +170,11 @@ class SiteAiReportTest extends TestCase
         Http::preventStrayRequests();
         Http::fake([
             'generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response(
-                $this->generateContentResponse("## Краткое резюме\nРост органики."),
+                $this->generateContentResponse(
+                    "## Краткое резюме\nРост органики.\n\n{{chart:organic_trend}}\n\n```charts-json\n"
+                    .'[{"id":"organic_trend","type":"line","title":"Органические сессии","labels":["2026-09-01"],"series":[{"name":"organic_sessions","values":[40]}]}]'
+                    ."\n```",
+                ),
             ),
         ]);
 
@@ -257,7 +261,10 @@ class SiteAiReportTest extends TestCase
         ])
             ->assertCreated()
             ->assertJsonPath('ok', true)
-            ->assertJsonPath('data.reply', "## Краткое резюме\nРост органики.")
+            ->assertJsonPath('data.reply', "## Краткое резюме\nРост органики.\n\n{{chart:organic_trend}}")
+            ->assertJsonPath('data.charts.0.id', 'organic_trend')
+            ->assertJsonPath('data.charts.0.type', 'line')
+            ->assertJsonPath('data.charts.0.series.0.values.0', 40)
             ->assertJsonPath('data.tool.name', 'Google Gemini · gemini-3.6-flash')
             ->assertJsonPath('data.tool.model', 'gemini-3.6-flash')
             ->assertJsonPath('data.period.from', '2026-09-01')
@@ -280,6 +287,11 @@ class SiteAiReportTest extends TestCase
             'period_to' => '2026-09-07',
         ]);
 
+        $saved = SiteAiReport::query()->where('site_id', $site->id)->first();
+        $this->assertNotNull($saved);
+        $this->assertSame('organic_trend', $saved->charts[0]['id'] ?? null);
+        $this->assertStringNotContainsString('charts-json', $saved->reply);
+
         Http::assertSent(function (Request $request) {
             if (! str_contains($request->url(), ':generateContent')) {
                 return false;
@@ -289,6 +301,8 @@ class SiteAiReportTest extends TestCase
 
             return is_string($prompt)
                 && str_contains($prompt, 'сформируй SEO-отчёт')
+                && str_contains($prompt, '{{chart:')
+                && str_contains($prompt, 'charts-json')
                 && str_contains($prompt, 'Demo Site')
                 && str_contains($prompt, 'https://example.com')
                 && str_contains($prompt, 'Google Analytics 4')
@@ -328,7 +342,18 @@ class SiteAiReportTest extends TestCase
             'ai_service_id' => $service->id,
             'ai_service_name' => 'Google Gemini · gemini-2.0-flash',
             'model' => 'gemini-2.0-flash',
-            'reply' => 'Новый отчёт',
+            'reply' => "Новый отчёт\n\n{{chart:clicks}}",
+            'charts' => [
+                [
+                    'id' => 'clicks',
+                    'type' => 'bar',
+                    'title' => 'Клики',
+                    'labels' => ['день 1'],
+                    'series' => [
+                        ['name' => 'clicks', 'values' => [20]],
+                    ],
+                ],
+            ],
             'created_at' => now(),
         ]);
 
@@ -338,12 +363,14 @@ class SiteAiReportTest extends TestCase
             ->assertJsonPath('data.0.id', $newer->id)
             ->assertJsonPath('data.0.tool.model', 'gemini-2.0-flash')
             ->assertJsonMissingPath('data.0.reply')
+            ->assertJsonMissingPath('data.0.charts')
             ->assertJsonPath('data.1.id', $older->id);
 
         $this->getJson("/api/app/sites/{$site->id}/ai-reports/{$newer->id}")
             ->assertOk()
             ->assertJsonPath('data.id', $newer->id)
-            ->assertJsonPath('data.reply', 'Новый отчёт')
+            ->assertJsonPath('data.reply', "Новый отчёт\n\n{{chart:clicks}}")
+            ->assertJsonPath('data.charts.0.id', 'clicks')
             ->assertJsonPath('data.tool.label', 'Google Gemini · gemini-2.0-flash');
     }
 

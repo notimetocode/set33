@@ -3,28 +3,31 @@
 namespace App\Models;
 
 use Database\Factories\SiteAnalyticsDailyFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable([
-    'site_id',
-    'date',
-    'sessions',
-    'total_users',
-    'new_users',
-    'screen_page_views',
-    'organic_sessions',
-    'organic_total_users',
-    'organic_new_users',
-])]
 class SiteAnalyticsDaily extends Model
 {
     /** @use HasFactory<SiteAnalyticsDailyFactory> */
     use HasFactory;
 
     protected $table = 'site_analytics_daily';
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'site_id',
+        'date',
+        'sessions',
+        'total_users',
+        'new_users',
+        'screen_page_views',
+        'organic_sessions',
+        'organic_total_users',
+        'organic_new_users',
+    ];
 
     /**
      * @return array<string, string>

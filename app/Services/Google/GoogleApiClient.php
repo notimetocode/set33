@@ -307,7 +307,7 @@ class GoogleApiClient
                 $startDate,
                 $endDate,
                 SearchConsoleDimension::Query,
-                max(1, (int) config('services.google.gsc_top_queries', 20)),
+                max(1, (int) config('services.google.gsc_top_queries', 50)),
             ),
             'pages' => $this->querySearchConsoleDimension(
                 $searchConsole,
@@ -315,7 +315,7 @@ class GoogleApiClient
                 $startDate,
                 $endDate,
                 SearchConsoleDimension::Page,
-                max(1, (int) config('services.google.gsc_top_pages', 10)),
+                max(1, (int) config('services.google.gsc_top_pages', 20)),
             ),
             'devices' => $this->querySearchConsoleDimension(
                 $searchConsole,
@@ -331,7 +331,7 @@ class GoogleApiClient
                 $startDate,
                 $endDate,
                 SearchConsoleDimension::Country,
-                max(1, (int) config('services.google.gsc_top_countries', 15)),
+                max(1, (int) config('services.google.gsc_top_countries', 10)),
             ),
         ];
     }

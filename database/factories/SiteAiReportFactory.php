@@ -31,6 +31,7 @@ class SiteAiReportFactory extends Factory
             'period_from' => $from,
             'period_to' => $to,
             'reply' => "## Краткое резюме\n\n".fake()->paragraph(),
+            'charts' => [],
             'usage' => [
                 'prompt_tokens' => 120,
                 'candidates_tokens' => 40,

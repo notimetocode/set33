@@ -68,6 +68,7 @@ class SiteAiReportController extends Controller
 
         $report = $save->handle($site, $aiService, [
             'reply' => $result['reply'],
+            'charts' => $result['charts'] ?? [],
             'model' => $result['model'],
             'usage' => $result['usage'],
             'period' => $result['period'],

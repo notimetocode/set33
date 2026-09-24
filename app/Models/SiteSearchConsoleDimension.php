@@ -4,29 +4,32 @@ namespace App\Models;
 
 use App\Enums\SearchConsoleDimension;
 use Database\Factories\SiteSearchConsoleDimensionFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable([
-    'site_id',
-    'period_from',
-    'period_to',
-    'dimension',
-    'value',
-    'rank',
-    'clicks',
-    'impressions',
-    'ctr',
-    'position',
-])]
 class SiteSearchConsoleDimension extends Model
 {
     /** @use HasFactory<SiteSearchConsoleDimensionFactory> */
     use HasFactory;
 
     protected $table = 'site_search_console_dimensions';
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'site_id',
+        'period_from',
+        'period_to',
+        'dimension',
+        'value',
+        'rank',
+        'clicks',
+        'impressions',
+        'ctr',
+        'position',
+    ];
 
     /**
      * @return array<string, string>

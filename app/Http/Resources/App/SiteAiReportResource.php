@@ -36,6 +36,10 @@ class SiteAiReportResource extends JsonResource
                 ! $request->routeIs('app.sites.ai-reports.index'),
                 $this->reply,
             ),
+            'charts' => $this->when(
+                ! $request->routeIs('app.sites.ai-reports.index'),
+                $this->charts ?? [],
+            ),
         ];
     }
 }

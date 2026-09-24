@@ -4,29 +4,38 @@ namespace App\Models;
 
 use App\Enums\GithubConnectionStatus;
 use Database\Factories\GithubConnectionFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable([
-    'user_id',
-    'github_user_id',
-    'github_login',
-    'github_account_email',
-    'access_token',
-    'refresh_token',
-    'expires_at',
-    'scopes',
-    'status',
-])]
-#[Hidden(['access_token', 'refresh_token'])]
 class GithubConnection extends Model
 {
     /** @use HasFactory<GithubConnectionFactory> */
     use HasFactory;
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'user_id',
+        'github_user_id',
+        'github_login',
+        'github_account_email',
+        'access_token',
+        'refresh_token',
+        'expires_at',
+        'scopes',
+        'status',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = [
+        'access_token',
+        'refresh_token',
+    ];
 
     /**
      * @return array<string, string>

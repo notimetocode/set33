@@ -4,24 +4,27 @@ namespace App\Models;
 
 use App\Enums\SiteGoogleIntegrationStatus;
 use Database\Factories\SiteGoogleIntegrationFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable([
-    'site_id',
-    'google_connection_id',
-    'ga4_property_id',
-    'gsc_site_url',
-    'status',
-    'last_synced_at',
-    'last_error',
-])]
 class SiteGoogleIntegration extends Model
 {
     /** @use HasFactory<SiteGoogleIntegrationFactory> */
     use HasFactory;
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'site_id',
+        'google_connection_id',
+        'ga4_property_id',
+        'gsc_site_url',
+        'status',
+        'last_synced_at',
+        'last_error',
+    ];
 
     /**
      * @return array<string, string>

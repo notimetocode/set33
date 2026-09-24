@@ -4,27 +4,30 @@ namespace App\Models;
 
 use App\Enums\SiteGithubIntegrationStatus;
 use Database\Factories\SiteGithubIntegrationFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable([
-    'site_id',
-    'github_connection_id',
-    'repository_id',
-    'repository_owner',
-    'repository_name',
-    'repository_full_name',
-    'default_branch',
-    'status',
-    'last_synced_at',
-    'last_error',
-])]
 class SiteGithubIntegration extends Model
 {
     /** @use HasFactory<SiteGithubIntegrationFactory> */
     use HasFactory;
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'site_id',
+        'github_connection_id',
+        'repository_id',
+        'repository_owner',
+        'repository_name',
+        'repository_full_name',
+        'default_branch',
+        'status',
+        'last_synced_at',
+        'last_error',
+    ];
 
     /**
      * @return array<string, string>

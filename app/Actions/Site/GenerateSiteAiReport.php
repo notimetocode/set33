@@ -13,12 +13,20 @@ class GenerateSiteAiReport
     public function __construct(
         private BuildSiteAiReportPrompt $buildPrompt,
         private GenerateAiServiceContent $generateContent,
+        private ParseSiteAiReportReply $parseReply,
     ) {}
 
     /**
      * @return array{
      *     ok: bool,
      *     reply: string|null,
+     *     charts: list<array{
+     *         id: string,
+     *         type: string,
+     *         title: string,
+     *         labels: list<string>,
+     *         series: list<array{name: string, values: list<float|int>}>
+     *     }>,
      *     message: string|null,
      *     model: string|null,
      *     usage: array{
@@ -70,6 +78,7 @@ class GenerateSiteAiReport
             return [
                 'ok' => false,
                 'reply' => null,
+                'charts' => [],
                 'message' => 'Нет данных сервисов за выбранный период. Загрузите метрики на вкладке «Данные сервисов» и повторите попытку.',
                 'model' => null,
                 'usage' => null,
@@ -91,10 +100,26 @@ class GenerateSiteAiReport
 
         $result = $this->generateContent->handle($aiService, $prompt);
 
+        if (! $result['ok'] || ! filled($result['reply'])) {
+            return [
+                'ok' => $result['ok'],
+                'reply' => $result['reply'],
+                'charts' => [],
+                'message' => $result['message'],
+                'model' => $result['model'],
+                'usage' => $result['usage'],
+                'period' => ['from' => $from, 'to' => $to],
+                'data_counts' => $dataCounts,
+            ];
+        }
+
+        $parsed = $this->parseReply->handle((string) $result['reply']);
+
         return [
-            'ok' => $result['ok'],
-            'reply' => $result['reply'],
-            'message' => $result['message'],
+            'ok' => true,
+            'reply' => $parsed['reply'],
+            'charts' => $parsed['charts'],
+            'message' => null,
             'model' => $result['model'],
             'usage' => $result['usage'],
             'period' => ['from' => $from, 'to' => $to],

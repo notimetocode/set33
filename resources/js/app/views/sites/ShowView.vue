@@ -807,9 +807,10 @@
                                     {{ aiReportModel }}
                                 </span>
                             </div>
-                            <AppMarkdown
+                            <AppAiReportBody
                                 class="page-app-sites__ai-report-reply-body"
                                 :source="aiReportReply"
+                                :charts="aiReportCharts"
                             />
                         </div>
                     </template>
@@ -1320,8 +1321,8 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import SiteIntegrationCard from '../../components/SiteIntegrationCard.vue';
+import AppAiReportBody from '../../../shared/components/AppAiReportBody.vue';
 import AppLoader from '../../../shared/components/AppLoader.vue';
-import AppMarkdown from '../../../shared/components/AppMarkdown.vue';
 import AppModal from '../../../shared/components/AppModal.vue';
 import { toast } from '../../../shared/toast';
 import { listAiServices } from '../../api/aiServices';
@@ -1410,6 +1411,7 @@ const aiReportGenerating = ref(false);
 const aiReportLoading = ref(false);
 const aiReportError = ref('');
 const aiReportReply = ref('');
+const aiReportCharts = ref([]);
 const aiReportModel = ref('');
 const aiReportMeta = ref('');
 const aiReports = ref([]);
@@ -1636,6 +1638,7 @@ function preferConnectedMetricsTab() {
 function clearAiReportView() {
     aiReportError.value = '';
     aiReportReply.value = '';
+    aiReportCharts.value = [];
     aiReportModel.value = '';
     aiReportMeta.value = '';
 }
@@ -1666,6 +1669,7 @@ function aiReportCardPeriod(report) {
 function applyAiReport(report) {
     selectedAiReportId.value = report?.id ? String(report.id) : '';
     aiReportReply.value = report?.reply || '';
+    aiReportCharts.value = Array.isArray(report?.charts) ? report.charts : [];
     aiReportModel.value = report?.tool?.label || report?.tool?.model || '';
     aiReportMeta.value = formatDataCounts(report?.data_counts);
 
@@ -1803,6 +1807,7 @@ async function onOpenAiReport(report) {
     aiReportLoading.value = true;
     aiReportError.value = '';
     aiReportReply.value = '';
+    aiReportCharts.value = [];
     aiReportModel.value = report.tool?.label || report.tool?.model || '';
     aiReportMeta.value = formatDataCounts(report.data_counts);
 

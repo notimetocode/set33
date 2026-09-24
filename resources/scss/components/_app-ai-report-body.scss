@@ -1,0 +1,6 @@
+.app-ai-report-body {
+  > .app-markdown + .app-chart,
+  > .app-chart + .app-markdown {
+    margin-top: 0.25rem;
+  }
+}

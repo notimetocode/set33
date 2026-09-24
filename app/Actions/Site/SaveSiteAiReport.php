@@ -11,6 +11,13 @@ class SaveSiteAiReport
     /**
      * @param  array{
      *     reply: string,
+     *     charts?: list<array{
+     *         id: string,
+     *         type: string,
+     *         title: string,
+     *         labels: list<string>,
+     *         series: list<array{name: string, values: list<float|int>}>
+     *     }>,
      *     model: string|null,
      *     usage: array{
      *         prompt_tokens: int|null,
@@ -42,6 +49,7 @@ class SaveSiteAiReport
             'period_from' => $result['period']['from'],
             'period_to' => $result['period']['to'],
             'reply' => $result['reply'],
+            'charts' => $result['charts'] ?? [],
             'usage' => $result['usage'],
             'data_counts' => $result['data_counts'],
         ]);

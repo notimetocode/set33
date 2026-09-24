@@ -50,8 +50,8 @@ class SyncSiteGoogleIntegrationRequest extends FormRequest
                 return;
             }
 
-            if ($from->diffInDays($to) > 90) {
-                $validator->errors()->add('to', 'Период не должен превышать 90 дней.');
+            if ($from->diffInDays($to) > 365) {
+                $validator->errors()->add('to', 'Период не должен превышать 365 дней.');
             }
         });
     }
