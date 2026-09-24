@@ -3,7 +3,7 @@
         "laravel-boost": {
             "command": "wsl.exe",
             "args": [
-                "/usr/bin/php8.3",
+                "/usr/bin/php8.2",
                 "/var/www/set33/artisan",
                 "boost:mcp"
             ]

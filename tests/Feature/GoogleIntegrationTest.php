@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Actions\Google\CompleteGoogleOAuth;
+use App\Enums\SearchConsoleDimension;
 use App\Enums\SiteGoogleIntegrationStatus;
 use App\Jobs\BackfillSiteGoogleMetricsJob;
 use App\Models\GoogleConnection;
@@ -10,6 +11,7 @@ use App\Models\Site;
 use App\Models\SiteAnalyticsDaily;
 use App\Models\SiteGoogleIntegration;
 use App\Models\SiteSearchConsoleDaily;
+use App\Models\SiteSearchConsoleDimension;
 use App\Models\User;
 use App\Services\Google\GoogleApiClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -154,6 +156,47 @@ class GoogleIntegrationTest extends TestCase
                         'position' => 12.3,
                     ],
                 ]);
+
+            $mock->shouldReceive('fetchSearchConsoleDimensions')
+                ->once()
+                ->andReturn([
+                    'queries' => [
+                        [
+                            'value' => 'купить велосипед',
+                            'clicks' => 3,
+                            'impressions' => 40,
+                            'ctr' => 0.075,
+                            'position' => 4.2,
+                        ],
+                    ],
+                    'pages' => [
+                        [
+                            'value' => 'https://example.com/bikes',
+                            'clicks' => 4,
+                            'impressions' => 50,
+                            'ctr' => 0.08,
+                            'position' => 5.1,
+                        ],
+                    ],
+                    'devices' => [
+                        [
+                            'value' => 'MOBILE',
+                            'clicks' => 3,
+                            'impressions' => 60,
+                            'ctr' => 0.05,
+                            'position' => 11.0,
+                        ],
+                    ],
+                    'countries' => [
+                        [
+                            'value' => 'rus',
+                            'clicks' => 5,
+                            'impressions' => 90,
+                            'ctr' => 0.055,
+                            'position' => 10.0,
+                        ],
+                    ],
+                ]);
         });
 
         $this->postJson("/api/app/sites/{$site->id}/google-integration/sync", [
@@ -180,6 +223,34 @@ class GoogleIntegrationTest extends TestCase
             'impressions' => 100,
         ]);
 
+        $this->assertDatabaseHas('site_search_console_dimensions', [
+            'site_id' => $site->id,
+            'period_from' => '2026-09-20',
+            'period_to' => '2026-09-20',
+            'dimension' => 'query',
+            'value' => 'купить велосипед',
+            'rank' => 1,
+            'clicks' => 3,
+        ]);
+
+        $this->assertDatabaseHas('site_search_console_dimensions', [
+            'site_id' => $site->id,
+            'dimension' => 'page',
+            'value' => 'https://example.com/bikes',
+        ]);
+
+        $this->assertDatabaseHas('site_search_console_dimensions', [
+            'site_id' => $site->id,
+            'dimension' => 'device',
+            'value' => 'MOBILE',
+        ]);
+
+        $this->assertDatabaseHas('site_search_console_dimensions', [
+            'site_id' => $site->id,
+            'dimension' => 'country',
+            'value' => 'rus',
+        ]);
+
         $this->assertNotNull($integration->fresh()->last_synced_at);
     }
 
@@ -202,6 +273,16 @@ class GoogleIntegrationTest extends TestCase
             'clicks' => 7,
         ]);
 
+        SiteSearchConsoleDimension::factory()->create([
+            'site_id' => $site->id,
+            'period_from' => '2026-09-20',
+            'period_to' => '2026-09-22',
+            'dimension' => SearchConsoleDimension::Query,
+            'value' => 'seo отчёт',
+            'rank' => 1,
+            'clicks' => 11,
+        ]);
+
         $this->getJson("/api/app/sites/{$site->id}/metrics/analytics?from=2026-09-20&to=2026-09-22")
             ->assertOk()
             ->assertJsonPath('data.0.sessions', 42)
@@ -210,7 +291,12 @@ class GoogleIntegrationTest extends TestCase
 
         $this->getJson("/api/app/sites/{$site->id}/metrics/search-console?from=2026-09-20&to=2026-09-22")
             ->assertOk()
-            ->assertJsonPath('data.0.clicks', 7);
+            ->assertJsonPath('data.daily.0.clicks', 7)
+            ->assertJsonPath('data.queries.0.value', 'seo отчёт')
+            ->assertJsonPath('data.queries.0.clicks', 11)
+            ->assertJsonPath('data.pages', [])
+            ->assertJsonPath('data.devices', [])
+            ->assertJsonPath('data.countries', []);
     }
 
     public function test_connection_show_and_disconnect(): void

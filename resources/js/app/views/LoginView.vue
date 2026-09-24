@@ -3,7 +3,7 @@
         <form class="auth-form" @submit.prevent="submit">
             <div class="page-app-login__brand">
                 <span class="logo">
-                    <img class="logo__mark" src="/images/logo.svg" alt="" width="32" height="32">
+                    <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="20">
                 </span>
                 Личный кабинет
             </div>
@@ -38,6 +38,11 @@
             <button class="btn btn-primary w-100" type="submit" :disabled="loading">
                 {{ loading ? 'Вход…' : 'Войти' }}
             </button>
+
+            <p class="page-app-login__switch text-muted mb-0">
+                Нет аккаунта?
+                <router-link :to="{ name: 'register' }">Зарегистрироваться</router-link>
+            </p>
         </form>
     </div>
 </template>
@@ -59,7 +64,7 @@ async function submit() {
 
     try {
         await login(email.value, password.value);
-        await router.push({ name: 'home' });
+        await router.push({ name: 'sites.index' });
     } catch (e) {
         error.value = e.response?.data?.message
             || e.response?.data?.errors?.email?.[0]

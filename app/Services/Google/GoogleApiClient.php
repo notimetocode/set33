@@ -3,6 +3,7 @@
 namespace App\Services\Google;
 
 use App\Enums\GoogleConnectionStatus;
+use App\Enums\SearchConsoleDimension;
 use App\Models\GoogleConnection;
 use Google\Client as GoogleClient;
 use Google\Service\AnalyticsData;
@@ -272,6 +273,99 @@ class GoogleApiClient
 
             $rows[] = [
                 'date' => $date,
+                'clicks' => (int) $row->getClicks(),
+                'impressions' => (int) $row->getImpressions(),
+                'ctr' => (float) $row->getCtr(),
+                'position' => (float) $row->getPosition(),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array{
+     *     queries: list<array{value: string, clicks: int, impressions: int, ctr: float, position: float}>,
+     *     pages: list<array{value: string, clicks: int, impressions: int, ctr: float, position: float}>,
+     *     devices: list<array{value: string, clicks: int, impressions: int, ctr: float, position: float}>,
+     *     countries: list<array{value: string, clicks: int, impressions: int, ctr: float, position: float}>
+     * }
+     */
+    public function fetchSearchConsoleDimensions(
+        GoogleConnection $connection,
+        string $siteUrl,
+        Carbon $startDate,
+        Carbon $endDate,
+    ): array {
+        $client = $this->authenticatedClient($connection);
+        $searchConsole = new SearchConsole($client);
+
+        return [
+            'queries' => $this->querySearchConsoleDimension(
+                $searchConsole,
+                $siteUrl,
+                $startDate,
+                $endDate,
+                SearchConsoleDimension::Query,
+                max(1, (int) config('services.google.gsc_top_queries', 20)),
+            ),
+            'pages' => $this->querySearchConsoleDimension(
+                $searchConsole,
+                $siteUrl,
+                $startDate,
+                $endDate,
+                SearchConsoleDimension::Page,
+                max(1, (int) config('services.google.gsc_top_pages', 10)),
+            ),
+            'devices' => $this->querySearchConsoleDimension(
+                $searchConsole,
+                $siteUrl,
+                $startDate,
+                $endDate,
+                SearchConsoleDimension::Device,
+                10,
+            ),
+            'countries' => $this->querySearchConsoleDimension(
+                $searchConsole,
+                $siteUrl,
+                $startDate,
+                $endDate,
+                SearchConsoleDimension::Country,
+                max(1, (int) config('services.google.gsc_top_countries', 15)),
+            ),
+        ];
+    }
+
+    /**
+     * @return list<array{value: string, clicks: int, impressions: int, ctr: float, position: float}>
+     */
+    private function querySearchConsoleDimension(
+        SearchConsole $searchConsole,
+        string $siteUrl,
+        Carbon $startDate,
+        Carbon $endDate,
+        SearchConsoleDimension $dimension,
+        int $rowLimit,
+    ): array {
+        $request = new SearchAnalyticsQueryRequest;
+        $request->setStartDate($startDate->toDateString());
+        $request->setEndDate($endDate->toDateString());
+        $request->setDimensions([$dimension->apiDimension()]);
+        $request->setRowLimit($rowLimit);
+
+        $response = $searchConsole->searchanalytics->query($siteUrl, $request);
+        $rows = [];
+
+        foreach ($response->getRows() ?? [] as $row) {
+            $keys = $row->getKeys() ?? [];
+            $value = (string) ($keys[0] ?? '');
+
+            if ($value === '') {
+                continue;
+            }
+
+            $rows[] = [
+                'value' => $value,
                 'clicks' => (int) $row->getClicks(),
                 'impressions' => (int) $row->getImpressions(),
                 'ctr' => (float) $row->getCtr(),

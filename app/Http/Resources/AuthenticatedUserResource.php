@@ -31,6 +31,9 @@ class AuthenticatedUserResource extends JsonResource
             'last_name' => $this->last_name,
             'first_name' => $this->first_name,
             'middle_name' => $this->middle_name,
+            'phone' => $this->phone,
+            'telegram' => $this->telegram,
+            'viber' => $this->viber,
             'avatar' => [
                 'sm' => $avatarUrl,
                 'md' => $avatarUrl,

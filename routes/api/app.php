@@ -4,11 +4,14 @@ use App\Http\Controllers\App\AiServiceController;
 use App\Http\Controllers\App\Auth\LoginController;
 use App\Http\Controllers\App\Auth\LogoutController;
 use App\Http\Controllers\App\Auth\MeController;
+use App\Http\Controllers\App\Auth\RegisterController;
 use App\Http\Controllers\App\GithubConnectionController;
 use App\Http\Controllers\App\GithubRepositoryController;
 use App\Http\Controllers\App\GoogleConnectionController;
 use App\Http\Controllers\App\ProfileController;
+use App\Http\Controllers\App\SiteAiReportController;
 use App\Http\Controllers\App\SiteController;
+use App\Http\Controllers\App\SiteEventController;
 use App\Http\Controllers\App\SiteGithubIntegrationController;
 use App\Http\Controllers\App\SiteGoogleIntegrationController;
 use App\Http\Controllers\App\SiteMetricsController;
@@ -18,11 +21,16 @@ Route::post('/auth/login', LoginController::class)
     ->middleware('throttle:login')
     ->name('app.auth.login');
 
+Route::post('/auth/register', RegisterController::class)
+    ->middleware('throttle:register')
+    ->name('app.auth.register');
+
 Route::middleware(['auth:sanctum', 'ability:app'])->group(function (): void {
     Route::post('/auth/logout', LogoutController::class)->name('app.auth.logout');
     Route::get('/auth/me', MeController::class)->name('app.auth.me');
 
     Route::get('/profile', [ProfileController::class, 'show'])->name('app.profile.show');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('app.profile.update');
 
     Route::get('/ai-services/meta', [AiServiceController::class, 'meta'])->name('app.ai-services.meta');
     Route::post('/ai-services/models', [AiServiceController::class, 'models'])
@@ -95,4 +103,21 @@ Route::middleware(['auth:sanctum', 'ability:app'])->group(function (): void {
         ->name('app.sites.metrics.search-console');
     Route::get('/sites/{site}/metrics/github-commits', [SiteMetricsController::class, 'githubCommits'])
         ->name('app.sites.metrics.github-commits');
+
+    Route::get('/sites/{site}/events', [SiteEventController::class, 'index'])
+        ->name('app.sites.events.index');
+    Route::post('/sites/{site}/events', [SiteEventController::class, 'store'])
+        ->name('app.sites.events.store');
+    Route::put('/sites/{site}/events/{event}', [SiteEventController::class, 'update'])
+        ->name('app.sites.events.update');
+    Route::delete('/sites/{site}/events/{event}', [SiteEventController::class, 'destroy'])
+        ->name('app.sites.events.destroy');
+
+    Route::get('/sites/{site}/ai-reports', [SiteAiReportController::class, 'index'])
+        ->name('app.sites.ai-reports.index');
+    Route::get('/sites/{site}/ai-reports/{ai_report}', [SiteAiReportController::class, 'show'])
+        ->name('app.sites.ai-reports.show');
+    Route::post('/sites/{site}/ai-reports', [SiteAiReportController::class, 'store'])
+        ->middleware('throttle:ai-service-generate')
+        ->name('app.sites.ai-reports.store');
 });

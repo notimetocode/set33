@@ -12,24 +12,21 @@
 
   &__mark {
     display: block;
-    width: 2rem;
-    height: 2rem;
+    height: 1.25rem;
+    width: auto;
     flex-shrink: 0;
   }
 
   &--sm &__mark {
-    width: 1.5rem;
-    height: 1.5rem;
+    height: 1.125rem;
   }
 
   &--lg &__mark {
-    width: 3rem;
-    height: 3rem;
+    height: 1.75rem;
   }
 
   &--xl &__mark {
-    width: 4.5rem;
-    height: 4.5rem;
+    height: 2.25rem;
   }
 
   &__text {

@@ -9,6 +9,18 @@ export async function login(email, password) {
     return data;
 }
 
+export async function register(name, email, password, passwordConfirmation) {
+    const { data } = await http.post('/auth/register', {
+        name,
+        email,
+        password,
+        password_confirmation: passwordConfirmation,
+    });
+    storeToken('/api/app', data.token);
+
+    return data;
+}
+
 export async function logout() {
     try {
         await http.post('/auth/logout');

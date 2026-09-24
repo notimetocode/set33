@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\App;
 
+use App\Enums\SearchConsoleDimension;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\App\Site\SiteMetricsRequest;
 use App\Models\Site;
@@ -42,7 +43,7 @@ class SiteMetricsController extends Controller
         $from = $request->date('from')->toDateString();
         $to = $request->date('to')->toDateString();
 
-        $rows = $site->searchConsoleDaily()
+        $daily = $site->searchConsoleDaily()
             ->whereBetween('date', [$from, $to])
             ->orderBy('date')
             ->get()
@@ -52,9 +53,52 @@ class SiteMetricsController extends Controller
                 'impressions' => $row->impressions,
                 'ctr' => $row->ctr,
                 'position' => $row->position,
-            ]);
+            ])
+            ->values()
+            ->all();
 
-        return response()->json(['data' => $rows]);
+        $dimensionRows = $site->searchConsoleDimensions()
+            ->where('period_from', $from)
+            ->where('period_to', $to)
+            ->orderBy('dimension')
+            ->orderBy('rank')
+            ->orderBy('id')
+            ->get();
+
+        $mapDimension = static fn ($row) => [
+            'value' => $row->value,
+            'rank' => $row->rank,
+            'clicks' => $row->clicks,
+            'impressions' => $row->impressions,
+            'ctr' => $row->ctr,
+            'position' => $row->position,
+        ];
+
+        return response()->json([
+            'data' => [
+                'daily' => $daily,
+                'queries' => $dimensionRows
+                    ->where('dimension', SearchConsoleDimension::Query)
+                    ->values()
+                    ->map($mapDimension)
+                    ->all(),
+                'pages' => $dimensionRows
+                    ->where('dimension', SearchConsoleDimension::Page)
+                    ->values()
+                    ->map($mapDimension)
+                    ->all(),
+                'devices' => $dimensionRows
+                    ->where('dimension', SearchConsoleDimension::Device)
+                    ->values()
+                    ->map($mapDimension)
+                    ->all(),
+                'countries' => $dimensionRows
+                    ->where('dimension', SearchConsoleDimension::Country)
+                    ->values()
+                    ->map($mapDimension)
+                    ->all(),
+            ],
+        ]);
     }
 
     public function githubCommits(SiteMetricsRequest $request, Site $site): JsonResponse

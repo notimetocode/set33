@@ -201,34 +201,193 @@
     white-space: nowrap;
   }
 
-  &__metrics-tabs {
-    margin-bottom: 0;
-    border-bottom-color: rgba(15, 23, 18, 0.1);
-    gap: 0.15rem;
+  &__ai-report-field {
+    max-width: 28rem;
 
-    .nav-link {
-      margin-bottom: -1px;
-      border: 1px solid transparent;
-      border-top-left-radius: 0.5rem;
-      border-top-right-radius: 0.5rem;
-      color: var(--muted, #{$muted});
-      font-weight: 600;
-      font-size: 0.875rem;
-
-      &:hover {
-        border-color: transparent;
-        color: var(--body-color, #{$body-color});
-      }
-
-      &.active {
-        color: var(--brand, #{$primary});
-        background: var(--surface, #fff);
-        border-color: rgba(15, 23, 18, 0.1) rgba(15, 23, 18, 0.1) var(--surface, #fff);
-      }
+    .form-label {
+      margin-bottom: 0.35rem;
     }
   }
 
-  &__metrics-body {
-    padding-top: 1rem;
+  &__metrics-tabs,
+  &__ai-report-tabs,
+  &__event-tabs {
+    margin-bottom: 1.25rem;
+  }
+
+  &__event-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__ai-report-cards,
+  &__event-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+
+    @media (min-width: 576px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (min-width: 992px) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  &__ai-report-card,
+  &__event-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    width: 100%;
+    padding: 1rem 1.05rem;
+    text-align: left;
+    border: 1px solid rgba(15, 23, 18, 0.08);
+    border-radius: 0.75rem;
+    background: var(--surface, #fff);
+    color: inherit;
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      background-color 0.15s ease;
+
+    &:hover:not(:disabled) {
+      border-color: rgba($primary, 0.35);
+      box-shadow: 0 0 0 3px rgba($primary, 0.08);
+    }
+
+    &:focus-visible {
+      outline: none;
+      border-color: rgba($primary, 0.45);
+      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+  }
+
+  &__ai-report-card-title,
+  &__event-card-title {
+    font-size: 0.9375rem;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    color: var(--body-color, #{$body-color});
+  }
+
+  &__ai-report-card-meta,
+  &__event-card-meta {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--muted, #{$muted});
+  }
+
+  &__event-card-meta {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  &__ai-report-card-period,
+  &__event-card-date {
+    margin-top: 0.15rem;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--muted, #{$muted});
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__ai-report-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+  }
+
+  &__ai-report-reply {
+    margin-top: 0.35rem;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background: rgba(15, 23, 18, 0.02);
+    border: 1px solid rgba(15, 23, 18, 0.06);
+  }
+
+  &__ai-report-reply-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__ai-report-reply-title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted, #{$muted});
+  }
+
+  &__ai-report-reply-meta {
+    font-size: 0.75rem;
+    color: var(--muted, #{$muted});
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__ai-report-reply-body {
+    margin: 0;
+  }
+
+  &__event-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.85rem 1rem;
+    margin-bottom: 1rem;
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  &__event-field {
+    &--title,
+    &--url,
+    &--description {
+      @media (min-width: 768px) {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .form-label {
+      margin-bottom: 0.35rem;
+    }
+  }
+
+  &__event-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
   }
 }

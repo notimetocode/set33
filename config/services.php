@@ -62,6 +62,9 @@ return [
             'https://www.googleapis.com/auth/webmasters.readonly',
         ],
         'metrics_backfill_days' => (int) env('GOOGLE_METRICS_BACKFILL_DAYS', 28),
+        'gsc_top_queries' => (int) env('GOOGLE_GSC_TOP_QUERIES', 20),
+        'gsc_top_pages' => (int) env('GOOGLE_GSC_TOP_PAGES', 10),
+        'gsc_top_countries' => (int) env('GOOGLE_GSC_TOP_COUNTRIES', 15),
     ],
 
     'github' => [

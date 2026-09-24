@@ -2,10 +2,13 @@
 
 namespace App\Actions\Google;
 
+use App\Enums\SearchConsoleDimension;
 use App\Enums\SiteGoogleIntegrationStatus;
+use App\Models\GoogleConnection;
 use App\Models\SiteAnalyticsDaily;
 use App\Models\SiteGoogleIntegration;
 use App\Models\SiteSearchConsoleDaily;
+use App\Models\SiteSearchConsoleDimension;
 use App\Services\Google\GoogleApiClient;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -82,6 +85,13 @@ class SyncSiteGoogleMetrics
                             ],
                         );
                     }
+
+                    $this->syncSearchConsoleDimensions(
+                        $integration,
+                        $connection,
+                        $startDate,
+                        $endDate,
+                    );
                 }
 
                 $integration->forceFill([
@@ -109,5 +119,52 @@ class SyncSiteGoogleMetrics
         $startDate = $endDate->copy()->subDays($days - 1);
 
         return $this->handle($integration, $startDate, $endDate);
+    }
+
+    private function syncSearchConsoleDimensions(
+        SiteGoogleIntegration $integration,
+        GoogleConnection $connection,
+        Carbon $startDate,
+        Carbon $endDate,
+    ): void {
+        $periodFrom = $startDate->toDateString();
+        $periodTo = $endDate->toDateString();
+
+        $dimensions = $this->googleApiClient->fetchSearchConsoleDimensions(
+            $connection,
+            $integration->gsc_site_url,
+            $startDate,
+            $endDate,
+        );
+
+        SiteSearchConsoleDimension::query()
+            ->where('site_id', $integration->site_id)
+            ->where('period_from', $periodFrom)
+            ->where('period_to', $periodTo)
+            ->delete();
+
+        $payload = [
+            SearchConsoleDimension::Query->value => $dimensions['queries'],
+            SearchConsoleDimension::Page->value => $dimensions['pages'],
+            SearchConsoleDimension::Device->value => $dimensions['devices'],
+            SearchConsoleDimension::Country->value => $dimensions['countries'],
+        ];
+
+        foreach ($payload as $dimension => $rows) {
+            foreach (array_values($rows) as $index => $row) {
+                SiteSearchConsoleDimension::query()->create([
+                    'site_id' => $integration->site_id,
+                    'period_from' => $periodFrom,
+                    'period_to' => $periodTo,
+                    'dimension' => $dimension,
+                    'value' => mb_substr((string) $row['value'], 0, 2048),
+                    'rank' => $index + 1,
+                    'clicks' => $row['clicks'],
+                    'impressions' => $row['impressions'],
+                    'ctr' => $row['ctr'],
+                    'position' => $row['position'],
+                ]);
+            }
+        }
     }
 }

@@ -1,25 +1,66 @@
 import * as bootstrap from 'bootstrap';
 import { getToken } from '../shared/api/http';
 import { initCookieConsent } from './cookie-consent';
+import { initHeroTorus } from './hero-torus';
 
 function syncPublicAuthCtas() {
     const authed = Boolean(getToken('/api/app'));
-    const href = authed ? '/app' : '/app/login';
-    const label = authed ? 'Личный кабинет' : 'Войти';
 
     document.querySelectorAll('[data-public-auth-cta]').forEach((el) => {
-        el.setAttribute('href', href);
-        el.textContent = label;
+        const mode = el.getAttribute('data-public-auth-cta') || 'login';
+        const keepWhenAuthed = el.hasAttribute('data-public-auth-keep');
+
+        if (authed) {
+            if (mode === 'register' && !keepWhenAuthed) {
+                el.hidden = true;
+                return;
+            }
+
+            el.hidden = false;
+            el.setAttribute('href', '/app');
+            el.textContent = 'Личный кабинет';
+
+            return;
+        }
+
+        el.hidden = false;
+
+        if (mode === 'register') {
+            el.setAttribute('href', '/app/register');
+            el.textContent = 'Зарегистрироваться';
+
+            return;
+        }
+
+        el.setAttribute('href', '/app/login');
+        el.textContent = 'Войти';
     });
+}
+
+function initPublicHeaderScroll() {
+    const header = document.querySelector('[data-public-header]');
+
+    if (!header) {
+        return;
+    }
+
+    const threshold = 8;
+
+    function updateScrolled() {
+        header.classList.toggle('is-scrolled', window.scrollY > threshold);
+    }
+
+    updateScrolled();
+    window.addEventListener('scroll', updateScrolled, { passive: true });
 }
 
 function initPublicNav() {
     const root = document.querySelector('.layout-public');
     const toggle = document.querySelector('[data-public-nav-toggle]');
-    const sidebar = document.querySelector('[data-public-nav-sidebar]');
+    const panel = document.querySelector('[data-public-nav-panel]');
     const backdrop = document.querySelector('[data-public-nav-backdrop]');
 
-    if (!root || !toggle || !sidebar) {
+    if (!root || !toggle || !panel) {
         return;
     }
 
@@ -32,7 +73,8 @@ function initPublicNav() {
         document.body.classList.toggle('public-nav-open', open);
         toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
         toggle.setAttribute('aria-label', open ? closeLabel : openLabel);
-        sidebar.setAttribute('aria-hidden', open ? 'false' : 'true');
+        panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+        backdrop?.setAttribute('aria-hidden', open ? 'false' : 'true');
     }
 
     function closeNav() {
@@ -56,7 +98,7 @@ function initPublicNav() {
     toggle.addEventListener('click', toggleNav);
     backdrop?.addEventListener('click', closeNav);
 
-    sidebar.querySelectorAll('[data-public-nav-link]').forEach((link) => {
+    panel.querySelectorAll('[data-public-nav-link]').forEach((link) => {
         link.addEventListener('click', closeNav);
     });
 
@@ -79,8 +121,10 @@ function initPublicUi() {
     });
 
     syncPublicAuthCtas();
+    initPublicHeaderScroll();
     initPublicNav();
     initCookieConsent();
+    initHeroTorus();
 }
 
 if (document.readyState === 'loading') {

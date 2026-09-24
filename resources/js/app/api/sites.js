@@ -88,6 +88,63 @@ export async function getSiteAnalyticsMetrics(siteId, params) {
 
 export async function getSiteSearchConsoleMetrics(siteId, params) {
     const { data } = await http.get(`/sites/${siteId}/metrics/search-console`, { params });
+    const payload = data.data ?? {};
+
+    if (Array.isArray(payload)) {
+        return {
+            daily: payload,
+            queries: [],
+            pages: [],
+            devices: [],
+            countries: [],
+        };
+    }
+
+    return {
+        daily: payload.daily ?? [],
+        queries: payload.queries ?? [],
+        pages: payload.pages ?? [],
+        devices: payload.devices ?? [],
+        countries: payload.countries ?? [],
+    };
+}
+
+export async function listSiteEvents(siteId, params) {
+    const { data } = await http.get(`/sites/${siteId}/events`, { params });
 
     return data.data ?? [];
+}
+
+export async function createSiteEvent(siteId, payload) {
+    const { data } = await http.post(`/sites/${siteId}/events`, payload);
+
+    return data.data ?? data;
+}
+
+export async function updateSiteEvent(siteId, eventId, payload) {
+    const { data } = await http.put(`/sites/${siteId}/events/${eventId}`, payload);
+
+    return data.data ?? data;
+}
+
+export async function deleteSiteEvent(siteId, eventId) {
+    await http.delete(`/sites/${siteId}/events/${eventId}`);
+}
+
+export async function listSiteAiReports(siteId) {
+    const { data } = await http.get(`/sites/${siteId}/ai-reports`);
+
+    return data.data ?? [];
+}
+
+export async function getSiteAiReport(siteId, reportId) {
+    const { data } = await http.get(`/sites/${siteId}/ai-reports/${reportId}`);
+
+    return data.data ?? data;
+}
+
+export async function generateSiteAiReport(siteId, payload) {
+    const { data } = await http.post(`/sites/${siteId}/ai-reports`, payload);
+
+    return data;
 }

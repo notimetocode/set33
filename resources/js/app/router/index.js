@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { isAuthenticated } from '../api/auth';
 import AppLayout from '../layouts/AppLayout.vue';
 import LoginView from '../views/LoginView.vue';
-import HomeView from '../views/HomeView.vue';
+import RegisterView from '../views/RegisterView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import AiServicesIndexView from '../views/ai-services/IndexView.vue';
 import AiServicesFormView from '../views/ai-services/FormView.vue';
@@ -15,6 +15,7 @@ const router = createRouter({
     history: createWebHistory('/app'),
     routes: [
         { path: '/login', name: 'login', component: LoginView, meta: { guest: true } },
+        { path: '/register', name: 'register', component: RegisterView, meta: { guest: true } },
         {
             path: '/',
             component: AppLayout,
@@ -22,11 +23,7 @@ const router = createRouter({
             children: [
                 {
                     path: '',
-                    name: 'home',
-                    component: HomeView,
-                    meta: {
-                        breadcrumbs: [{ label: 'Главная' }],
-                    },
+                    redirect: { name: 'sites.index' },
                 },
                 {
                     path: 'profile',
@@ -134,7 +131,7 @@ router.beforeEach((to) => {
     }
 
     if (guestOnly && authed) {
-        return { name: 'home' };
+        return { name: 'sites.index' };
     }
 
     return true;

@@ -37,6 +37,12 @@ class AppServiceProvider extends ServiceProvider
             ));
         });
 
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perMinute(5)->by(Str::transliterate(
+                Str::lower($request->string('email')->toString()).'|'.$request->ip()
+            ));
+        });
+
         RateLimiter::for('ai-service-models', function (Request $request) {
             return Limit::perMinute(20)->by((string) ($request->user()?->id ?: $request->ip()));
         });

@@ -1,0 +1,275 @@
+<?php
+
+namespace App\Actions\Site;
+
+use App\Enums\SearchConsoleDimension;
+use App\Models\Site;
+
+class BuildSiteAiReportPrompt
+{
+    private const int MAX_COMMITS_IN_PROMPT = 80;
+
+    private const int MAX_EVENTS_IN_PROMPT = 50;
+
+    /**
+     * @param  list<array<string, mixed>>  $analytics
+     * @param  list<array<string, mixed>>  $searchConsole
+     * @param  array{
+     *     queries: list<array<string, mixed>>,
+     *     pages: list<array<string, mixed>>,
+     *     devices: list<array<string, mixed>>,
+     *     countries: list<array<string, mixed>>
+     * }  $searchConsoleDimensions
+     * @param  list<array<string, mixed>>  $commits
+     * @param  list<array<string, mixed>>  $events
+     */
+    public function handle(
+        Site $site,
+        string $from,
+        string $to,
+        array $analytics,
+        array $searchConsole,
+        array $searchConsoleDimensions,
+        array $commits,
+        array $events = [],
+    ): string {
+        $sections = [
+            $this->instructions(),
+            $this->siteContext($site, $from, $to),
+            $this->analyticsSection($analytics),
+            $this->searchConsoleSection($searchConsole, $searchConsoleDimensions),
+            $this->commitsSection($commits),
+            $this->eventsSection($events),
+        ];
+
+        return implode("\n\n", $sections);
+    }
+
+    private function instructions(): string
+    {
+        return <<<'PROMPT'
+Проанализируй приведённые ниже данные сайта и сформируй SEO-отчёт на русском языке.
+
+Задачи анализа:
+1. Найди закономерности, тренды и аномалии в метриках за указанный период.
+2. Оцени динамику органического трафика (GA4: organic_*) и поисковой видимости (Search Console: клики, показы, CTR, средняя позиция).
+3. Разбери топ-запросы и топ-страницы: что даёт клики, где высокий CTR или слабая позиция при больших показах; учти разрезы по устройствам и странам.
+4. Сопоставь изменения метрик с активностью разработки (коммиты GitHub), если такие данные есть: возможные корреляции деплоев/изменений с ростом или падением показателей.
+5. Учти ручные события периода (упоминания в СМИ, публикации, акции, инциденты и т.п.): оцени их возможное влияние на трафик и видимость.
+6. Выдели сильные стороны, риски и конкретные гипотезы для улучшения SEO.
+7. Если какого-то источника данных нет или он пуст — явно укажи это и не выдумывай цифры.
+
+Структура отчёта (используй Markdown):
+## Краткое резюме
+## Динамика и закономерности
+## Органический трафик и видимость
+## Запросы, страницы, устройства и страны
+## Связь с разработкой
+## События и внешние факторы
+## Рекомендации
+## Что проверить дополнительно
+
+Пиши конкретно, опирайся на числа из данных. Избегай общих фраз без привязки к периоду и метрикам.
+PROMPT;
+    }
+
+    private function siteContext(Site $site, string $from, string $to): string
+    {
+        return implode("\n", [
+            '## Контекст сайта',
+            '- Название: '.$site->name,
+            '- URL: '.$site->url,
+            '- Период анализа: с '.$from.' по '.$to,
+        ]);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $analytics
+     */
+    private function analyticsSection(array $analytics): string
+    {
+        if ($analytics === []) {
+            return "## Google Analytics 4\nДанные за период отсутствуют.";
+        }
+
+        return "## Google Analytics 4 (ежедневные метрики)\n"
+            .'Поля: date, sessions, total_users, new_users, screen_page_views, '
+            ."organic_sessions, organic_total_users, organic_new_users.\n"
+            ."```json\n"
+            .$this->encodeJson($analytics)
+            ."\n```";
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $searchConsole
+     * @param  array{
+     *     queries: list<array<string, mixed>>,
+     *     pages: list<array<string, mixed>>,
+     *     devices: list<array<string, mixed>>,
+     *     countries: list<array<string, mixed>>
+     * }  $dimensions
+     */
+    private function searchConsoleSection(array $searchConsole, array $dimensions): string
+    {
+        $hasDaily = $searchConsole !== [];
+        $hasDimensions = ($dimensions['queries'] ?? []) !== []
+            || ($dimensions['pages'] ?? []) !== []
+            || ($dimensions['devices'] ?? []) !== []
+            || ($dimensions['countries'] ?? []) !== [];
+
+        if (! $hasDaily && ! $hasDimensions) {
+            return "## Google Search Console\nДанные за период отсутствуют.";
+        }
+
+        $parts = ['## Google Search Console'];
+
+        if ($hasDaily) {
+            $parts[] = "### Ежедневные метрики сайта\n"
+                ."Поля: date, clicks, impressions, ctr, position.\n"
+                ."```json\n"
+                .$this->encodeJson($searchConsole)
+                ."\n```";
+        }
+
+        $parts[] = $this->dimensionBlock(
+            'Топ-запросы',
+            SearchConsoleDimension::Query,
+            $dimensions['queries'] ?? [],
+            'value (текст запроса), rank, clicks, impressions, ctr, position',
+        );
+        $parts[] = $this->dimensionBlock(
+            'Топ-страницы',
+            SearchConsoleDimension::Page,
+            $dimensions['pages'] ?? [],
+            'value (URL), rank, clicks, impressions, ctr, position',
+        );
+        $parts[] = $this->dimensionBlock(
+            'Устройства',
+            SearchConsoleDimension::Device,
+            $dimensions['devices'] ?? [],
+            'value (DESKTOP/MOBILE/TABLET), rank, clicks, impressions, ctr, position',
+        );
+        $parts[] = $this->dimensionBlock(
+            'Страны',
+            SearchConsoleDimension::Country,
+            $dimensions['countries'] ?? [],
+            'value (код страны ISO 3166-1 alpha-3), rank, clicks, impressions, ctr, position',
+        );
+
+        return implode("\n\n", $parts);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     */
+    private function dimensionBlock(string $title, SearchConsoleDimension $dimension, array $rows, string $fields): string
+    {
+        if ($rows === []) {
+            return "### {$title}\nДанные за период отсутствуют.";
+        }
+
+        return "### {$title} ({$dimension->label()})\n"
+            ."Поля: {$fields}.\n"
+            ."```json\n"
+            .$this->encodeJson($rows)
+            ."\n```";
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $commits
+     */
+    private function commitsSection(array $commits): string
+    {
+        if ($commits === []) {
+            return "## Коммиты GitHub\nДанные за период отсутствуют.";
+        }
+
+        $total = count($commits);
+        $included = array_slice($commits, 0, self::MAX_COMMITS_IN_PROMPT);
+        $note = $total > self::MAX_COMMITS_IN_PROMPT
+            ? "Показаны {$this->formatCount(count($included))} из {$this->formatCount($total)} коммитов (самые свежие).\n"
+            : '';
+
+        $simplified = array_map(function (array $row): array {
+            return [
+                'sha' => $row['short_sha'] ?? (isset($row['sha']) ? substr((string) $row['sha'], 0, 7) : null),
+                'message' => $this->firstLine((string) ($row['message'] ?? '')),
+                'author' => $row['author_name'] ?? null,
+                'date' => $row['author_date'] ?? null,
+            ];
+        }, $included);
+
+        return "## Коммиты GitHub\n"
+            .$note
+            ."Поля: sha, message, author, date.\n"
+            ."```json\n"
+            .$this->encodeJson($simplified)
+            ."\n```";
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $events
+     */
+    private function eventsSection(array $events): string
+    {
+        if ($events === []) {
+            return "## События\nСобытия за период не указаны.";
+        }
+
+        $total = count($events);
+        $included = array_slice($events, 0, self::MAX_EVENTS_IN_PROMPT);
+        $note = $total > self::MAX_EVENTS_IN_PROMPT
+            ? "Показаны {$this->formatCount(count($included))} из {$this->formatCount($total)} событий (первые по дате).\n"
+            : '';
+
+        $simplified = array_map(function (array $row): array {
+            return [
+                'date' => $row['date'] ?? null,
+                'title' => $row['title'] ?? null,
+                'description' => $this->truncate((string) ($row['description'] ?? ''), 500),
+                'url' => $row['url'] ?? null,
+            ];
+        }, $included);
+
+        return "## События (ручные заметки за период)\n"
+            .$note
+            ."Поля: date, title, description, url.\n"
+            ."```json\n"
+            .$this->encodeJson($simplified)
+            ."\n```";
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     */
+    private function encodeJson(array $rows): string
+    {
+        return (string) json_encode(
+            $rows,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+        );
+    }
+
+    private function firstLine(string $message): string
+    {
+        $line = strtok($message, "\n") ?: '';
+
+        return $this->truncate($line, 200);
+    }
+
+    private function truncate(string $value, int $max): string
+    {
+        if ($value === '') {
+            return $value;
+        }
+
+        return mb_strlen($value) > $max
+            ? mb_substr($value, 0, $max - 3).'...'
+            : $value;
+    }
+
+    private function formatCount(int $count): string
+    {
+        return number_format($count, 0, '.', ' ');
+    }
+}

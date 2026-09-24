@@ -3,7 +3,7 @@
         <header class="layout-admin__topbar">
             <RouterLink class="layout-admin__brand text-decoration-none" :to="{ name: 'dashboard' }">
                 <span class="logo logo--sm">
-                    <img class="logo__mark" src="/images/logo.svg" alt="" width="32" height="32">
+                    <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="20">
                 </span>
                 Админ-панель
             </RouterLink>
@@ -40,7 +40,7 @@
                 :to="{ name: 'dashboard' }"
             >
                 <span class="logo logo--sm">
-                    <img class="logo__mark" src="/images/logo.svg" alt="" width="32" height="32">
+                    <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="20">
                 </span>
                 Админ-панель
             </RouterLink>

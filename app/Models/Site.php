@@ -61,10 +61,34 @@ class Site extends Model
     }
 
     /**
+     * @return HasMany<SiteSearchConsoleDimension, $this>
+     */
+    public function searchConsoleDimensions(): HasMany
+    {
+        return $this->hasMany(SiteSearchConsoleDimension::class);
+    }
+
+    /**
      * @return HasMany<SiteGithubCommit, $this>
      */
     public function githubCommits(): HasMany
     {
         return $this->hasMany(SiteGithubCommit::class);
+    }
+
+    /**
+     * @return HasMany<SiteAiReport, $this>
+     */
+    public function aiReports(): HasMany
+    {
+        return $this->hasMany(SiteAiReport::class);
+    }
+
+    /**
+     * @return HasMany<SiteEvent, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(SiteEvent::class);
     }
 }

@@ -1,9 +1,9 @@
 <template>
     <div class="layout-app">
         <aside class="layout-app__sidebar">
-            <RouterLink class="layout-app__brand text-decoration-none" :to="{ name: 'home' }">
+            <RouterLink class="layout-app__brand text-decoration-none" :to="{ name: 'sites.index' }">
                 <span class="logo logo--sm">
-                    <img class="logo__mark" src="/images/logo.svg" alt="" width="32" height="32">
+                    <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="20">
                 </span>
                 Личный кабинет
             </RouterLink>
@@ -63,7 +63,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, provide, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { logout, me } from '../api/auth';
 import AppToastHost from '../../shared/components/AppToastHost.vue';
@@ -80,12 +80,6 @@ const user = ref(null);
 const userLoading = ref(true);
 
 const navItems = [
-    {
-        name: 'home',
-        label: 'Главная',
-        icon: ['fas', 'house'],
-        isActive: (r) => r.name === 'home',
-    },
     {
         name: 'sites.index',
         label: 'Сайты',
@@ -113,14 +107,20 @@ const breadcrumbItems = computed(() => {
         return [];
     }
 
-    return [{ label: 'Личный кабинет', name: 'home' }, ...items];
+    return [{ label: 'Личный кабинет', name: 'sites.index' }, ...items];
 });
 const fullName = computed(() => formatUserFio(user.value));
 const avatarUrl = computed(() => user.value?.avatar?.sm || user.value?.avatar?.md || '');
 
+async function refreshUser() {
+    user.value = await me();
+}
+
+provide('refreshAppUser', refreshUser);
+
 onMounted(async () => {
     try {
-        user.value = await me();
+        await refreshUser();
     } catch (e) {
         await logout();
         await router.push({ name: 'login' });

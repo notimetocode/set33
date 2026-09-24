@@ -18,8 +18,9 @@
 
   &__brand {
     display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
     font-weight: 600;
     padding: 0 0.25rem;
     color: inherit;
