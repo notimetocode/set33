@@ -4,9 +4,9 @@ namespace App\Actions\Site;
 
 class ParseSiteAiReportReply
 {
-    private const int MAX_CHARTS = 6;
+    private const MAX_CHARTS = 6;
 
-    private const array ALLOWED_TYPES = ['line', 'bar', 'pie'];
+    private const ALLOWED_TYPES = ['line', 'bar', 'pie'];
 
     /**
      * @return array{reply: string, charts: list<array{

@@ -7,9 +7,9 @@ use App\Models\Site;
 
 class BuildSiteAiReportPrompt
 {
-    private const int MAX_COMMITS_IN_PROMPT = 80;
+    private const MAX_COMMITS_IN_PROMPT = 80;
 
-    private const int MAX_EVENTS_IN_PROMPT = 50;
+    private const MAX_EVENTS_IN_PROMPT = 50;
 
     /**
      * @param  list<array<string, mixed>>  $analytics
