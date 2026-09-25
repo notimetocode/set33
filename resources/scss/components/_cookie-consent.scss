@@ -78,6 +78,18 @@
   color: $muted;
 }
 
+.cookie-consent__link {
+  color: $primary;
+  font-weight: 550;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+
+  &:hover {
+    color: $primary;
+    opacity: 0.85;
+  }
+}
+
 .cookie-consent__actions {
   display: flex;
   flex-shrink: 0;

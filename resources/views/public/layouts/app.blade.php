@@ -113,6 +113,8 @@
             <nav class="layout-public__footer-nav" aria-label="Навигация в подвале">
                 <a href="{{ route('public.home') }}#how-it-works" class="layout-public__footer-link">Как это работает</a>
                 <a href="{{ route('public.home') }}#pricing" class="layout-public__footer-link">Цены</a>
+                <a href="{{ route('public.privacy') }}" class="layout-public__footer-link">Политика конфиденциальности</a>
+                <a href="{{ route('public.terms') }}" class="layout-public__footer-link">Условия использования</a>
                 <a
                     href="{{ url('/app/login') }}"
                     class="layout-public__footer-link"

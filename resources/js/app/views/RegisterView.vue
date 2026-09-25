@@ -59,6 +59,13 @@
                 >
             </div>
 
+            <p class="page-app-register__legal text-muted">
+                Регистрируясь, вы принимаете
+                <a href="/terms" target="_blank" rel="noopener noreferrer">Условия использования</a>
+                и
+                <a href="/privacy" target="_blank" rel="noopener noreferrer">Политику конфиденциальности</a>.
+            </p>
+
             <button class="btn btn-primary w-100" type="submit" :disabled="loading">
                 {{ loading ? 'Регистрация…' : 'Зарегистрироваться' }}
             </button>

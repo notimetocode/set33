@@ -5,9 +5,15 @@ use App\Http\Controllers\App\GithubOAuthCallbackController;
 use App\Http\Controllers\App\GoogleOAuthCallbackController;
 use App\Http\Controllers\App\SpaController as AppSpaController;
 use App\Http\Controllers\PublicSite\HomeController;
+use App\Http\Controllers\PublicSite\PrivacyPolicyController;
+use App\Http\Controllers\PublicSite\TermsOfServiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('public.home');
+
+Route::get('/privacy', PrivacyPolicyController::class)->name('public.privacy');
+
+Route::get('/terms', TermsOfServiceController::class)->name('public.terms');
 
 Route::get('/oauth/google/callback', GoogleOAuthCallbackController::class)
     ->name('oauth.google.callback');
