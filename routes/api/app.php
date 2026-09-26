@@ -10,6 +10,7 @@ use App\Http\Controllers\App\GithubRepositoryController;
 use App\Http\Controllers\App\GoogleConnectionController;
 use App\Http\Controllers\App\ProfileController;
 use App\Http\Controllers\App\SiteAiReportController;
+use App\Http\Controllers\App\SiteAiReportSharingController;
 use App\Http\Controllers\App\SiteController;
 use App\Http\Controllers\App\SiteEventController;
 use App\Http\Controllers\App\SiteGithubIntegrationController;
@@ -120,4 +121,6 @@ Route::middleware(['auth:sanctum', 'ability:app'])->group(function (): void {
     Route::post('/sites/{site}/ai-reports', [SiteAiReportController::class, 'store'])
         ->middleware('throttle:ai-service-generate')
         ->name('app.sites.ai-reports.store');
+    Route::put('/sites/{site}/ai-reports/{ai_report}/sharing', [SiteAiReportSharingController::class, 'update'])
+        ->name('app.sites.ai-reports.sharing.update');
 });

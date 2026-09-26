@@ -15,6 +15,20 @@
     gap: 0.75rem;
   }
 
+  &__heading {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  &__logo {
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    object-fit: contain;
+  }
+
   &__title {
     margin: 0;
     font-size: 1rem;

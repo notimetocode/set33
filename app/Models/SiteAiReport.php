@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AiReportVisibility;
 use Database\Factories\SiteAiReportFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,23 @@ class SiteAiReport extends Model
         'charts',
         'usage',
         'data_counts',
+        'visibility',
+        'share_token',
+        'share_password',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    protected $hidden = [
+        'share_password',
+    ];
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'visibility' => 'private',
     ];
 
     /**
@@ -40,6 +58,7 @@ class SiteAiReport extends Model
             'charts' => 'array',
             'usage' => 'array',
             'data_counts' => 'array',
+            'visibility' => AiReportVisibility::class,
         ];
     }
 
@@ -66,5 +85,20 @@ class SiteAiReport extends Model
         }
 
         return $this->ai_service_name;
+    }
+
+    public function shareUrl(): ?string
+    {
+        if (! $this->visibility->isShared() || ! filled($this->share_token)) {
+            return null;
+        }
+
+        return route('public.ai-reports.show', ['token' => $this->share_token]);
+    }
+
+    public function hasSharePassword(): bool
+    {
+        return $this->visibility === AiReportVisibility::Password
+            && filled($this->share_password);
     }
 }

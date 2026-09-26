@@ -32,6 +32,11 @@ class SiteAiReportResource extends JsonResource
             ],
             'data_counts' => $this->data_counts,
             'usage' => $this->usage,
+            'sharing' => [
+                'visibility' => $this->visibility->value,
+                'share_url' => $this->shareUrl(),
+                'has_password' => $this->hasSharePassword(),
+            ],
             'reply' => $this->when(
                 ! $request->routeIs('app.sites.ai-reports.index'),
                 $this->reply,

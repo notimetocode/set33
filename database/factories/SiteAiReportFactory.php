@@ -2,11 +2,14 @@
 
 namespace Database\Factories;
 
+use App\Enums\AiReportVisibility;
 use App\Enums\AiServiceType;
 use App\Models\AiService;
 use App\Models\Site;
 use App\Models\SiteAiReport;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<SiteAiReport>
@@ -48,6 +51,27 @@ class SiteAiReportFactory extends Factory
                 'github_commits' => 3,
                 'events' => 1,
             ],
+            'visibility' => AiReportVisibility::Private,
+            'share_token' => null,
+            'share_password' => null,
         ];
+    }
+
+    public function shared(): static
+    {
+        return $this->state(fn (): array => [
+            'visibility' => AiReportVisibility::Link,
+            'share_token' => Str::random(40),
+            'share_password' => null,
+        ]);
+    }
+
+    public function passwordProtected(string $password = 'secret123'): static
+    {
+        return $this->state(fn (): array => [
+            'visibility' => AiReportVisibility::Password,
+            'share_token' => Str::random(40),
+            'share_password' => Hash::make($password),
+        ]);
     }
 }

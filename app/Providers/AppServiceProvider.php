@@ -75,6 +75,12 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by((string) ($request->user()?->id ?: $request->ip()));
         });
 
+        RateLimiter::for('ai-report-unlock', function (Request $request) {
+            return Limit::perMinute(10)->by(Str::transliterate(
+                Str::lower($request->route('token') ?? '').'|'.$request->ip()
+            ));
+        });
+
         Gate::define('app.profile.view', [AppProfilePolicy::class, 'view']);
         Gate::define('app.profile.update', [AppProfilePolicy::class, 'update']);
 

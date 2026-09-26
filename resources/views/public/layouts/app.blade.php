@@ -125,5 +125,6 @@
     </footer>
 
     <x-cookie-consent />
+    @stack('scripts')
 </body>
 </html>

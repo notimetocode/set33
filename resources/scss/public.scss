@@ -22,8 +22,12 @@
 @import 'components/table';
 @import 'components/modal';
 @import 'components/cookie-consent';
+@import 'components/app-markdown';
+@import 'components/app-chart';
+@import 'components/app-ai-report-body';
 
 // Layouts & pages
 @import 'layouts/public';
 @import 'pages/public/home';
 @import 'pages/public/legal';
+@import 'pages/public/ai-report';

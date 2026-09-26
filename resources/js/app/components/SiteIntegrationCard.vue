@@ -1,7 +1,19 @@
 <template>
     <article class="site-integration-card">
         <div class="site-integration-card__top">
-            <h3 class="site-integration-card__title">{{ title }}</h3>
+            <div class="site-integration-card__heading">
+                <img
+                    v-if="logo"
+                    class="site-integration-card__logo"
+                    :src="logo"
+                    :alt="title"
+                    width="28"
+                    height="28"
+                    loading="lazy"
+                    decoding="async"
+                >
+                <h3 class="site-integration-card__title">{{ title }}</h3>
+            </div>
             <span
                 class="status-tag"
                 :class="connected ? 'status-tag--ok' : 'status-tag--muted'"
@@ -33,6 +45,10 @@ defineProps({
     title: {
         type: String,
         required: true,
+    },
+    logo: {
+        type: String,
+        default: '',
     },
     connected: {
         type: Boolean,

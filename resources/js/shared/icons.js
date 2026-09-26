@@ -8,8 +8,11 @@ import {
     faGlobe,
     faHouse,
     faKey,
+    faLink,
+    faLock,
     faRightFromBracket,
     faRobot,
+    faShareNodes,
     faUser,
     faXmark,
 } from '@fortawesome/free-solid-svg-icons';
@@ -22,8 +25,11 @@ library.add(
     faGlobe,
     faHouse,
     faKey,
+    faLink,
+    faLock,
     faRightFromBracket,
     faRobot,
+    faShareNodes,
     faUser,
     faXmark,
 );

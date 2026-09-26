@@ -148,3 +148,9 @@ export async function generateSiteAiReport(siteId, payload) {
 
     return data;
 }
+
+export async function updateSiteAiReportSharing(siteId, reportId, payload) {
+    const { data } = await http.put(`/sites/${siteId}/ai-reports/${reportId}/sharing`, payload);
+
+    return data.data ?? data;
+}

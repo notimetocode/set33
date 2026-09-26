@@ -1,0 +1,54 @@
+.page-shared-ai-report {
+  padding: 2.5rem 0 4rem;
+
+  @media (min-width: 768px) {
+    padding: 3.25rem 0 5rem;
+  }
+
+  &__inner {
+    max-width: 48rem;
+
+    &--narrow {
+      max-width: 26rem;
+    }
+  }
+
+  &__header {
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  &__eyebrow {
+    margin: 0 0 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 550;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--brand);
+  }
+
+  &__title {
+    margin: 0 0 0.65rem;
+    font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    color: $body-color;
+  }
+
+  &__meta {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--muted);
+  }
+
+  &__body {
+    padding: 1rem 0 0;
+  }
+
+  &__form {
+    margin-top: 0.25rem;
+  }
+}

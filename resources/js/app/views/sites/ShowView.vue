@@ -33,6 +33,7 @@
             <section class="page-app-sites__integrations" aria-label="Подключения сервисов">
                 <SiteIntegrationCard
                     title="Google Analytics"
+                    logo="/images/integrations/google-analytics.svg"
                     :connected="gaConnected"
                     :detail="gaDetail"
                     empty-detail="Property GA4 не выбран"
@@ -41,6 +42,7 @@
                 />
                 <SiteIntegrationCard
                     title="Google Search Console"
+                    logo="/images/integrations/google-search-console.svg"
                     :connected="gscConnected"
                     :detail="gscDetail"
                     empty-detail="Сайт Search Console не выбран"
@@ -49,6 +51,7 @@
                 />
                 <SiteIntegrationCard
                     title="GitHub"
+                    logo="/images/integrations/github.svg"
                     :connected="githubConnected"
                     :detail="githubDetail"
                     empty-detail="Репозиторий не выбран"
@@ -132,16 +135,16 @@
                         </div>
                     </div>
                     <p v-if="integration?.last_synced_at" class="text-muted small mt-3 mb-0">
-                        Google: {{ formatDateTime(integration.last_synced_at) }}
+                        Последняя загрузка Google: {{ formatDateTime(integration.last_synced_at) }}
                     </p>
                     <p v-if="githubIntegration?.last_synced_at" class="text-muted small mt-1 mb-0">
-                        GitHub: {{ formatDateTime(githubIntegration.last_synced_at) }}
+                        Последняя загрузка GitHub: {{ formatDateTime(githubIntegration.last_synced_at) }}
                     </p>
                     <p v-if="integration?.last_error" class="text-danger small mt-2 mb-0">
-                        Google: {{ integration.last_error }}
+                        Ошибка Google: {{ integration.last_error }}
                     </p>
                     <p v-if="githubIntegration?.last_error" class="text-danger small mt-2 mb-0">
-                        GitHub: {{ githubIntegration.last_error }}
+                        Ошибка GitHub: {{ githubIntegration.last_error }}
                     </p>
                 </section>
 
@@ -760,6 +763,19 @@
                 >
                     <div class="page-app-sites__panel-head">
                         <h2 class="h5 mb-0">AI отчёт</h2>
+                        <button
+                            v-if="isAiReportOpen"
+                            type="button"
+                            class="btn btn-outline-primary btn-sm page-app-sites__ai-report-share-btn"
+                            :disabled="aiReportLoading || !selectedAiReportId || aiReportSharingSaving"
+                            @click="openAiReportSharingModal"
+                        >
+                            <FontAwesomeIcon
+                                :icon="['fas', 'share-nodes']"
+                                aria-hidden="true"
+                            />
+                            <span>Поделиться</span>
+                        </button>
                     </div>
 
                     <template v-if="isAiReportOpen">
@@ -767,19 +783,12 @@
                             <button
                                 type="button"
                                 class="btn btn-secondary"
-                                :disabled="aiReportLoading"
+                                :disabled="aiReportLoading || aiReportSharingSaving"
                                 @click="onBackFromAiReport"
                             >
                                 Назад
                             </button>
                         </div>
-
-                        <p
-                            v-if="aiReportMeta"
-                            class="text-muted small mb-3"
-                        >
-                            {{ aiReportMeta }}
-                        </p>
 
                         <div
                             v-if="aiReportError"
@@ -794,25 +803,55 @@
                             label="Загрузка отчёта…"
                         />
 
-                        <div
-                            v-else-if="aiReportReply"
-                            class="page-app-sites__ai-report-reply"
-                        >
-                            <div class="page-app-sites__ai-report-reply-head">
-                                <h3 class="page-app-sites__ai-report-reply-title">Результат</h3>
-                                <span
-                                    v-if="aiReportModel"
-                                    class="page-app-sites__ai-report-reply-meta"
-                                >
-                                    {{ aiReportModel }}
-                                </span>
+                        <template v-else-if="aiReportReply">
+                            <div class="page-app-sites__ai-report-reply">
+                                <div class="page-app-sites__ai-report-reply-head">
+                                    <h3 class="page-app-sites__ai-report-reply-title">Результат</h3>
+                                    <span
+                                        v-if="aiReportModel"
+                                        class="page-app-sites__ai-report-reply-meta"
+                                    >
+                                        {{ aiReportModel }}
+                                    </span>
+                                </div>
+                                <AppAiReportBody
+                                    class="page-app-sites__ai-report-reply-body"
+                                    :source="aiReportReply"
+                                    :charts="aiReportCharts"
+                                />
                             </div>
-                            <AppAiReportBody
-                                class="page-app-sites__ai-report-reply-body"
-                                :source="aiReportReply"
-                                :charts="aiReportCharts"
-                            />
-                        </div>
+
+                            <div
+                                v-if="showAiReportStats"
+                                class="page-app-sites__ai-report-usage mt-3"
+                                aria-label="Статистика запроса к AI"
+                            >
+                                <h3 class="page-app-sites__ai-report-usage-title">
+                                    Статистика запроса к AI
+                                </h3>
+
+                                <p
+                                    v-if="aiReportMeta"
+                                    class="page-app-sites__ai-report-usage-meta"
+                                >
+                                    {{ aiReportMeta }}
+                                </p>
+
+                                <dl
+                                    v-if="aiReportUsageItems.length"
+                                    class="page-app-sites__ai-report-usage-grid"
+                                >
+                                    <div
+                                        v-for="item in aiReportUsageItems"
+                                        :key="item.key"
+                                        class="page-app-sites__ai-report-usage-item"
+                                    >
+                                        <dt>{{ item.label }}</dt>
+                                        <dd>{{ item.value }}</dd>
+                                    </div>
+                                </dl>
+                            </div>
+                        </template>
                     </template>
 
                     <template v-else>
@@ -885,6 +924,12 @@
                                     >
                                         <span class="page-app-sites__ai-report-card-title">
                                             {{ aiReportCardTitle(report) }}
+                                        </span>
+                                        <span
+                                            v-if="aiReportSharingLabel(report)"
+                                            class="page-app-sites__ai-report-card-share"
+                                        >
+                                            {{ aiReportSharingLabel(report) }}
                                         </span>
                                         <span class="page-app-sites__ai-report-card-meta">
                                             {{ aiReportCardTool(report) }}
@@ -1314,6 +1359,122 @@
                 </template>
             </template>
         </AppModal>
+        <AppModal
+            v-model:open="aiReportSharingOpen"
+            title="Доступ к отчёту"
+            align="start"
+            size="md"
+            :show-confirm="false"
+            :close-on-backdrop="!aiReportSharingSaving"
+        >
+            <div class="page-app-sites__ai-report-share">
+                <fieldset class="page-app-sites__ai-report-share-options">
+                    <legend class="form-label">Кто может открыть отчёт</legend>
+
+                    <label
+                        v-for="option in aiReportSharingOptions"
+                        :key="option.value"
+                        class="page-app-sites__ai-report-share-option"
+                    >
+                        <input
+                            v-model="aiReportSharingForm.visibility"
+                            type="radio"
+                            class="form-check-input"
+                            name="ai-report-visibility"
+                            :value="option.value"
+                            :disabled="aiReportSharingSaving"
+                        >
+                        <span>{{ option.label }}</span>
+                    </label>
+                </fieldset>
+
+                <div
+                    v-if="aiReportSharingForm.visibility === 'password'"
+                    class="page-app-sites__ai-report-share-password mb-3"
+                >
+                    <label
+                        class="form-label"
+                        for="ai-report-share-password"
+                    >
+                        {{ aiReportSharing.has_password ? 'Новый пароль' : 'Пароль' }}
+                    </label>
+                    <input
+                        id="ai-report-share-password"
+                        v-model="aiReportSharingForm.password"
+                        type="password"
+                        class="form-control"
+                        :class="{ 'is-invalid': Boolean(aiReportSharingErrors.password) }"
+                        autocomplete="new-password"
+                        :placeholder="aiReportSharing.has_password ? 'Оставьте пустым, чтобы не менять' : 'Задайте пароль'"
+                        :disabled="aiReportSharingSaving"
+                    >
+                    <div
+                        v-if="aiReportSharingErrors.password"
+                        class="invalid-feedback d-block"
+                    >
+                        {{ aiReportSharingErrors.password }}
+                    </div>
+                </div>
+
+                <div
+                    v-if="aiReportSharing.share_url && aiReportSharingForm.visibility !== 'private'"
+                    class="page-app-sites__ai-report-share-link mb-3"
+                >
+                    <label
+                        class="form-label"
+                        for="ai-report-share-url"
+                    >Ссылка</label>
+                    <div class="input-group">
+                        <input
+                            id="ai-report-share-url"
+                            type="text"
+                            class="form-control"
+                            :value="aiReportSharing.share_url"
+                            readonly
+                        >
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            :disabled="aiReportSharingSaving"
+                            @click="onCopyAiReportShareLink"
+                        >
+                            Копировать
+                        </button>
+                    </div>
+                </div>
+
+                <div
+                    v-if="aiReportSharingError"
+                    class="alert alert-danger py-2 mb-3"
+                >
+                    {{ aiReportSharingError }}
+                </div>
+            </div>
+
+            <template #actions>
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    :disabled="aiReportSharingSaving"
+                    @click="aiReportSharingOpen = false"
+                >
+                    Отмена
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    :disabled="aiReportSharingSaving || !canSaveAiReportSharing"
+                    @click="onSaveAiReportSharing"
+                >
+                    <span
+                        v-if="aiReportSharingSaving"
+                        class="spinner-border spinner-border-sm"
+                        aria-hidden="true"
+                    />
+                    {{ aiReportSharingSaving ? 'Сохранение…' : 'Сохранить' }}
+                </button>
+            </template>
+        </AppModal>
     </div>
 </template>
 
@@ -1353,6 +1514,7 @@ import {
     listSiteEvents,
     startGoogleOAuth,
     syncSiteGoogleIntegration,
+    updateSiteAiReportSharing,
     updateSiteEvent,
     updateSiteGoogleIntegration,
 } from '../../api/sites';
@@ -1414,12 +1576,33 @@ const aiReportReply = ref('');
 const aiReportCharts = ref([]);
 const aiReportModel = ref('');
 const aiReportMeta = ref('');
+const aiReportUsage = ref(null);
 const aiReports = ref([]);
 const aiReportsLoading = ref(false);
 const aiReportsError = ref('');
 const aiReportsLoaded = ref(false);
 const selectedAiReportId = ref('');
 const activeAiReportTab = ref('saved');
+const aiReportSharing = reactive({
+    visibility: 'private',
+    share_url: null,
+    has_password: false,
+});
+const aiReportSharingForm = reactive({
+    visibility: 'private',
+    password: '',
+});
+const aiReportSharingOpen = ref(false);
+const aiReportSharingSaving = ref(false);
+const aiReportSharingError = ref('');
+const aiReportSharingErrors = reactive({
+    password: '',
+});
+const aiReportSharingOptions = [
+    { value: 'private', label: 'Приватный' },
+    { value: 'link', label: 'Доступен по ссылке' },
+    { value: 'password', label: 'Доступен по ссылке с паролем' },
+];
 
 const siteViewTabs = [
     { id: 'data', label: 'Данные сервисов' },
@@ -1496,9 +1679,49 @@ const canGenerateAiReport = computed(() => (
 
 const isAiReportOpen = computed(() => Boolean(selectedAiReportId.value));
 
+const aiReportUsageItems = computed(() => {
+    const usage = aiReportUsage.value;
+
+    if (!usage || typeof usage !== 'object') {
+        return [];
+    }
+
+    const fields = [
+        { key: 'prompt_tokens', label: 'Входные токены' },
+        { key: 'candidates_tokens', label: 'Выходные токены' },
+        { key: 'thoughts_tokens', label: 'Токены размышлений' },
+        { key: 'total_tokens', label: 'Всего токенов' },
+    ];
+
+    return fields
+        .filter((field) => Number.isFinite(usage[field.key]))
+        .map((field) => ({
+            key: field.key,
+            label: field.label,
+            value: formatTokenCount(usage[field.key]),
+        }));
+});
+
+const showAiReportStats = computed(() => (
+    Boolean(aiReportMeta.value) || aiReportUsageItems.value.length > 0
+));
+
 const showAiReportTabs = computed(() => (
     aiReportsLoaded.value && aiReports.value.length > 0
 ));
+
+const canSaveAiReportSharing = computed(() => {
+    if (aiReportSharingForm.visibility !== 'password') {
+        return true;
+    }
+
+    if (aiReportSharingForm.password.trim()) {
+        return true;
+    }
+
+    return aiReportSharing.has_password
+        && aiReportSharing.visibility === 'password';
+});
 
 const isEventEditing = computed(() => Boolean(editingEventId.value));
 
@@ -1641,6 +1864,136 @@ function clearAiReportView() {
     aiReportCharts.value = [];
     aiReportModel.value = '';
     aiReportMeta.value = '';
+    aiReportUsage.value = null;
+    resetAiReportSharing();
+}
+
+function resetAiReportSharing() {
+    aiReportSharing.visibility = 'private';
+    aiReportSharing.share_url = null;
+    aiReportSharing.has_password = false;
+    aiReportSharingForm.visibility = 'private';
+    aiReportSharingForm.password = '';
+    aiReportSharingError.value = '';
+    aiReportSharingErrors.password = '';
+    aiReportSharingOpen.value = false;
+}
+
+function applyAiReportSharing(sharing) {
+    aiReportSharing.visibility = sharing?.visibility || 'private';
+    aiReportSharing.share_url = sharing?.share_url || null;
+    aiReportSharing.has_password = Boolean(sharing?.has_password);
+    aiReportSharingForm.visibility = aiReportSharing.visibility;
+    aiReportSharingForm.password = '';
+    aiReportSharingError.value = '';
+    aiReportSharingErrors.password = '';
+}
+
+function aiReportSharingLabel(report) {
+    const visibility = report?.sharing?.visibility;
+
+    if (visibility === 'link') {
+        return 'По ссылке';
+    }
+
+    if (visibility === 'password') {
+        return 'По ссылке с паролем';
+    }
+
+    return '';
+}
+
+function openAiReportSharingModal() {
+    if (!selectedAiReportId.value) {
+        return;
+    }
+
+    aiReportSharingForm.visibility = aiReportSharing.visibility || 'private';
+    aiReportSharingForm.password = '';
+    aiReportSharingError.value = '';
+    aiReportSharingErrors.password = '';
+    aiReportSharingOpen.value = true;
+}
+
+async function onCopyAiReportShareLink() {
+    const url = aiReportSharing.share_url;
+
+    if (!url) {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(url);
+        toast.show({ ok: true, message: 'Ссылка скопирована.' });
+    } catch {
+        toast.show({ ok: false, message: 'Не удалось скопировать ссылку.' });
+    }
+}
+
+async function onSaveAiReportSharing() {
+    if (!site.value || !selectedAiReportId.value || !canSaveAiReportSharing.value) {
+        return;
+    }
+
+    aiReportSharingSaving.value = true;
+    aiReportSharingError.value = '';
+    aiReportSharingErrors.password = '';
+
+    const payload = {
+        visibility: aiReportSharingForm.visibility,
+    };
+
+    if (aiReportSharingForm.visibility === 'password' && aiReportSharingForm.password.trim()) {
+        payload.password = aiReportSharingForm.password.trim();
+    }
+
+    try {
+        const report = await updateSiteAiReportSharing(
+            site.value.id,
+            selectedAiReportId.value,
+            payload,
+        );
+
+        applyAiReportSharing(report.sharing);
+        upsertAiReportListItem(report);
+        toast.show({ ok: true, message: 'Настройки доступа сохранены.' });
+
+        if (report.sharing?.visibility === 'private') {
+            aiReportSharingOpen.value = false;
+        }
+    } catch (e) {
+        aiReportSharingErrors.password = e.response?.data?.errors?.password?.[0] || '';
+        aiReportSharingError.value = e.response?.data?.message
+            || e.response?.data?.errors?.visibility?.[0]
+            || (aiReportSharingErrors.password ? '' : 'Не удалось сохранить доступ.');
+    } finally {
+        aiReportSharingSaving.value = false;
+    }
+}
+
+function upsertAiReportListItem(report) {
+    if (!report?.id) {
+        return;
+    }
+
+    const item = {
+        id: report.id,
+        created_at: report.created_at,
+        period: report.period,
+        tool: report.tool,
+        data_counts: report.data_counts,
+        usage: report.usage,
+        sharing: report.sharing,
+    };
+
+    aiReports.value = [
+        item,
+        ...aiReports.value.filter((existing) => existing.id !== report.id),
+    ];
+}
+
+function formatTokenCount(value) {
+    return Number(value).toLocaleString('ru-RU');
 }
 
 function aiServiceOptionLabel(service) {
@@ -1660,10 +2013,53 @@ function aiReportCardTool(report) {
 }
 
 function aiReportCardPeriod(report) {
-    const from = report.period?.from ? formatDate(report.period.from) : '—';
-    const to = report.period?.to ? formatDate(report.period.to) : '—';
+    const fromRaw = report.period?.from;
+    const toRaw = report.period?.to;
+    const from = fromRaw ? formatDate(fromRaw) : '—';
+    const to = toRaw ? formatDate(toRaw) : '—';
+    const days = aiReportPeriodDays(fromRaw, toRaw);
 
-    return `${from} — ${to}`;
+    if (days === null) {
+        return `${from} — ${to}`;
+    }
+
+    return `${from} — ${to} (${days} ${pluralDays(days)})`;
+}
+
+function aiReportPeriodDays(from, to) {
+    if (!from || !to) {
+        return null;
+    }
+
+    const fromDate = new Date(`${from}T00:00:00`);
+    const toDate = new Date(`${to}T00:00:00`);
+
+    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime()) || toDate < fromDate) {
+        return null;
+    }
+
+    const msPerDay = 24 * 60 * 60 * 1000;
+
+    return Math.round((toDate - fromDate) / msPerDay) + 1;
+}
+
+function pluralDays(count) {
+    const abs = Math.abs(count) % 100;
+    const last = abs % 10;
+
+    if (abs > 10 && abs < 20) {
+        return 'дней';
+    }
+
+    if (last === 1) {
+        return 'день';
+    }
+
+    if (last >= 2 && last <= 4) {
+        return 'дня';
+    }
+
+    return 'дней';
 }
 
 function applyAiReport(report) {
@@ -1672,6 +2068,8 @@ function applyAiReport(report) {
     aiReportCharts.value = Array.isArray(report?.charts) ? report.charts : [];
     aiReportModel.value = report?.tool?.label || report?.tool?.model || '';
     aiReportMeta.value = formatDataCounts(report?.data_counts);
+    aiReportUsage.value = report?.usage ?? null;
+    applyAiReportSharing(report?.sharing);
 
     if (report?.period?.from) {
         period.from = report.period.from;
@@ -1810,6 +2208,8 @@ async function onOpenAiReport(report) {
     aiReportCharts.value = [];
     aiReportModel.value = report.tool?.label || report.tool?.model || '';
     aiReportMeta.value = formatDataCounts(report.data_counts);
+    aiReportUsage.value = report.usage ?? null;
+    applyAiReportSharing(report.sharing);
 
     try {
         const fullReport = await getSiteAiReport(site.value.id, report.id);
@@ -1850,17 +2250,7 @@ async function onGenerateAiReport() {
         const report = result.data;
 
         if (report) {
-            aiReports.value = [
-                {
-                    id: report.id,
-                    created_at: report.created_at,
-                    period: report.period,
-                    tool: report.tool,
-                    data_counts: report.data_counts,
-                    usage: report.usage,
-                },
-                ...aiReports.value.filter((item) => item.id !== report.id),
-            ];
+            upsertAiReportListItem(report);
             applyAiReport(report);
         }
     } catch (e) {
