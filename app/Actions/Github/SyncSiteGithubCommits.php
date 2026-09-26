@@ -17,10 +17,14 @@ class SyncSiteGithubCommits
         private readonly GithubApiClient $githubApiClient,
     ) {}
 
+    /**
+     * @param  bool  $replaceExisting  true = удалить все коммиты сайта перед загрузкой (ручная синхронизация)
+     */
     public function handle(
         SiteGithubIntegration $integration,
         Carbon $startDate,
         Carbon $endDate,
+        bool $replaceExisting = true,
     ): SiteGithubIntegration {
         $integration->loadMissing(['site', 'githubConnection']);
 
@@ -50,18 +54,22 @@ class SyncSiteGithubCommits
                 ],
             );
 
-            DB::transaction(function () use ($integration, $commits): void {
+            DB::transaction(function () use ($integration, $commits, $replaceExisting): void {
+                if ($replaceExisting) {
+                    SiteGithubCommit::query()
+                        ->where('site_id', $integration->site_id)
+                        ->delete();
+                }
+
                 foreach ($commits as $commit) {
                     if ($commit['sha'] === '') {
                         continue;
                     }
 
-                    SiteGithubCommit::query()->updateOrCreate(
-                        [
+                    if ($replaceExisting) {
+                        SiteGithubCommit::query()->create([
                             'site_id' => $integration->site_id,
                             'sha' => $commit['sha'],
-                        ],
-                        [
                             'message' => $commit['message'],
                             'html_url' => $commit['html_url'] !== '' ? $commit['html_url'] : null,
                             'author_name' => $commit['author_name'],
@@ -70,8 +78,25 @@ class SyncSiteGithubCommits
                             'committer_name' => $commit['committer_name'],
                             'committer_email' => $commit['committer_email'],
                             'committer_date' => $commit['committer_date'],
-                        ],
-                    );
+                        ]);
+                    } else {
+                        SiteGithubCommit::query()->updateOrCreate(
+                            [
+                                'site_id' => $integration->site_id,
+                                'sha' => $commit['sha'],
+                            ],
+                            [
+                                'message' => $commit['message'],
+                                'html_url' => $commit['html_url'] !== '' ? $commit['html_url'] : null,
+                                'author_name' => $commit['author_name'],
+                                'author_email' => $commit['author_email'],
+                                'author_date' => $commit['author_date'],
+                                'committer_name' => $commit['committer_name'],
+                                'committer_email' => $commit['committer_email'],
+                                'committer_date' => $commit['committer_date'],
+                            ],
+                        );
+                    }
                 }
 
                 $integration->forceFill([

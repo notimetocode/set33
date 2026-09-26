@@ -43,6 +43,9 @@ class GenerateSiteAiReport
      *         search_console_pages: int,
      *         search_console_devices: int,
      *         search_console_countries: int,
+     *         search_console_appearances: int,
+     *         search_console_sitemaps: int,
+     *         search_console_url_inspections: int,
      *         github_commits: int,
      *         events: int
      *     }
@@ -63,6 +66,9 @@ class GenerateSiteAiReport
             'search_console_pages' => count($searchConsoleDimensions['pages']),
             'search_console_devices' => count($searchConsoleDimensions['devices']),
             'search_console_countries' => count($searchConsoleDimensions['countries']),
+            'search_console_appearances' => count($searchConsoleDimensions['search_appearances']),
+            'search_console_sitemaps' => count($searchConsoleDimensions['sitemaps']),
+            'search_console_url_inspections' => count($searchConsoleDimensions['url_inspections']),
             'github_commits' => count($commits),
             'events' => count($events),
         ];
@@ -73,6 +79,9 @@ class GenerateSiteAiReport
             && $dataCounts['search_console_pages'] === 0
             && $dataCounts['search_console_devices'] === 0
             && $dataCounts['search_console_countries'] === 0
+            && $dataCounts['search_console_appearances'] === 0
+            && $dataCounts['search_console_sitemaps'] === 0
+            && $dataCounts['search_console_url_inspections'] === 0
             && $dataCounts['github_commits'] === 0
         ) {
             return [
@@ -145,6 +154,12 @@ class GenerateSiteAiReport
                 'organic_sessions' => $row->organic_sessions,
                 'organic_total_users' => $row->organic_total_users,
                 'organic_new_users' => $row->organic_new_users,
+                'engaged_sessions' => $row->engaged_sessions,
+                'engagement_rate' => $row->engagement_rate,
+                'bounce_rate' => $row->bounce_rate,
+                'average_session_duration' => $row->average_session_duration,
+                'event_count' => $row->event_count,
+                'organic_engaged_sessions' => $row->organic_engaged_sessions,
             ])
             ->all();
     }
@@ -173,7 +188,10 @@ class GenerateSiteAiReport
      *     queries: list<array<string, mixed>>,
      *     pages: list<array<string, mixed>>,
      *     devices: list<array<string, mixed>>,
-     *     countries: list<array<string, mixed>>
+     *     countries: list<array<string, mixed>>,
+     *     search_appearances: list<array<string, mixed>>,
+     *     sitemaps: list<array<string, mixed>>,
+     *     url_inspections: list<array<string, mixed>>
      * }
      */
     private function loadSearchConsoleDimensions(Site $site, string $from, string $to): array
@@ -215,6 +233,36 @@ class GenerateSiteAiReport
                 ->where('dimension', SearchConsoleDimension::Country)
                 ->values()
                 ->map($map)
+                ->all(),
+            'search_appearances' => $rows
+                ->where('dimension', SearchConsoleDimension::SearchAppearance)
+                ->values()
+                ->map($map)
+                ->all(),
+            'sitemaps' => $site->searchConsoleSitemaps()
+                ->orderByDesc('errors')
+                ->orderBy('path')
+                ->get()
+                ->map(fn ($row) => [
+                    'path' => $row->path,
+                    'type' => $row->type,
+                    'errors' => $row->errors,
+                    'warnings' => $row->warnings,
+                    'is_pending' => $row->is_pending,
+                    'last_downloaded_at' => $row->last_downloaded_at?->toIso8601String(),
+                ])
+                ->all(),
+            'url_inspections' => $site->urlInspections()
+                ->orderByDesc('inspected_at')
+                ->get()
+                ->map(fn ($row) => [
+                    'inspected_url' => $row->inspected_url,
+                    'verdict' => $row->verdict,
+                    'page_fetch_state' => $row->page_fetch_state,
+                    'indexing_state' => $row->indexing_state,
+                    'coverage_state' => $row->coverage_state,
+                    'last_crawl_time' => $row->last_crawl_time?->toIso8601String(),
+                ])
                 ->all(),
         ];
     }

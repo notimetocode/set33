@@ -27,6 +27,12 @@ class SiteAnalyticsDaily extends Model
         'organic_sessions',
         'organic_total_users',
         'organic_new_users',
+        'engaged_sessions',
+        'engagement_rate',
+        'bounce_rate',
+        'average_session_duration',
+        'event_count',
+        'organic_engaged_sessions',
     ];
 
     /**
@@ -43,6 +49,12 @@ class SiteAnalyticsDaily extends Model
             'organic_sessions' => 'integer',
             'organic_total_users' => 'integer',
             'organic_new_users' => 'integer',
+            'engaged_sessions' => 'integer',
+            'engagement_rate' => 'float',
+            'bounce_rate' => 'float',
+            'average_session_duration' => 'float',
+            'event_count' => 'integer',
+            'organic_engaged_sessions' => 'integer',
         ];
     }
 

@@ -65,6 +65,11 @@ return [
         'gsc_top_queries' => (int) env('GOOGLE_GSC_TOP_QUERIES', 50),
         'gsc_top_pages' => (int) env('GOOGLE_GSC_TOP_PAGES', 20),
         'gsc_top_countries' => (int) env('GOOGLE_GSC_TOP_COUNTRIES', 10),
+        'gsc_url_inspections' => (int) env('GOOGLE_GSC_URL_INSPECTIONS', 10),
+    ],
+
+    'pagespeed' => [
+        'psi_base_url' => env('PAGESPEED_PSI_BASE_URL', 'https://www.googleapis.com'),
     ],
 
     'github' => [

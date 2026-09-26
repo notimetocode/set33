@@ -26,6 +26,7 @@ class SiteController extends Controller
             ->with([
                 'googleIntegration.googleConnection',
                 'githubIntegration.githubConnection',
+                'pagespeedIntegration.googleConnection',
             ])
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -42,6 +43,7 @@ class SiteController extends Controller
         $site->load([
             'googleIntegration.googleConnection',
             'githubIntegration.githubConnection',
+            'pagespeedIntegration.googleConnection',
         ]);
 
         return (new SiteResource($site))
@@ -56,6 +58,7 @@ class SiteController extends Controller
         $site->load([
             'googleIntegration.googleConnection',
             'githubIntegration.githubConnection',
+            'pagespeedIntegration.googleConnection',
         ]);
 
         return new SiteResource($site);
@@ -69,6 +72,7 @@ class SiteController extends Controller
         $site->load([
             'googleIntegration.googleConnection',
             'githubIntegration.githubConnection',
+            'pagespeedIntegration.googleConnection',
         ]);
 
         return new SiteResource($site);

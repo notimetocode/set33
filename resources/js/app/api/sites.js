@@ -106,6 +106,9 @@ export async function getSiteSearchConsoleMetrics(siteId, params) {
         pages: payload.pages ?? [],
         devices: payload.devices ?? [],
         countries: payload.countries ?? [],
+        search_appearances: payload.search_appearances ?? [],
+        sitemaps: payload.sitemaps ?? [],
+        url_inspections: payload.url_inspections ?? [],
     };
 }
 

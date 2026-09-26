@@ -26,6 +26,12 @@ class SiteAnalyticsDailyFactory extends Factory
             'organic_sessions' => fake()->numberBetween(0, 2000),
             'organic_total_users' => fake()->numberBetween(0, 1500),
             'organic_new_users' => fake()->numberBetween(0, 800),
+            'engaged_sessions' => fake()->numberBetween(0, 4000),
+            'engagement_rate' => fake()->randomFloat(4, 0, 1),
+            'bounce_rate' => fake()->randomFloat(4, 0, 1),
+            'average_session_duration' => fake()->randomFloat(2, 0, 600),
+            'event_count' => fake()->numberBetween(0, 20000),
+            'organic_engaged_sessions' => fake()->numberBetween(0, 1500),
         ];
     }
 }

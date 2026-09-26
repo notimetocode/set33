@@ -80,6 +80,8 @@ class SiteGoogleIntegrationController extends Controller
                 $integration,
                 $request->date('from')->startOfDay(),
                 $request->date('to')->startOfDay(),
+                $request->metrics(),
+                $request->limits(),
             );
         } catch (Throwable $e) {
             return response()->json([

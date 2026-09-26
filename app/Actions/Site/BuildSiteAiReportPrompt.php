@@ -109,7 +109,9 @@ PROMPT;
 
         return "## Google Analytics 4 (ежедневные метрики)\n"
             .'Поля: date, sessions, total_users, new_users, screen_page_views, '
-            ."organic_sessions, organic_total_users, organic_new_users.\n"
+            .'organic_sessions, organic_total_users, organic_new_users; '
+            .'опционально: engaged_sessions, engagement_rate, bounce_rate, '
+            ."average_session_duration, event_count, organic_engaged_sessions.\n"
             ."```json\n"
             .$this->encodeJson($analytics)
             ."\n```";
@@ -121,7 +123,8 @@ PROMPT;
      *     queries: list<array<string, mixed>>,
      *     pages: list<array<string, mixed>>,
      *     devices: list<array<string, mixed>>,
-     *     countries: list<array<string, mixed>>
+     *     countries: list<array<string, mixed>>,
+     *     search_appearances?: list<array<string, mixed>>
      * }  $dimensions
      */
     private function searchConsoleSection(array $searchConsole, array $dimensions): string
@@ -130,7 +133,10 @@ PROMPT;
         $hasDimensions = ($dimensions['queries'] ?? []) !== []
             || ($dimensions['pages'] ?? []) !== []
             || ($dimensions['devices'] ?? []) !== []
-            || ($dimensions['countries'] ?? []) !== [];
+            || ($dimensions['countries'] ?? []) !== []
+            || ($dimensions['search_appearances'] ?? []) !== []
+            || ($dimensions['sitemaps'] ?? []) !== []
+            || ($dimensions['url_inspections'] ?? []) !== [];
 
         if (! $hasDaily && ! $hasDimensions) {
             return "## Google Search Console\nДанные за период отсутствуют.";
@@ -170,6 +176,29 @@ PROMPT;
             $dimensions['countries'] ?? [],
             'value (код страны ISO 3166-1 alpha-3), rank, clicks, impressions, ctr, position',
         );
+        $parts[] = $this->dimensionBlock(
+            'Типы отображения в поиске',
+            SearchConsoleDimension::SearchAppearance,
+            $dimensions['search_appearances'] ?? [],
+            'value (тип rich result / appearance), rank, clicks, impressions, ctr, position',
+        );
+
+        if (($dimensions['sitemaps'] ?? []) !== []) {
+            $parts[] = "### Sitemaps\n"
+                ."Поля: path, type, errors, warnings, is_pending, last_downloaded_at.\n"
+                ."```json\n"
+                .$this->encodeJson($dimensions['sitemaps'])
+                ."\n```";
+        }
+
+        if (($dimensions['url_inspections'] ?? []) !== []) {
+            $parts[] = "### URL Inspection\n"
+                .'Поля: inspected_url, verdict, page_fetch_state, indexing_state, '
+                ."coverage_state, last_crawl_time.\n"
+                ."```json\n"
+                .$this->encodeJson($dimensions['url_inspections'])
+                ."\n```";
+        }
 
         return implode("\n\n", $parts);
     }

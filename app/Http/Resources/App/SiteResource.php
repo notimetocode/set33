@@ -32,6 +32,12 @@ class SiteResource extends JsonResource
                     ? new SiteGithubIntegrationResource($this->githubIntegration)
                     : null,
             ),
+            'pagespeed_integration' => $this->whenLoaded(
+                'pagespeedIntegration',
+                fn () => $this->pagespeedIntegration
+                    ? new SitePageSpeedIntegrationResource($this->pagespeedIntegration)
+                    : null,
+            ),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

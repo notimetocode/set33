@@ -77,6 +77,7 @@ class SiteGithubIntegrationController extends Controller
                 $integration,
                 $request->date('from')->startOfDay(),
                 $request->date('to')->startOfDay(),
+                replaceExisting: true,
             );
         } catch (Throwable $e) {
             return response()->json([

@@ -8,6 +8,7 @@ enum SearchConsoleDimension: string
     case Page = 'page';
     case Device = 'device';
     case Country = 'country';
+    case SearchAppearance = 'search_appearance';
 
     public function label(): string
     {
@@ -16,11 +17,15 @@ enum SearchConsoleDimension: string
             self::Page => 'Страница',
             self::Device => 'Устройство',
             self::Country => 'Страна',
+            self::SearchAppearance => 'Тип отображения',
         };
     }
 
     public function apiDimension(): string
     {
-        return $this->value;
+        return match ($this) {
+            self::SearchAppearance => 'searchAppearance',
+            default => $this->value,
+        };
     }
 }

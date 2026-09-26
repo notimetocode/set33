@@ -14,6 +14,7 @@ use App\Models\SiteSearchConsoleDaily;
 use App\Models\SiteSearchConsoleDimension;
 use App\Models\User;
 use App\Services\Google\GoogleApiClient;
+use App\Support\SiteSyncMetrics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
@@ -202,6 +203,7 @@ class GoogleIntegrationTest extends TestCase
         $this->postJson("/api/app/sites/{$site->id}/google-integration/sync", [
             'from' => '2026-09-20',
             'to' => '2026-09-20',
+            'metrics' => SiteSyncMetrics::defaultGoogle(),
         ])
             ->assertOk()
             ->assertJsonPath('data.status', SiteGoogleIntegrationStatus::Active->value);
@@ -252,6 +254,369 @@ class GoogleIntegrationTest extends TestCase
         ]);
 
         $this->assertNotNull($integration->fresh()->last_synced_at);
+    }
+
+    public function test_sync_requires_metrics_selection(): void
+    {
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create();
+        $connection = GoogleConnection::factory()->for($user)->create();
+        SiteGoogleIntegration::factory()->create([
+            'site_id' => $site->id,
+            'google_connection_id' => $connection->id,
+            'ga4_property_id' => 'properties/999',
+            'status' => SiteGoogleIntegrationStatus::Active,
+        ]);
+
+        $this->postJson("/api/app/sites/{$site->id}/google-integration/sync", [
+            'from' => '2026-09-20',
+            'to' => '2026-09-20',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['metrics']);
+    }
+
+    public function test_sync_loads_only_selected_metrics_and_wipes_previous_data(): void
+    {
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create();
+        $connection = GoogleConnection::factory()->for($user)->create();
+        SiteGoogleIntegration::factory()->create([
+            'site_id' => $site->id,
+            'google_connection_id' => $connection->id,
+            'ga4_property_id' => 'properties/999',
+            'gsc_site_url' => 'https://example.com/',
+            'status' => SiteGoogleIntegrationStatus::Active,
+        ]);
+
+        SiteAnalyticsDaily::factory()->create([
+            'site_id' => $site->id,
+            'date' => '2026-09-10',
+            'sessions' => 99,
+            'new_users' => 50,
+        ]);
+
+        SiteSearchConsoleDaily::factory()->create([
+            'site_id' => $site->id,
+            'date' => '2026-09-10',
+            'clicks' => 40,
+        ]);
+
+        SiteSearchConsoleDimension::factory()->create([
+            'site_id' => $site->id,
+            'period_from' => '2026-09-01',
+            'period_to' => '2026-09-10',
+            'dimension' => SearchConsoleDimension::Query,
+            'value' => 'старый запрос',
+        ]);
+
+        $this->mock(GoogleApiClient::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('fetchAnalyticsDaily')
+                ->once()
+                ->withArgs(function ($connection, $propertyId, $startDate, $endDate, $metrics): bool {
+                    return $propertyId === 'properties/999'
+                        && $metrics === ['new_users'];
+                })
+                ->andReturn([
+                    [
+                        'date' => '2026-09-20',
+                        'sessions' => 10,
+                        'total_users' => 8,
+                        'new_users' => 3,
+                        'screen_page_views' => 20,
+                        'organic_sessions' => 4,
+                        'organic_total_users' => 3,
+                        'organic_new_users' => 1,
+                    ],
+                ]);
+
+            $mock->shouldReceive('fetchSearchConsoleDaily')->never();
+            $mock->shouldReceive('fetchSearchConsoleDimensions')->never();
+        });
+
+        $this->postJson("/api/app/sites/{$site->id}/google-integration/sync", [
+            'from' => '2026-09-20',
+            'to' => '2026-09-20',
+            'metrics' => ['new_users'],
+        ])
+            ->assertOk();
+
+        $this->assertDatabaseMissing('site_analytics_daily', [
+            'site_id' => $site->id,
+            'date' => '2026-09-10',
+        ]);
+
+        $this->assertDatabaseHas('site_analytics_daily', [
+            'site_id' => $site->id,
+            'date' => '2026-09-20',
+            'sessions' => 0,
+            'total_users' => 0,
+            'new_users' => 3,
+            'screen_page_views' => 0,
+            'organic_sessions' => 0,
+            'organic_total_users' => 0,
+            'organic_new_users' => 0,
+        ]);
+
+        $this->assertDatabaseHas('site_search_console_daily', [
+            'site_id' => $site->id,
+            'date' => '2026-09-10',
+            'clicks' => 40,
+        ]);
+
+        $this->assertDatabaseHas('site_search_console_dimensions', [
+            'site_id' => $site->id,
+            'value' => 'старый запрос',
+        ]);
+    }
+
+    public function test_sync_stores_optional_engagement_metrics(): void
+    {
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create();
+        $connection = GoogleConnection::factory()->for($user)->create();
+        SiteGoogleIntegration::factory()->create([
+            'site_id' => $site->id,
+            'google_connection_id' => $connection->id,
+            'ga4_property_id' => 'properties/999',
+            'status' => SiteGoogleIntegrationStatus::Active,
+        ]);
+
+        $this->mock(GoogleApiClient::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('fetchAnalyticsDaily')
+                ->once()
+                ->withArgs(function ($connection, $propertyId, $startDate, $endDate, $metrics): bool {
+                    return $metrics === ['engaged_sessions', 'engagement_rate', 'bounce_rate'];
+                })
+                ->andReturn([
+                    [
+                        'date' => '2026-09-20',
+                        'engaged_sessions' => 7,
+                        'engagement_rate' => 0.55,
+                        'bounce_rate' => 0.31,
+                        'average_session_duration' => 0,
+                        'event_count' => 0,
+                        'sessions' => 0,
+                        'total_users' => 0,
+                        'new_users' => 0,
+                        'screen_page_views' => 0,
+                        'organic_sessions' => 0,
+                        'organic_total_users' => 0,
+                        'organic_new_users' => 0,
+                        'organic_engaged_sessions' => 0,
+                    ],
+                ]);
+
+            $mock->shouldReceive('fetchSearchConsoleDaily')->never();
+            $mock->shouldReceive('fetchSearchConsoleDimensions')->never();
+        });
+
+        $this->postJson("/api/app/sites/{$site->id}/google-integration/sync", [
+            'from' => '2026-09-20',
+            'to' => '2026-09-20',
+            'metrics' => ['engaged_sessions', 'engagement_rate', 'bounce_rate'],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('site_analytics_daily', [
+            'site_id' => $site->id,
+            'date' => '2026-09-20',
+            'engaged_sessions' => 7,
+            'engagement_rate' => 0.55,
+            'bounce_rate' => 0.31,
+            'sessions' => 0,
+        ]);
+    }
+
+    public function test_sync_passes_search_console_dimension_limits(): void
+    {
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create();
+        $connection = GoogleConnection::factory()->for($user)->create();
+        SiteGoogleIntegration::factory()->create([
+            'site_id' => $site->id,
+            'google_connection_id' => $connection->id,
+            'gsc_site_url' => 'https://example.com/',
+            'status' => SiteGoogleIntegrationStatus::Active,
+        ]);
+
+        $this->mock(GoogleApiClient::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('fetchAnalyticsDaily')->never();
+            $mock->shouldReceive('fetchSearchConsoleDaily')->never();
+            $mock->shouldReceive('fetchSearchConsoleDimensions')
+                ->once()
+                ->withArgs(function ($connection, $siteUrl, $startDate, $endDate, $dimensionKeys, $limits): bool {
+                    return $dimensionKeys === ['queries', 'pages']
+                        && ($limits['queries'] ?? null) === 12
+                        && ($limits['pages'] ?? null) === 8;
+                })
+                ->andReturn([
+                    'queries' => [
+                        [
+                            'value' => 'велосипед',
+                            'clicks' => 2,
+                            'impressions' => 20,
+                            'ctr' => 0.1,
+                            'position' => 3.0,
+                        ],
+                    ],
+                    'pages' => [
+                        [
+                            'value' => 'https://example.com/',
+                            'clicks' => 1,
+                            'impressions' => 10,
+                            'ctr' => 0.1,
+                            'position' => 2.0,
+                        ],
+                    ],
+                ]);
+        });
+
+        $this->postJson("/api/app/sites/{$site->id}/google-integration/sync", [
+            'from' => '2026-09-20',
+            'to' => '2026-09-20',
+            'metrics' => ['queries', 'pages'],
+            'limits' => [
+                'queries' => 12,
+                'pages' => 8,
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('site_search_console_dimensions', [
+            'site_id' => $site->id,
+            'dimension' => 'query',
+            'value' => 'велосипед',
+        ]);
+
+        $this->assertDatabaseHas('site_search_console_dimensions', [
+            'site_id' => $site->id,
+            'dimension' => 'page',
+            'value' => 'https://example.com/',
+        ]);
+    }
+
+    public function test_sync_stores_sitemaps(): void
+    {
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create();
+        $connection = GoogleConnection::factory()->for($user)->create();
+        SiteGoogleIntegration::factory()->create([
+            'site_id' => $site->id,
+            'google_connection_id' => $connection->id,
+            'gsc_site_url' => 'https://example.com/',
+            'status' => SiteGoogleIntegrationStatus::Active,
+        ]);
+
+        $this->mock(GoogleApiClient::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('fetchAnalyticsDaily')->never();
+            $mock->shouldReceive('fetchSearchConsoleDaily')->never();
+            $mock->shouldReceive('fetchSearchConsoleDimensions')->never();
+            $mock->shouldReceive('inspectUrls')->never();
+            $mock->shouldReceive('fetchSitemaps')
+                ->once()
+                ->andReturn([
+                    [
+                        'path' => 'https://example.com/sitemap.xml',
+                        'type' => 'SITEMAP',
+                        'is_pending' => false,
+                        'is_sitemaps_index' => false,
+                        'last_downloaded_at' => '2026-09-20T10:00:00Z',
+                        'last_submitted_at' => '2026-09-01T10:00:00Z',
+                        'errors' => 2,
+                        'warnings' => 1,
+                        'contents' => [
+                            ['type' => 'WEB', 'submitted' => 120],
+                        ],
+                    ],
+                ]);
+        });
+
+        $this->postJson("/api/app/sites/{$site->id}/google-integration/sync", [
+            'from' => '2026-09-20',
+            'to' => '2026-09-20',
+            'metrics' => ['sitemaps'],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('site_search_console_sitemaps', [
+            'site_id' => $site->id,
+            'path' => 'https://example.com/sitemap.xml',
+            'errors' => 2,
+            'warnings' => 1,
+            'type' => 'SITEMAP',
+        ]);
+    }
+
+    public function test_sync_stores_url_inspections_for_top_pages(): void
+    {
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create([
+            'url' => 'https://example.com/',
+        ]);
+        $connection = GoogleConnection::factory()->for($user)->create();
+        SiteGoogleIntegration::factory()->create([
+            'site_id' => $site->id,
+            'google_connection_id' => $connection->id,
+            'gsc_site_url' => 'https://example.com/',
+            'status' => SiteGoogleIntegrationStatus::Active,
+        ]);
+
+        $this->mock(GoogleApiClient::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('fetchAnalyticsDaily')->never();
+            $mock->shouldReceive('fetchSearchConsoleDaily')->never();
+            $mock->shouldReceive('fetchSitemaps')->never();
+            $mock->shouldReceive('fetchSearchConsoleDimensions')
+                ->once()
+                ->withArgs(function ($connection, $siteUrl, $startDate, $endDate, $dimensionKeys, $limits): bool {
+                    return $dimensionKeys === ['pages']
+                        && ($limits['pages'] ?? null) === 3;
+                })
+                ->andReturn([
+                    'pages' => [
+                        [
+                            'value' => 'https://example.com/about',
+                            'clicks' => 5,
+                            'impressions' => 50,
+                            'ctr' => 0.1,
+                            'position' => 4.0,
+                        ],
+                    ],
+                ]);
+            $mock->shouldReceive('inspectUrls')
+                ->once()
+                ->withArgs(function ($connection, $siteUrl, $urls): bool {
+                    return $urls === ['https://example.com/about'];
+                })
+                ->andReturn([
+                    [
+                        'inspected_url' => 'https://example.com/about',
+                        'verdict' => 'PASS',
+                        'coverage_state' => 'Submitted and indexed',
+                        'indexing_state' => 'INDEXING_ALLOWED',
+                        'page_fetch_state' => 'SUCCESSFUL',
+                        'robots_txt_state' => 'ALLOWED',
+                        'crawled_as' => 'MOBILE',
+                        'last_crawl_time' => '2026-09-19T12:00:00Z',
+                        'google_canonical' => 'https://example.com/about',
+                        'user_canonical' => 'https://example.com/about',
+                        'inspection_result_link' => 'https://search.google.com/search-console/inspect',
+                        'referring_urls' => [],
+                        'sitemaps' => ['https://example.com/sitemap.xml'],
+                    ],
+                ]);
+        });
+
+        $this->postJson("/api/app/sites/{$site->id}/google-integration/sync", [
+            'from' => '2026-09-20',
+            'to' => '2026-09-20',
+            'metrics' => ['url_inspections'],
+            'limits' => ['url_inspections' => 3],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('site_url_inspections', [
+            'site_id' => $site->id,
+            'inspected_url' => 'https://example.com/about',
+            'verdict' => 'PASS',
+            'page_fetch_state' => 'SUCCESSFUL',
+        ]);
     }
 
     public function test_metrics_endpoints_return_stored_rows(): void

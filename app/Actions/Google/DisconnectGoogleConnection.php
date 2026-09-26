@@ -22,6 +22,7 @@ class DisconnectGoogleConnection
 
         DB::transaction(function () use ($connection): void {
             $connection->siteIntegrations()->delete();
+            $connection->pagespeedIntegrations()->delete();
             $connection->delete();
         });
     }

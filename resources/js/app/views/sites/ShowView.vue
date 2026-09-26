@@ -58,6 +58,15 @@
                     :disabled="busy"
                     @configure="openGithubModal"
                 />
+                <SiteIntegrationCard
+                    title="PageSpeed / CrUX"
+                    logo="/images/integrations/pagespeed.svg"
+                    :connected="pagespeedConnected"
+                    :detail="pagespeedDetail"
+                    empty-detail="Не подключено"
+                    :disabled="busy"
+                    @configure="openPagespeedModal"
+                />
             </section>
 
             <div
@@ -88,7 +97,7 @@
                 aria-labelledby="site-view-tab-data"
             >
                 <section
-                    v-if="gaConnected || gscConnected || githubConnected"
+                    v-if="gaConnected || gscConnected || githubConnected || pagespeedConnected"
                     class="page-app-sites__panel page-app-sites__period mb-4"
                 >
                     <div class="page-app-sites__panel-head">
@@ -134,17 +143,94 @@
                             </button>
                         </div>
                     </div>
+
+                    <div
+                        v-if="availableSyncMetricGroups.length"
+                        class="page-app-sites__sync-metrics mt-3"
+                    >
+                        <p class="text-muted small mb-2">
+                            Отметьте, какие данные загружать. При загрузке предыдущие данные выбранных типов будут удалены.
+                        </p>
+                        <div
+                            v-for="group in availableSyncMetricGroups"
+                            :key="group.id"
+                            class="page-app-sites__sync-metrics-group"
+                        >
+                            <div class="page-app-sites__sync-metrics-group-head">
+                                <span class="page-app-sites__sync-metrics-group-title">{{ group.label }}</span>
+                                <button
+                                    type="button"
+                                    class="btn btn-link btn-sm p-0"
+                                    :disabled="busy"
+                                    @click="toggleSyncMetricGroup(group)"
+                                >
+                                    {{ isSyncMetricGroupFullySelected(group) ? 'Снять все' : 'Выбрать все' }}
+                                </button>
+                            </div>
+                            <div class="page-app-sites__sync-metrics-list">
+                                <div
+                                    v-for="metric in group.metrics"
+                                    :key="metric.key"
+                                    class="page-app-sites__sync-metric"
+                                >
+                                    <div class="form-check">
+                                        <input
+                                            :id="`sync-metric-${metric.key}`"
+                                            v-model="syncMetricSelection[metric.key]"
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            :disabled="busy"
+                                        >
+                                        <label
+                                            class="form-check-label"
+                                            :for="`sync-metric-${metric.key}`"
+                                        >
+                                            {{ metric.label }}
+                                            <span
+                                                v-if="metric.optional"
+                                                class="page-app-sites__sync-metric-optional"
+                                            >доп.</span>
+                                        </label>
+                                    </div>
+                                    <div
+                                        v-if="metric.limitKey && syncMetricSelection[metric.key]"
+                                        class="page-app-sites__sync-metric-limit"
+                                    >
+                                        <label
+                                            class="form-label mb-0"
+                                            :for="`sync-limit-${metric.limitKey}`"
+                                        >Кол-во</label>
+                                        <input
+                                            :id="`sync-limit-${metric.limitKey}`"
+                                            v-model.number="syncMetricLimits[metric.limitKey]"
+                                            type="number"
+                                            class="form-control form-control-sm"
+                                            min="1"
+                                            max="1000"
+                                            :disabled="busy"
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <p v-if="integration?.last_synced_at" class="text-muted small mt-3 mb-0">
                         Последняя загрузка Google: {{ formatDateTime(integration.last_synced_at) }}
                     </p>
                     <p v-if="githubIntegration?.last_synced_at" class="text-muted small mt-1 mb-0">
                         Последняя загрузка GitHub: {{ formatDateTime(githubIntegration.last_synced_at) }}
                     </p>
+                    <p v-if="pagespeedIntegration?.last_synced_at" class="text-muted small mt-1 mb-0">
+                        Последняя загрузка PageSpeed / CrUX: {{ formatDateTime(pagespeedIntegration.last_synced_at) }}
+                    </p>
                     <p v-if="integration?.last_error" class="text-danger small mt-2 mb-0">
                         Ошибка Google: {{ integration.last_error }}
                     </p>
                     <p v-if="githubIntegration?.last_error" class="text-danger small mt-2 mb-0">
                         Ошибка GitHub: {{ githubIntegration.last_error }}
+                    </p>
+                    <p v-if="pagespeedIntegration?.last_error" class="text-danger small mt-2 mb-0">
+                        Ошибка PageSpeed / CrUX: {{ pagespeedIntegration.last_error }}
                     </p>
                 </section>
 
@@ -199,6 +285,12 @@
                                             <th>Орг. сессии</th>
                                             <th>Орг. польз.</th>
                                             <th>Орг. новые</th>
+                                            <th v-if="hasAnalyticsEngagement">Вовлеч. сессии</th>
+                                            <th v-if="hasAnalyticsEngagement">Вовлечённость</th>
+                                            <th v-if="hasAnalyticsEngagement">Отказы</th>
+                                            <th v-if="hasAnalyticsEngagement">Ср. длит.</th>
+                                            <th v-if="hasAnalyticsEngagement">События</th>
+                                            <th v-if="hasAnalyticsEngagement">Орг. вовлеч.</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -211,6 +303,12 @@
                                             <td>{{ row.organic_sessions ?? 0 }}</td>
                                             <td>{{ row.organic_total_users ?? 0 }}</td>
                                             <td>{{ row.organic_new_users ?? 0 }}</td>
+                                            <td v-if="hasAnalyticsEngagement">{{ row.engaged_sessions ?? 0 }}</td>
+                                            <td v-if="hasAnalyticsEngagement">{{ formatPct(row.engagement_rate) }}</td>
+                                            <td v-if="hasAnalyticsEngagement">{{ formatPct(row.bounce_rate) }}</td>
+                                            <td v-if="hasAnalyticsEngagement">{{ formatDuration(row.average_session_duration) }}</td>
+                                            <td v-if="hasAnalyticsEngagement">{{ row.event_count ?? 0 }}</td>
+                                            <td v-if="hasAnalyticsEngagement">{{ row.organic_engaged_sessions ?? 0 }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -363,6 +461,111 @@
                                         </table>
                                     </div>
                                 </div>
+
+                                <div v-if="gscSearchAppearances.length">
+                                    <h3 class="h6 mb-2">Типы отображения в поиске</h3>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Тип</th>
+                                                    <th>Клики</th>
+                                                    <th>Показы</th>
+                                                    <th>CTR</th>
+                                                    <th>Позиция</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr
+                                                    v-for="row in gscSearchAppearances"
+                                                    :key="`appearance-${row.rank}-${row.value}`"
+                                                >
+                                                    <td>{{ row.rank }}</td>
+                                                    <td>{{ row.value }}</td>
+                                                    <td>{{ row.clicks }}</td>
+                                                    <td>{{ row.impressions }}</td>
+                                                    <td>{{ formatPct(row.ctr) }}</td>
+                                                    <td>{{ formatNumber(row.position) }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div v-if="gscSitemaps.length">
+                                    <h3 class="h6 mb-2">Sitemaps</h3>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>URL</th>
+                                                    <th>Тип</th>
+                                                    <th>Ошибки</th>
+                                                    <th>Предупр.</th>
+                                                    <th>Статус</th>
+                                                    <th>Загружен</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr
+                                                    v-for="row in gscSitemaps"
+                                                    :key="`sitemap-${row.path}`"
+                                                >
+                                                    <td class="text-break">{{ row.path }}</td>
+                                                    <td>{{ row.type || '—' }}</td>
+                                                    <td>{{ row.errors }}</td>
+                                                    <td>{{ row.warnings }}</td>
+                                                    <td>
+                                                        <span v-if="row.is_pending">В обработке</span>
+                                                        <span v-else-if="row.is_sitemaps_index">Индекс</span>
+                                                        <span v-else>Готов</span>
+                                                    </td>
+                                                    <td>{{ formatDateTime(row.last_downloaded_at) || '—' }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div v-if="gscUrlInspections.length">
+                                    <h3 class="h6 mb-2">URL Inspection</h3>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>URL</th>
+                                                    <th>Вердикт</th>
+                                                    <th>Загрузка</th>
+                                                    <th>Индексация</th>
+                                                    <th>Покрытие</th>
+                                                    <th>Последний обход</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr
+                                                    v-for="row in gscUrlInspections"
+                                                    :key="`inspect-${row.inspected_url}`"
+                                                >
+                                                    <td class="text-break">
+                                                        <a
+                                                            v-if="row.inspection_result_link"
+                                                            :href="row.inspection_result_link"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >{{ row.inspected_url }}</a>
+                                                        <span v-else>{{ row.inspected_url }}</span>
+                                                    </td>
+                                                    <td>{{ formatInspectionLabel(row.verdict) }}</td>
+                                                    <td>{{ formatInspectionLabel(row.page_fetch_state) }}</td>
+                                                    <td>{{ formatInspectionLabel(row.indexing_state) }}</td>
+                                                    <td>{{ row.coverage_state || '—' }}</td>
+                                                    <td>{{ formatDateTime(row.last_crawl_time) || '—' }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -407,6 +610,97 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+
+                        <div
+                            v-show="activeMetricsTab === 'pagespeed'"
+                            id="metrics-pane-pagespeed"
+                            class="page-app-sites__metrics-pane"
+                            role="tabpanel"
+                            aria-labelledby="metrics-tab-pagespeed"
+                        >
+                            <p v-if="pagespeedIntegration?.strategy_label" class="text-muted small mb-3">
+                                Стратегия: {{ pagespeedIntegration.strategy_label }}
+                            </p>
+                            <AppLoader v-if="metricsLoading" block label="Загрузка PageSpeed / CrUX…" />
+                            <div v-else-if="!pagespeedConnected" class="text-muted">
+                                PageSpeed Insights не подключён
+                            </div>
+                            <template v-else>
+                                <h3 class="h6 mb-2">Lab (Lighthouse)</h3>
+                                <div v-if="!pagespeedLabRows.length" class="text-muted mb-4">Нет lab-снимков</div>
+                                <div v-else class="table-responsive mb-4">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Стратегия</th>
+                                                <th>Score</th>
+                                                <th>LCP</th>
+                                                <th>INP</th>
+                                                <th>CLS</th>
+                                                <th>FCP</th>
+                                                <th>TTFB</th>
+                                                <th>TBT</th>
+                                                <th>SI</th>
+                                                <th>Загружено</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr
+                                                v-for="(row, index) in pagespeedLabRows"
+                                                :key="`lab-${row.strategy}-${row.fetched_at}-${index}`"
+                                            >
+                                                <td>{{ formatPagespeedStrategy(row.strategy) }}</td>
+                                                <td>{{ formatPagespeedScore(row.performance_score) }}</td>
+                                                <td>{{ formatMs(row.lcp_ms) }}</td>
+                                                <td>{{ formatMs(row.inp_ms) }}</td>
+                                                <td>{{ formatCls(row.cls) }}</td>
+                                                <td>{{ formatMs(row.fcp_ms) }}</td>
+                                                <td>{{ formatMs(row.ttfb_ms) }}</td>
+                                                <td>{{ formatMs(row.tbt_ms) }}</td>
+                                                <td>{{ formatMs(row.speed_index_ms) }}</td>
+                                                <td>{{ formatDateTime(row.fetched_at) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <h3 class="h6 mb-2">CrUX (полевые данные)</h3>
+                                <div v-if="!pagespeedCruxRows.length" class="text-muted">Нет CrUX-снимков</div>
+                                <div v-else class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Scope</th>
+                                                <th>Form factor</th>
+                                                <th>LCP p75</th>
+                                                <th>INP p75</th>
+                                                <th>CLS p75</th>
+                                                <th>FCP p75</th>
+                                                <th>TTFB p75</th>
+                                                <th>Период</th>
+                                                <th>Загружено</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr
+                                                v-for="(row, index) in pagespeedCruxRows"
+                                                :key="`crux-${row.scope}-${row.form_factor}-${row.fetched_at}-${index}`"
+                                            >
+                                                <td>{{ formatCruxScope(row.scope) }}</td>
+                                                <td>{{ formatCruxFormFactor(row.form_factor) }}</td>
+                                                <td>{{ formatMs(row.lcp_p75_ms) }}</td>
+                                                <td>{{ formatMs(row.inp_p75_ms) }}</td>
+                                                <td>{{ formatCls(row.cls_p75) }}</td>
+                                                <td>{{ formatMs(row.fcp_p75_ms) }}</td>
+                                                <td>{{ formatMs(row.ttfb_p75_ms) }}</td>
+                                                <td>{{ formatCruxPeriod(row) }}</td>
+                                                <td>{{ formatDateTime(row.fetched_at) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </section>
@@ -948,7 +1242,7 @@
                                 :aria-labelledby="showAiReportTabs ? 'ai-report-tab-new' : undefined"
                             >
                                 <p class="text-muted small mb-3">
-                                    В отчёт попадут данные GA4, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub и события. Срезы GSC появляются после загрузки метрик за тот же период.
+                                    В отчёт попадут данные GA4, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub, PageSpeed / CrUX и события. Срезы GSC появляются после загрузки метрик за тот же период.
                                     (тот же, что на вкладках «Данные сервисов» и «События»).
                                 </p>
 
@@ -1359,6 +1653,94 @@
                 </template>
             </template>
         </AppModal>
+
+        <AppModal
+            v-model:open="pagespeedModalOpen"
+            title="PageSpeed Insights / CrUX"
+            size="md"
+            align="start"
+            :show-confirm="false"
+            :close-on-backdrop="!busy"
+        >
+            <div class="page-app-sites__modal-account">
+                <template v-if="connection && !connection.needs_reauth">
+                    <p class="text-muted small mb-2">
+                        Аккаунт Google: <strong>{{ connection.google_account_email }}</strong>
+                    </p>
+                    <div class="page-app-sites__modal-actions">
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            :disabled="busy"
+                            @click="onConnectGoogle"
+                        >
+                            Переподключить
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-outline-danger btn-sm"
+                            :disabled="busy"
+                            @click="onDisconnectGoogle"
+                        >
+                            Отключить Google
+                        </button>
+                    </div>
+                </template>
+                <template v-else>
+                    <p class="text-muted mb-3">
+                        {{ connection?.needs_reauth
+                            ? 'Нужна повторная авторизация Google.'
+                            : 'Подключите Google, чтобы включить PageSpeed Insights / CrUX.' }}
+                    </p>
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        :disabled="busy"
+                        @click="onConnectGoogle"
+                    >
+                        Подключить Google
+                    </button>
+                </template>
+            </div>
+
+            <template v-if="connection && !connection.needs_reauth">
+                <label class="form-label" for="pagespeed-strategy">Стратегия</label>
+                <select
+                    id="pagespeed-strategy"
+                    v-model="pagespeedForm.strategy"
+                    class="form-select mb-3"
+                    :disabled="busy"
+                >
+                    <option
+                        v-for="option in pagespeedStrategyOptions"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}
+                    </option>
+                </select>
+                <div class="page-app-sites__modal-actions">
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        :disabled="busy"
+                        @click="onSavePagespeedIntegration"
+                    >
+                        {{ pagespeedConnected ? 'Сохранить' : 'Подключить к сайту' }}
+                    </button>
+                    <button
+                        v-if="pagespeedConnected"
+                        type="button"
+                        class="btn btn-outline-danger"
+                        :disabled="busy"
+                        @click="onDisconnectPagespeedIntegration"
+                    >
+                        Отключить от сайта
+                    </button>
+                </div>
+            </template>
+        </AppModal>
+
         <AppModal
             v-model:open="aiReportSharingOpen"
             title="Доступ к отчёту"
@@ -1499,6 +1881,12 @@ import {
     deleteSiteGithubIntegration,
 } from '../../api/github';
 import {
+    deleteSitePageSpeedIntegration,
+    getSitePageSpeedMetrics,
+    syncSitePageSpeedIntegration,
+    upsertSitePageSpeedIntegration,
+} from '../../api/pagespeed';
+import {
     disconnectGoogle,
     createSiteEvent,
     deleteSiteEvent,
@@ -1526,6 +1914,7 @@ const connection = ref(null);
 const githubConnection = ref(null);
 const integration = ref(null);
 const githubIntegration = ref(null);
+const pagespeedIntegration = ref(null);
 const ga4Properties = ref([]);
 const gscSites = ref([]);
 const githubRepositories = ref([]);
@@ -1536,7 +1925,12 @@ const gscQueries = ref([]);
 const gscPages = ref([]);
 const gscDevices = ref([]);
 const gscCountries = ref([]);
+const gscSearchAppearances = ref([]);
+const gscSitemaps = ref([]);
+const gscUrlInspections = ref([]);
 const commitRows = ref([]);
+const pagespeedLabRows = ref([]);
+const pagespeedCruxRows = ref([]);
 const eventRows = ref([]);
 
 const loading = ref(true);
@@ -1561,6 +1955,7 @@ const activeEventTab = ref('saved');
 const gaModalOpen = ref(false);
 const gscModalOpen = ref(false);
 const githubModalOpen = ref(false);
+const pagespeedModalOpen = ref(false);
 const activeSiteView = ref('data');
 const activeMetricsTab = ref('ga4');
 
@@ -1624,6 +2019,13 @@ const metricsTabs = [
     { id: 'ga4', label: 'GA4' },
     { id: 'gsc', label: 'Search Console' },
     { id: 'github', label: 'GitHub' },
+    { id: 'pagespeed', label: 'PageSpeed / CrUX' },
+];
+
+const pagespeedStrategyOptions = [
+    { value: 'mobile', label: 'Mobile' },
+    { value: 'desktop', label: 'Desktop' },
+    { value: 'both', label: 'Mobile и Desktop' },
 ];
 
 const periodMax = yesterdayDateString();
@@ -1643,6 +2045,10 @@ const githubForm = reactive({
     default_branch: '',
 });
 
+const pagespeedForm = reactive({
+    strategy: 'mobile',
+});
+
 const eventForm = reactive({
     occurred_on: periodMax,
     title: '',
@@ -1658,13 +2064,169 @@ const hasGscMetrics = computed(() => (
     || gscPages.value.length > 0
     || gscDevices.value.length > 0
     || gscCountries.value.length > 0
+    || gscSearchAppearances.value.length > 0
+    || gscSitemaps.value.length > 0
+    || gscUrlInspections.value.length > 0
 ));
 const githubConnected = computed(() => Boolean(githubIntegration.value?.is_configured));
+const pagespeedConnected = computed(() => Boolean(pagespeedIntegration.value?.is_configured));
+
+const syncMetricGroups = [
+    {
+        id: 'ga',
+        label: 'Google Analytics',
+        available: () => gaConnected.value,
+        metrics: [
+            { key: 'sessions', label: 'Сессии', defaultSelected: true },
+            { key: 'total_users', label: 'Пользователи', defaultSelected: true },
+            { key: 'new_users', label: 'Новые пользователи', defaultSelected: true },
+            { key: 'screen_page_views', label: 'Просмотры', defaultSelected: true },
+            { key: 'organic_sessions', label: 'Органические сессии', defaultSelected: true },
+            { key: 'organic_total_users', label: 'Органические пользователи', defaultSelected: true },
+            { key: 'organic_new_users', label: 'Органические новые пользователи', defaultSelected: true },
+            { key: 'engaged_sessions', label: 'Вовлечённые сессии', defaultSelected: false, optional: true },
+            { key: 'engagement_rate', label: 'Доля вовлечённости', defaultSelected: false, optional: true },
+            { key: 'bounce_rate', label: 'Показатель отказов', defaultSelected: false, optional: true },
+            { key: 'average_session_duration', label: 'Средняя длительность сессии', defaultSelected: false, optional: true },
+            { key: 'event_count', label: 'События', defaultSelected: false, optional: true },
+            { key: 'organic_engaged_sessions', label: 'Органические вовлечённые сессии', defaultSelected: false, optional: true },
+        ],
+    },
+    {
+        id: 'gsc-daily',
+        label: 'Search Console (по дням)',
+        available: () => gscConnected.value,
+        metrics: [
+            { key: 'clicks', label: 'Клики', defaultSelected: true },
+            { key: 'impressions', label: 'Показы', defaultSelected: true },
+            { key: 'ctr', label: 'CTR', defaultSelected: true },
+            { key: 'position', label: 'Позиция', defaultSelected: true },
+        ],
+    },
+    {
+        id: 'gsc-dimensions',
+        label: 'Search Console (разрезы)',
+        available: () => gscConnected.value,
+        metrics: [
+            { key: 'queries', label: 'Запросы', defaultSelected: true, limitKey: 'queries' },
+            { key: 'pages', label: 'Страницы', defaultSelected: true, limitKey: 'pages' },
+            { key: 'devices', label: 'Устройства', defaultSelected: true },
+            { key: 'countries', label: 'Страны', defaultSelected: true },
+            { key: 'search_appearances', label: 'Типы отображения в поиске', defaultSelected: false, optional: true },
+            { key: 'sitemaps', label: 'Sitemaps', defaultSelected: false, optional: true },
+            {
+                key: 'url_inspections',
+                label: 'URL Inspection (топ-страницы)',
+                defaultSelected: false,
+                optional: true,
+                limitKey: 'url_inspections',
+            },
+        ],
+    },
+    {
+        id: 'github',
+        label: 'GitHub',
+        available: () => githubConnected.value,
+        metrics: [
+            { key: 'commits', label: 'Коммиты', defaultSelected: true },
+        ],
+    },
+    {
+        id: 'pagespeed',
+        label: 'PageSpeed / CrUX',
+        available: () => pagespeedConnected.value,
+        metrics: [
+            { key: 'psi_lab', label: 'Lab (Lighthouse)', defaultSelected: true },
+            { key: 'crux_origin', label: 'CrUX origin', defaultSelected: true },
+            { key: 'crux_url', label: 'CrUX URL', defaultSelected: false, optional: true },
+        ],
+    },
+];
+
+const allSyncMetricDefs = syncMetricGroups.flatMap((group) => group.metrics);
+
+const syncMetricSelection = reactive(
+    Object.fromEntries(allSyncMetricDefs.map((metric) => [metric.key, Boolean(metric.defaultSelected)])),
+);
+
+const syncMetricLimits = reactive({
+    queries: 50,
+    pages: 20,
+    url_inspections: 10,
+});
+
+const availableSyncMetricGroups = computed(() => (
+    syncMetricGroups.filter((group) => group.available())
+));
+
+const selectedSyncMetrics = computed(() => (
+    availableSyncMetricGroups.value
+        .flatMap((group) => group.metrics)
+        .map((metric) => metric.key)
+        .filter((key) => syncMetricSelection[key])
+));
+
+const PAGESPEED_SYNC_KEYS = new Set(['psi_lab', 'crux_origin', 'crux_url']);
+
+const selectedGoogleSyncMetrics = computed(() => (
+    selectedSyncMetrics.value.filter((key) => key !== 'commits' && !PAGESPEED_SYNC_KEYS.has(key))
+));
+
+const selectedGithubSyncMetrics = computed(() => (
+    selectedSyncMetrics.value.filter((key) => key === 'commits')
+));
+
+const selectedPageSpeedSyncMetrics = computed(() => (
+    selectedSyncMetrics.value.filter((key) => PAGESPEED_SYNC_KEYS.has(key))
+));
+
+const selectedGoogleSyncLimits = computed(() => {
+    const limits = {};
+
+    if (syncMetricSelection.queries) {
+        limits.queries = Math.min(1000, Math.max(1, Number(syncMetricLimits.queries) || 50));
+    }
+
+    if (syncMetricSelection.pages) {
+        limits.pages = Math.min(1000, Math.max(1, Number(syncMetricLimits.pages) || 20));
+    }
+
+    if (syncMetricSelection.url_inspections) {
+        limits.url_inspections = Math.min(50, Math.max(1, Number(syncMetricLimits.url_inspections) || 10));
+    }
+
+    return limits;
+});
+
+const hasAnalyticsEngagement = computed(() => (
+    analyticsRows.value.some((row) => (
+        Number(row.engaged_sessions || 0) > 0
+        || Number(row.engagement_rate || 0) > 0
+        || Number(row.bounce_rate || 0) > 0
+        || Number(row.average_session_duration || 0) > 0
+        || Number(row.event_count || 0) > 0
+        || Number(row.organic_engaged_sessions || 0) > 0
+    ))
+));
+
+function isSyncMetricGroupFullySelected(group) {
+    return group.metrics.every((metric) => syncMetricSelection[metric.key]);
+}
+
+function toggleSyncMetricGroup(group) {
+    const next = !isSyncMetricGroupFullySelected(group);
+
+    group.metrics.forEach((metric) => {
+        syncMetricSelection[metric.key] = next;
+    });
+}
+
 const canSyncPeriod = computed(() => (
-    (gaConnected.value || gscConnected.value || githubConnected.value)
+    (gaConnected.value || gscConnected.value || githubConnected.value || pagespeedConnected.value)
     && Boolean(period.from)
     && Boolean(period.to)
     && period.from <= period.to
+    && selectedSyncMetrics.value.length > 0
 ));
 
 const canGenerateAiReport = computed(() => (
@@ -1757,6 +2319,13 @@ const githubDetail = computed(() => {
 
     return branch ? `${fullName} · ${branch}` : fullName;
 });
+const pagespeedDetail = computed(() => {
+    if (!pagespeedConnected.value) {
+        return '';
+    }
+
+    return pagespeedIntegration.value?.strategy_label || 'Подключено';
+});
 
 const repoInList = computed(() => {
     const current = githubIntegration.value?.repository_full_name;
@@ -1797,6 +2366,10 @@ function defaultPeriodFrom() {
 }
 
 function formatDateTime(value) {
+    if (!value) {
+        return '';
+    }
+
     try {
         return new Date(value).toLocaleString('ru-RU');
     } catch {
@@ -1824,6 +2397,18 @@ function formatNumber(value) {
     return Number(value).toFixed(1);
 }
 
+function formatDuration(value) {
+    const seconds = Math.max(0, Number(value) || 0);
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+
+    if (mins <= 0) {
+        return `${secs} с`;
+    }
+
+    return `${mins} м ${secs.toString().padStart(2, '0')} с`;
+}
+
 function formatGscDevice(value) {
     const map = {
         DESKTOP: 'Компьютер',
@@ -1832,6 +2417,36 @@ function formatGscDevice(value) {
     };
 
     return map[String(value || '').toUpperCase()] || value || '—';
+}
+
+function formatInspectionLabel(value) {
+    if (!value) {
+        return '—';
+    }
+
+    const map = {
+        PASS: 'OK',
+        FAIL: 'Ошибка',
+        NEUTRAL: 'Исключено',
+        PARTIAL: 'Частично',
+        SUCCESSFUL: 'Успешно',
+        SOFT_404: 'Soft 404',
+        NOT_FOUND: '404',
+        SERVER_ERROR: 'Ошибка сервера',
+        BLOCKED_ROBOTS_TXT: 'robots.txt',
+        ACCESS_DENIED: '401',
+        ACCESS_FORBIDDEN: '403',
+        REDIRECT_ERROR: 'Редирект',
+        INDEXING_ALLOWED: 'Разрешено',
+        BLOCKED_BY_META_TAG: 'noindex (meta)',
+        BLOCKED_BY_HTTP_HEADER: 'noindex (header)',
+        ALLOWED: 'Разрешено',
+        DISALLOWED: 'Запрещено',
+        MOBILE: 'Mobile',
+        DESKTOP: 'Desktop',
+    };
+
+    return map[String(value)] || value;
 }
 
 function commitSubject(message) {
@@ -1847,6 +2462,7 @@ function preferConnectedMetricsTab() {
         gaConnected.value ? 'ga4' : null,
         gscConnected.value ? 'gsc' : null,
         githubConnected.value ? 'github' : null,
+        pagespeedConnected.value ? 'pagespeed' : null,
     ].filter(Boolean);
 
     if (!connected.length) {
@@ -1856,6 +2472,73 @@ function preferConnectedMetricsTab() {
     if (!connected.includes(activeMetricsTab.value)) {
         activeMetricsTab.value = connected[0];
     }
+}
+
+function formatMs(value) {
+    if (value === null || value === undefined || value === '') {
+        return '—';
+    }
+
+    return `${Math.round(Number(value))} ms`;
+}
+
+function formatCls(value) {
+    if (value === null || value === undefined || value === '') {
+        return '—';
+    }
+
+    return Number(value).toFixed(3);
+}
+
+function formatPagespeedScore(value) {
+    if (value === null || value === undefined || value === '') {
+        return '—';
+    }
+
+    return String(value);
+}
+
+function formatPagespeedStrategy(value) {
+    const map = {
+        mobile: 'Mobile',
+        desktop: 'Desktop',
+    };
+
+    return map[String(value)] || value || '—';
+}
+
+function formatCruxScope(value) {
+    const map = {
+        origin: 'Origin',
+        url: 'URL',
+    };
+
+    return map[String(value)] || value || '—';
+}
+
+function formatCruxFormFactor(value) {
+    const map = {
+        PHONE: 'Phone',
+        DESKTOP: 'Desktop',
+        TABLET: 'Tablet',
+    };
+
+    return map[String(value)] || value || '—';
+}
+
+function formatCruxPeriod(row) {
+    const start = row?.collection_period_start;
+    const end = row?.collection_period_end;
+
+    if (!start && !end) {
+        return '—';
+    }
+
+    if (start && end) {
+        return `${start} — ${end}`;
+    }
+
+    return start || end;
 }
 
 function clearAiReportView() {
@@ -2497,10 +3180,11 @@ async function loadMetrics() {
 
     try {
         const params = { from: period.from, to: period.to };
-        const [analytics, gsc, commits] = await Promise.all([
+        const [analytics, gsc, commits, pagespeed] = await Promise.all([
             getSiteAnalyticsMetrics(site.value.id, params),
             getSiteSearchConsoleMetrics(site.value.id, params),
             getSiteGithubCommits(site.value.id, params),
+            getSitePageSpeedMetrics(site.value.id),
         ]);
         analyticsRows.value = analytics;
         gscRows.value = gsc.daily;
@@ -2508,7 +3192,12 @@ async function loadMetrics() {
         gscPages.value = gsc.pages;
         gscDevices.value = gsc.devices;
         gscCountries.value = gsc.countries;
+        gscSearchAppearances.value = gsc.search_appearances || [];
+        gscSitemaps.value = gsc.sitemaps || [];
+        gscUrlInspections.value = gsc.url_inspections || [];
         commitRows.value = commits;
+        pagespeedLabRows.value = pagespeed.lab || [];
+        pagespeedCruxRows.value = pagespeed.crux || [];
     } catch {
         analyticsRows.value = [];
         gscRows.value = [];
@@ -2516,7 +3205,12 @@ async function loadMetrics() {
         gscPages.value = [];
         gscDevices.value = [];
         gscCountries.value = [];
+        gscSearchAppearances.value = [];
+        gscSitemaps.value = [];
+        gscUrlInspections.value = [];
         commitRows.value = [];
+        pagespeedLabRows.value = [];
+        pagespeedCruxRows.value = [];
     } finally {
         metricsLoading.value = false;
     }
@@ -2656,6 +3350,11 @@ async function openGithubModal() {
     }
 }
 
+async function openPagespeedModal() {
+    pagespeedForm.strategy = pagespeedIntegration.value?.strategy || 'mobile';
+    pagespeedModalOpen.value = true;
+}
+
 async function reload() {
     loading.value = true;
     error.value = '';
@@ -2672,11 +3371,13 @@ async function reload() {
         githubConnection.value = githubConnectionData;
         integration.value = siteData.google_integration || null;
         githubIntegration.value = siteData.github_integration || null;
+        pagespeedIntegration.value = siteData.pagespeed_integration || null;
         form.ga4_property_id = integration.value?.ga4_property_id || '';
         form.gsc_site_url = integration.value?.gsc_site_url || '';
         githubForm.repository_full_name = githubIntegration.value?.repository_full_name || '';
         githubForm.repository_id = githubIntegration.value?.repository_id || null;
         githubForm.default_branch = githubIntegration.value?.default_branch || '';
+        pagespeedForm.strategy = pagespeedIntegration.value?.strategy || 'mobile';
 
         preferConnectedMetricsTab();
         await Promise.all([
@@ -2716,12 +3417,18 @@ async function onDisconnectGoogle() {
         await disconnectGoogle();
         connection.value = null;
         integration.value = null;
+        pagespeedIntegration.value = null;
         form.ga4_property_id = '';
         form.gsc_site_url = '';
+        pagespeedForm.strategy = 'mobile';
+        pagespeedLabRows.value = [];
+        pagespeedCruxRows.value = [];
         ga4Properties.value = [];
         gscSites.value = [];
         gaModalOpen.value = false;
         gscModalOpen.value = false;
+        pagespeedModalOpen.value = false;
+        preferConnectedMetricsTab();
         toast.show({ ok: true, message: 'Аккаунт Google отключён.' });
     } catch (e) {
         toast.show({
@@ -2886,6 +3593,55 @@ async function onClearGithubIntegration() {
     }
 }
 
+async function onSavePagespeedIntegration() {
+    busy.value = true;
+
+    try {
+        pagespeedIntegration.value = await upsertSitePageSpeedIntegration(site.value.id, {
+            strategy: pagespeedForm.strategy,
+        });
+        toast.show({
+            ok: true,
+            message: 'PageSpeed Insights подключён к сайту.',
+        });
+        pagespeedModalOpen.value = false;
+        preferConnectedMetricsTab();
+    } catch (e) {
+        toast.show({
+            ok: false,
+            message: e.response?.data?.message || 'Не удалось сохранить подключение',
+        });
+    } finally {
+        busy.value = false;
+    }
+}
+
+async function onDisconnectPagespeedIntegration() {
+    if (!window.confirm('Отключить PageSpeed Insights от этого сайта?')) {
+        return;
+    }
+
+    busy.value = true;
+
+    try {
+        await deleteSitePageSpeedIntegration(site.value.id);
+        pagespeedIntegration.value = null;
+        pagespeedForm.strategy = 'mobile';
+        pagespeedLabRows.value = [];
+        pagespeedCruxRows.value = [];
+        pagespeedModalOpen.value = false;
+        preferConnectedMetricsTab();
+        toast.show({ ok: true, message: 'PageSpeed Insights отключён от сайта.' });
+    } catch (e) {
+        toast.show({
+            ok: false,
+            message: e.response?.data?.message || 'Не удалось отключить PageSpeed',
+        });
+    } finally {
+        busy.value = false;
+    }
+}
+
 async function onSyncPeriod() {
     if (!canSyncPeriod.value) {
         return;
@@ -2893,7 +3649,7 @@ async function onSyncPeriod() {
 
     busy.value = true;
 
-    const payload = {
+    const basePayload = {
         from: period.from,
         to: period.to,
     };
@@ -2901,9 +3657,13 @@ async function onSyncPeriod() {
     let syncedAny = false;
 
     try {
-        if (gaConnected.value || gscConnected.value) {
+        if ((gaConnected.value || gscConnected.value) && selectedGoogleSyncMetrics.value.length) {
             try {
-                const result = await syncSiteGoogleIntegration(site.value.id, payload);
+                const result = await syncSiteGoogleIntegration(site.value.id, {
+                    ...basePayload,
+                    metrics: selectedGoogleSyncMetrics.value,
+                    limits: selectedGoogleSyncLimits.value,
+                });
                 if (result.data) {
                     integration.value = result.data;
                 }
@@ -2916,9 +3676,12 @@ async function onSyncPeriod() {
             }
         }
 
-        if (githubConnected.value) {
+        if (githubConnected.value && selectedGithubSyncMetrics.value.length) {
             try {
-                const result = await syncSiteGithubIntegration(site.value.id, payload);
+                const result = await syncSiteGithubIntegration(site.value.id, {
+                    ...basePayload,
+                    metrics: selectedGithubSyncMetrics.value,
+                });
                 if (result.data) {
                     githubIntegration.value = result.data;
                 }
@@ -2928,6 +3691,23 @@ async function onSyncPeriod() {
                     githubIntegration.value = e.response.data.data;
                 }
                 errors.push(e.response?.data?.message || 'Не удалось загрузить коммиты GitHub');
+            }
+        }
+
+        if (pagespeedConnected.value && selectedPageSpeedSyncMetrics.value.length) {
+            try {
+                const result = await syncSitePageSpeedIntegration(site.value.id, {
+                    metrics: selectedPageSpeedSyncMetrics.value,
+                });
+                if (result.data) {
+                    pagespeedIntegration.value = result.data;
+                }
+                syncedAny = true;
+            } catch (e) {
+                if (e.response?.data?.data) {
+                    pagespeedIntegration.value = e.response.data.data;
+                }
+                errors.push(e.response?.data?.message || 'Не удалось загрузить PageSpeed / CrUX');
             }
         }
 

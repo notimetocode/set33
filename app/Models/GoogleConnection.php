@@ -65,6 +65,14 @@ class GoogleConnection extends Model
         return $this->hasMany(SiteGoogleIntegration::class);
     }
 
+    /**
+     * @return HasMany<SitePageSpeedIntegration, $this>
+     */
+    public function pagespeedIntegrations(): HasMany
+    {
+        return $this->hasMany(SitePageSpeedIntegration::class);
+    }
+
     public function accessTokenExpired(): bool
     {
         if ($this->expires_at === null) {

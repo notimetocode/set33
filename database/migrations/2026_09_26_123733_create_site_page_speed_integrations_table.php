@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('site_pagespeed_integrations', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('site_id')->unique()->constrained()->cascadeOnDelete();
+            $table->foreignId('pagespeed_connection_id')->constrained('page_speed_connections')->cascadeOnDelete();
+            $table->string('strategy', 16)->default('mobile');
+            $table->string('status', 32)->default('active');
+            $table->timestamp('last_synced_at')->nullable();
+            $table->text('last_error')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('site_pagespeed_integrations');
+    }
+};

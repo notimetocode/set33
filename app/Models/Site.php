@@ -48,6 +48,14 @@ class Site extends Model
     }
 
     /**
+     * @return HasOne<SitePageSpeedIntegration, $this>
+     */
+    public function pagespeedIntegration(): HasOne
+    {
+        return $this->hasOne(SitePageSpeedIntegration::class);
+    }
+
+    /**
      * @return HasMany<SiteAnalyticsDaily, $this>
      */
     public function analyticsDaily(): HasMany
@@ -69,6 +77,38 @@ class Site extends Model
     public function searchConsoleDimensions(): HasMany
     {
         return $this->hasMany(SiteSearchConsoleDimension::class);
+    }
+
+    /**
+     * @return HasMany<SiteSearchConsoleSitemap, $this>
+     */
+    public function searchConsoleSitemaps(): HasMany
+    {
+        return $this->hasMany(SiteSearchConsoleSitemap::class);
+    }
+
+    /**
+     * @return HasMany<SiteUrlInspection, $this>
+     */
+    public function urlInspections(): HasMany
+    {
+        return $this->hasMany(SiteUrlInspection::class);
+    }
+
+    /**
+     * @return HasMany<SitePageSpeedLabSnapshot, $this>
+     */
+    public function pagespeedLabSnapshots(): HasMany
+    {
+        return $this->hasMany(SitePageSpeedLabSnapshot::class);
+    }
+
+    /**
+     * @return HasMany<SiteCruxSnapshot, $this>
+     */
+    public function cruxSnapshots(): HasMany
+    {
+        return $this->hasMany(SiteCruxSnapshot::class);
     }
 
     /**

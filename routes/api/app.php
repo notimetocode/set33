@@ -16,6 +16,7 @@ use App\Http\Controllers\App\SiteEventController;
 use App\Http\Controllers\App\SiteGithubIntegrationController;
 use App\Http\Controllers\App\SiteGoogleIntegrationController;
 use App\Http\Controllers\App\SiteMetricsController;
+use App\Http\Controllers\App\SitePageSpeedIntegrationController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', LoginController::class)
@@ -98,12 +99,24 @@ Route::middleware(['auth:sanctum', 'ability:app'])->group(function (): void {
         ->middleware('throttle:github-commits-sync')
         ->name('app.sites.github-integration.sync');
 
+    Route::get('/sites/{site}/pagespeed-integration', [SitePageSpeedIntegrationController::class, 'show'])
+        ->name('app.sites.pagespeed-integration.show');
+    Route::put('/sites/{site}/pagespeed-integration', [SitePageSpeedIntegrationController::class, 'update'])
+        ->name('app.sites.pagespeed-integration.update');
+    Route::delete('/sites/{site}/pagespeed-integration', [SitePageSpeedIntegrationController::class, 'destroy'])
+        ->name('app.sites.pagespeed-integration.destroy');
+    Route::post('/sites/{site}/pagespeed-integration/sync', [SitePageSpeedIntegrationController::class, 'sync'])
+        ->middleware('throttle:pagespeed-sync')
+        ->name('app.sites.pagespeed-integration.sync');
+
     Route::get('/sites/{site}/metrics/analytics', [SiteMetricsController::class, 'analytics'])
         ->name('app.sites.metrics.analytics');
     Route::get('/sites/{site}/metrics/search-console', [SiteMetricsController::class, 'searchConsole'])
         ->name('app.sites.metrics.search-console');
     Route::get('/sites/{site}/metrics/github-commits', [SiteMetricsController::class, 'githubCommits'])
         ->name('app.sites.metrics.github-commits');
+    Route::get('/sites/{site}/metrics/pagespeed', [SiteMetricsController::class, 'pagespeed'])
+        ->name('app.sites.metrics.pagespeed');
 
     Route::get('/sites/{site}/events', [SiteEventController::class, 'index'])
         ->name('app.sites.events.index');

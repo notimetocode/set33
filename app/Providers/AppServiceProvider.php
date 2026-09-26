@@ -75,6 +75,10 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by((string) ($request->user()?->id ?: $request->ip()));
         });
 
+        RateLimiter::for('pagespeed-sync', function (Request $request) {
+            return Limit::perMinute(4)->by((string) ($request->user()?->id ?: $request->ip()));
+        });
+
         RateLimiter::for('ai-report-unlock', function (Request $request) {
             return Limit::perMinute(10)->by(Str::transliterate(
                 Str::lower($request->route('token') ?? '').'|'.$request->ip()

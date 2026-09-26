@@ -71,6 +71,7 @@ class SiteGithubCommitsSyncTest extends TestCase
         $this->postJson("/api/app/sites/{$site->id}/github-integration/sync", [
             'from' => '2026-09-20',
             'to' => '2026-09-20',
+            'metrics' => ['commits'],
         ])
             ->assertOk()
             ->assertJsonPath('data.repository_full_name', 'octocat/hello-world')
@@ -85,6 +86,92 @@ class SiteGithubCommitsSyncTest extends TestCase
         $this->assertNotNull($site->githubIntegration()->first()?->last_synced_at);
     }
 
+    public function test_sync_requires_metrics_selection(): void
+    {
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create();
+        $connection = GithubConnection::factory()->for($user)->withoutExpiry()->create();
+        SiteGithubIntegration::factory()->for($site)->create([
+            'github_connection_id' => $connection->id,
+            'repository_owner' => 'octocat',
+            'repository_name' => 'hello-world',
+            'repository_full_name' => 'octocat/hello-world',
+            'default_branch' => 'main',
+        ]);
+
+        $this->postJson("/api/app/sites/{$site->id}/github-integration/sync", [
+            'from' => '2026-09-20',
+            'to' => '2026-09-20',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['metrics']);
+    }
+
+    public function test_sync_wipes_previous_commits(): void
+    {
+        Http::preventStrayRequests();
+
+        config([
+            'services.github.api_base_url' => 'https://api.github.com',
+        ]);
+
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create();
+        $connection = GithubConnection::factory()->for($user)->withoutExpiry()->create([
+            'access_token' => 'gho_test_token',
+        ]);
+        SiteGithubIntegration::factory()->for($site)->create([
+            'github_connection_id' => $connection->id,
+            'repository_owner' => 'octocat',
+            'repository_name' => 'hello-world',
+            'repository_full_name' => 'octocat/hello-world',
+            'default_branch' => 'main',
+        ]);
+
+        SiteGithubCommit::factory()->for($site)->create([
+            'sha' => 'oldcommitsha01',
+            'message' => 'Old commit',
+        ]);
+
+        Http::fake([
+            'api.github.com/repos/octocat/hello-world/commits*' => Http::response([
+                [
+                    'sha' => 'abc123def456',
+                    'html_url' => 'https://github.com/octocat/hello-world/commit/abc123def456',
+                    'commit' => [
+                        'message' => 'New commit',
+                        'author' => [
+                            'name' => 'Octocat',
+                            'email' => 'octocat@example.com',
+                            'date' => '2026-09-20T12:00:00Z',
+                        ],
+                        'committer' => [
+                            'name' => 'GitHub',
+                            'email' => 'noreply@github.com',
+                            'date' => '2026-09-20T12:00:00Z',
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $this->postJson("/api/app/sites/{$site->id}/github-integration/sync", [
+            'from' => '2026-09-20',
+            'to' => '2026-09-20',
+            'metrics' => ['commits'],
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('site_github_commits', [
+            'site_id' => $site->id,
+            'sha' => 'oldcommitsha01',
+        ]);
+
+        $this->assertDatabaseHas('site_github_commits', [
+            'site_id' => $site->id,
+            'sha' => 'abc123def456',
+        ]);
+    }
+
     public function test_sync_requires_configured_repository(): void
     {
         $user = $this->actingAsAppUser();
@@ -93,6 +180,7 @@ class SiteGithubCommitsSyncTest extends TestCase
         $this->postJson("/api/app/sites/{$site->id}/github-integration/sync", [
             'from' => '2026-09-01',
             'to' => '2026-09-20',
+            'metrics' => ['commits'],
         ])
             ->assertStatus(422)
             ->assertJsonPath('message', 'Сначала привяжите репозиторий и ветку GitHub к сайту.');
