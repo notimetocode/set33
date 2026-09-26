@@ -69,6 +69,7 @@ return [
     ],
 
     'pagespeed' => [
+        'api_key' => env('PAGESPEED_API_KEY'),
         'psi_base_url' => env('PAGESPEED_PSI_BASE_URL', 'https://www.googleapis.com'),
     ],
 

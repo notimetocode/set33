@@ -1057,19 +1057,35 @@
                 >
                     <div class="page-app-sites__panel-head">
                         <h2 class="h5 mb-0">AI отчёт</h2>
-                        <button
+                        <div
                             v-if="isAiReportOpen"
-                            type="button"
-                            class="btn btn-outline-primary btn-sm page-app-sites__ai-report-share-btn"
-                            :disabled="aiReportLoading || !selectedAiReportId || aiReportSharingSaving"
-                            @click="openAiReportSharingModal"
+                            class="page-app-sites__ai-report-toolbar"
                         >
-                            <FontAwesomeIcon
-                                :icon="['fas', 'share-nodes']"
-                                aria-hidden="true"
-                            />
-                            <span>Поделиться</span>
-                        </button>
+                            <button
+                                type="button"
+                                class="btn btn-outline-primary btn-sm page-app-sites__ai-report-share-btn"
+                                :disabled="aiReportLoading || aiReportPdfExporting || !aiReportReply"
+                                @click="onDownloadAiReportPdf"
+                            >
+                                <FontAwesomeIcon
+                                    :icon="['fas', 'file-pdf']"
+                                    aria-hidden="true"
+                                />
+                                <span>{{ aiReportPdfExporting ? 'Сохранение…' : 'Скачать PDF' }}</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-outline-primary btn-sm page-app-sites__ai-report-share-btn"
+                                :disabled="aiReportLoading || !selectedAiReportId || aiReportSharingSaving || aiReportPdfExporting"
+                                @click="openAiReportSharingModal"
+                            >
+                                <FontAwesomeIcon
+                                    :icon="['fas', 'share-nodes']"
+                                    aria-hidden="true"
+                                />
+                                <span>Поделиться</span>
+                            </button>
+                        </div>
                     </div>
 
                     <template v-if="isAiReportOpen">
@@ -1077,7 +1093,7 @@
                             <button
                                 type="button"
                                 class="btn btn-secondary"
-                                :disabled="aiReportLoading || aiReportSharingSaving"
+                                :disabled="aiReportLoading || aiReportSharingSaving || aiReportPdfExporting"
                                 @click="onBackFromAiReport"
                             >
                                 Назад
@@ -1108,11 +1124,15 @@
                                         {{ aiReportModel }}
                                     </span>
                                 </div>
-                                <AppAiReportBody
+                                <div
+                                    ref="aiReportExportEl"
                                     class="page-app-sites__ai-report-reply-body"
-                                    :source="aiReportReply"
-                                    :charts="aiReportCharts"
-                                />
+                                >
+                                    <AppAiReportBody
+                                        :source="aiReportReply"
+                                        :charts="aiReportCharts"
+                                    />
+                                </div>
                             </div>
 
                             <div
@@ -1867,6 +1887,10 @@ import SiteIntegrationCard from '../../components/SiteIntegrationCard.vue';
 import AppAiReportBody from '../../../shared/components/AppAiReportBody.vue';
 import AppLoader from '../../../shared/components/AppLoader.vue';
 import AppModal from '../../../shared/components/AppModal.vue';
+import {
+    buildAiReportPdfFilename,
+    downloadAiReportPdf,
+} from '../../../shared/exportAiReportPdf';
 import { toast } from '../../../shared/toast';
 import { listAiServices } from '../../api/aiServices';
 import {
@@ -1978,6 +2002,8 @@ const aiReportsError = ref('');
 const aiReportsLoaded = ref(false);
 const selectedAiReportId = ref('');
 const activeAiReportTab = ref('saved');
+const aiReportExportEl = ref(null);
+const aiReportPdfExporting = ref(false);
 const aiReportSharing = reactive({
     visibility: 'private',
     share_url: null,
@@ -2812,6 +2838,26 @@ function formatDataCounts(counts) {
         parts.push(`страны: ${counts.search_console_countries}`);
     }
 
+    if (counts.search_console_appearances) {
+        parts.push(`типы отображения: ${counts.search_console_appearances}`);
+    }
+
+    if (counts.search_console_sitemaps) {
+        parts.push(`sitemaps: ${counts.search_console_sitemaps}`);
+    }
+
+    if (counts.search_console_url_inspections) {
+        parts.push(`URL Inspection: ${counts.search_console_url_inspections}`);
+    }
+
+    if (counts.pagespeed_lab) {
+        parts.push(`PageSpeed lab: ${counts.pagespeed_lab}`);
+    }
+
+    if (counts.pagespeed_crux) {
+        parts.push(`CrUX: ${counts.pagespeed_crux}`);
+    }
+
     if (counts.github_commits) {
         parts.push(`GitHub: ${counts.github_commits}`);
     }
@@ -2903,6 +2949,48 @@ async function onOpenAiReport(report) {
         aiReportError.value = e.response?.data?.message || 'Не удалось загрузить отчёт';
     } finally {
         aiReportLoading.value = false;
+    }
+}
+
+async function onDownloadAiReportPdf() {
+    if (!aiReportExportEl.value || !aiReportReply.value || aiReportPdfExporting.value) {
+        return;
+    }
+
+    aiReportPdfExporting.value = true;
+
+    try {
+        const from = period.from ? formatDate(period.from) : '';
+        const to = period.to ? formatDate(period.to) : '';
+        const subtitleParts = [];
+
+        if (from || to) {
+            subtitleParts.push(`Период: ${from || '—'} — ${to || '—'}`);
+        }
+
+        if (aiReportModel.value) {
+            subtitleParts.push(aiReportModel.value);
+        }
+
+        await downloadAiReportPdf({
+            element: aiReportExportEl.value,
+            filename: buildAiReportPdfFilename({
+                siteName: site.value?.name,
+                periodFrom: period.from,
+                periodTo: period.to,
+            }),
+            title: site.value?.name || 'AI-отчёт',
+            subtitle: subtitleParts.join(' · '),
+        });
+
+        toast.show({ message: 'PDF сохранён' });
+    } catch (e) {
+        toast.show({
+            message: e?.message || 'Не удалось сохранить PDF',
+            ok: false,
+        });
+    } finally {
+        aiReportPdfExporting.value = false;
     }
 }
 

@@ -18,10 +18,17 @@ class BuildSiteAiReportPrompt
      *     queries: list<array<string, mixed>>,
      *     pages: list<array<string, mixed>>,
      *     devices: list<array<string, mixed>>,
-     *     countries: list<array<string, mixed>>
+     *     countries: list<array<string, mixed>>,
+     *     search_appearances?: list<array<string, mixed>>,
+     *     sitemaps?: list<array<string, mixed>>,
+     *     url_inspections?: list<array<string, mixed>>
      * }  $searchConsoleDimensions
      * @param  list<array<string, mixed>>  $commits
      * @param  list<array<string, mixed>>  $events
+     * @param  array{
+     *     lab?: list<array<string, mixed>>,
+     *     crux?: list<array<string, mixed>>
+     * }  $pageSpeed
      */
     public function handle(
         Site $site,
@@ -32,12 +39,14 @@ class BuildSiteAiReportPrompt
         array $searchConsoleDimensions,
         array $commits,
         array $events = [],
+        array $pageSpeed = [],
     ): string {
         $sections = [
             $this->instructions(),
             $this->siteContext($site, $from, $to),
             $this->analyticsSection($analytics),
             $this->searchConsoleSection($searchConsole, $searchConsoleDimensions),
+            $this->pageSpeedSection($pageSpeed),
             $this->commitsSection($commits),
             $this->eventsSection($events),
         ];
@@ -54,16 +63,20 @@ class BuildSiteAiReportPrompt
 1. Найди закономерности, тренды и аномалии в метриках за указанный период.
 2. Оцени динамику органического трафика (GA4: organic_*) и поисковой видимости (Search Console: клики, показы, CTR, средняя позиция).
 3. Разбери топ-запросы и топ-страницы: что даёт клики, где высокий CTR или слабая позиция при больших показах; учти разрезы по устройствам и странам.
-4. Сопоставь изменения метрик с активностью разработки (коммиты GitHub), если такие данные есть: возможные корреляции деплоев/изменений с ростом или падением показателей.
-5. Учти ручные события периода (упоминания в СМИ, публикации, акции, инциденты и т.п.): оцени их возможное влияние на трафик и видимость.
-6. Выдели сильные стороны, риски и конкретные гипотезы для улучшения SEO.
-7. Если какого-то источника данных нет или он пуст — явно укажи это и не выдумывай цифры.
+4. Учти типы отображения в поиске, sitemaps и URL Inspection: ошибки индексации, проблемы обхода, расхождения canonical.
+5. Оцени скорость и Core Web Vitals (PageSpeed lab и CrUX field data): LCP, INP, CLS, TTFB и связанные метрики; свяжи с SEO и UX, если данные есть.
+6. Сопоставь изменения метрик с активностью разработки (коммиты GitHub), если такие данные есть: возможные корреляции деплоев/изменений с ростом или падением показателей.
+7. Учти ручные события периода (упоминания в СМИ, публикации, акции, инциденты и т.п.): оцени их возможное влияние на трафик и видимость.
+8. Выдели сильные стороны, риски и конкретные гипотезы для улучшения SEO.
+9. Если какого-то источника данных нет или он пуст — явно укажи это и не выдумывай цифры.
 
 Структура отчёта (используй Markdown):
 ## Краткое резюме
 ## Динамика и закономерности
 ## Органический трафик и видимость
 ## Запросы, страницы, устройства и страны
+## Индексация и техническое SEO
+## Скорость и Core Web Vitals
 ## Связь с разработкой
 ## События и внешние факторы
 ## Рекомендации
@@ -185,7 +198,8 @@ PROMPT;
 
         if (($dimensions['sitemaps'] ?? []) !== []) {
             $parts[] = "### Sitemaps\n"
-                ."Поля: path, type, errors, warnings, is_pending, last_downloaded_at.\n"
+                .'Поля: path, type, is_pending, is_sitemaps_index, last_downloaded_at, '
+                ."last_submitted_at, errors, warnings, contents.\n"
                 ."```json\n"
                 .$this->encodeJson($dimensions['sitemaps'])
                 ."\n```";
@@ -193,11 +207,54 @@ PROMPT;
 
         if (($dimensions['url_inspections'] ?? []) !== []) {
             $parts[] = "### URL Inspection\n"
-                .'Поля: inspected_url, verdict, page_fetch_state, indexing_state, '
-                ."coverage_state, last_crawl_time.\n"
+                .'Поля: inspected_url, verdict, coverage_state, indexing_state, page_fetch_state, '
+                .'robots_txt_state, crawled_as, last_crawl_time, google_canonical, user_canonical, '
+                ."referring_urls, sitemaps, inspected_at.\n"
                 ."```json\n"
                 .$this->encodeJson($dimensions['url_inspections'])
                 ."\n```";
+        }
+
+        return implode("\n\n", $parts);
+    }
+
+    /**
+     * @param  array{
+     *     lab?: list<array<string, mixed>>,
+     *     crux?: list<array<string, mixed>>
+     * }  $pageSpeed
+     */
+    private function pageSpeedSection(array $pageSpeed): string
+    {
+        $lab = $pageSpeed['lab'] ?? [];
+        $crux = $pageSpeed['crux'] ?? [];
+
+        if ($lab === [] && $crux === []) {
+            return "## PageSpeed Insights / CrUX\nДанные отсутствуют.";
+        }
+
+        $parts = ['## PageSpeed Insights / CrUX'];
+
+        if ($lab !== []) {
+            $parts[] = "### Lab (Lighthouse)\n"
+                .'Поля: url, strategy, fetched_at, performance_score, lcp_ms, inp_ms, cls, '
+                ."fcp_ms, ttfb_ms, tbt_ms, speed_index_ms.\n"
+                ."```json\n"
+                .$this->encodeJson($lab)
+                ."\n```";
+        } else {
+            $parts[] = "### Lab (Lighthouse)\nДанные отсутствуют.";
+        }
+
+        if ($crux !== []) {
+            $parts[] = "### CrUX (field data)\n"
+                .'Поля: scope (origin|url), url, form_factor, collection_period_start, '
+                ."collection_period_end, lcp_p75_ms, inp_p75_ms, cls_p75, fcp_p75_ms, ttfb_p75_ms, fetched_at.\n"
+                ."```json\n"
+                .$this->encodeJson($crux)
+                ."\n```";
+        } else {
+            $parts[] = "### CrUX (field data)\nДанные отсутствуют.";
         }
 
         return implode("\n\n", $parts);

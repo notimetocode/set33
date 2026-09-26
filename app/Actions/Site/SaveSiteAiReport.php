@@ -33,6 +33,11 @@ class SaveSiteAiReport
      *         search_console_pages?: int,
      *         search_console_devices?: int,
      *         search_console_countries?: int,
+     *         search_console_appearances?: int,
+     *         search_console_sitemaps?: int,
+     *         search_console_url_inspections?: int,
+     *         pagespeed_lab?: int,
+     *         pagespeed_crux?: int,
      *         github_commits: int,
      *         events: int
      *     }

@@ -128,12 +128,51 @@ class PageSpeedIntegrationTest extends TestCase
             ->assertJsonPath('message', 'Сначала подключите PageSpeed Insights к сайту.');
     }
 
+    public function test_quota_error_without_api_key_is_translated(): void
+    {
+        Http::preventStrayRequests();
+
+        config([
+            'services.pagespeed.psi_base_url' => 'https://www.googleapis.com',
+            'services.pagespeed.api_key' => null,
+        ]);
+
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create([
+            'url' => 'https://example.com/',
+        ]);
+        $connection = GoogleConnection::factory()->for($user)->create();
+        SitePageSpeedIntegration::factory()->create([
+            'site_id' => $site->id,
+            'google_connection_id' => $connection->id,
+            'strategy' => 'mobile',
+        ]);
+
+        Http::fake([
+            'www.googleapis.com/pagespeedonline/v5/runPagespeed*' => Http::response([
+                'error' => [
+                    'message' => "Quota exceeded for quota metric 'Queries' and limit 'Queries per day' of service 'pagespeedonline.googleapis.com'",
+                ],
+            ], 429),
+        ]);
+
+        $this->postJson("/api/app/sites/{$site->id}/pagespeed-integration/sync", [
+            'metrics' => ['psi_lab'],
+        ])
+            ->assertStatus(422)
+            ->assertJsonPath(
+                'message',
+                'Превышена дневная квота PageSpeed Insights. Укажите PAGESPEED_API_KEY в .env (ключ Google Cloud с включённым PageSpeed Insights API).',
+            );
+    }
+
     public function test_sync_stores_lab_and_crux_and_wipes_previous(): void
     {
         Http::preventStrayRequests();
 
         config([
             'services.pagespeed.psi_base_url' => 'https://www.googleapis.com',
+            'services.pagespeed.api_key' => 'test-pagespeed-server-key',
         ]);
 
         $user = $this->actingAsAppUser();
@@ -165,6 +204,11 @@ class PageSpeedIntegrationTest extends TestCase
         ])
             ->assertOk()
             ->assertJsonPath('data.status', 'active');
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'pagespeedonline/v5/runPagespeed')
+                && $request['key'] === 'test-pagespeed-server-key';
+        });
 
         $this->assertDatabaseCount('site_pagespeed_lab_snapshots', 1);
         $this->assertDatabaseHas('site_pagespeed_lab_snapshots', [

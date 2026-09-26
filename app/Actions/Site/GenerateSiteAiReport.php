@@ -46,6 +46,8 @@ class GenerateSiteAiReport
      *         search_console_appearances: int,
      *         search_console_sitemaps: int,
      *         search_console_url_inspections: int,
+     *         pagespeed_lab: int,
+     *         pagespeed_crux: int,
      *         github_commits: int,
      *         events: int
      *     }
@@ -56,6 +58,7 @@ class GenerateSiteAiReport
         $analytics = $this->loadAnalytics($site, $from, $to);
         $searchConsole = $this->loadSearchConsole($site, $from, $to);
         $searchConsoleDimensions = $this->loadSearchConsoleDimensions($site, $from, $to);
+        $pageSpeed = $this->loadPageSpeed($site);
         $commits = $this->loadCommits($site, $from, $to);
         $events = $this->loadEvents($site, $from, $to);
 
@@ -69,6 +72,8 @@ class GenerateSiteAiReport
             'search_console_appearances' => count($searchConsoleDimensions['search_appearances']),
             'search_console_sitemaps' => count($searchConsoleDimensions['sitemaps']),
             'search_console_url_inspections' => count($searchConsoleDimensions['url_inspections']),
+            'pagespeed_lab' => count($pageSpeed['lab']),
+            'pagespeed_crux' => count($pageSpeed['crux']),
             'github_commits' => count($commits),
             'events' => count($events),
         ];
@@ -82,6 +87,8 @@ class GenerateSiteAiReport
             && $dataCounts['search_console_appearances'] === 0
             && $dataCounts['search_console_sitemaps'] === 0
             && $dataCounts['search_console_url_inspections'] === 0
+            && $dataCounts['pagespeed_lab'] === 0
+            && $dataCounts['pagespeed_crux'] === 0
             && $dataCounts['github_commits'] === 0
         ) {
             return [
@@ -105,6 +112,7 @@ class GenerateSiteAiReport
             $searchConsoleDimensions,
             $commits,
             $events,
+            $pageSpeed,
         );
 
         $result = $this->generateContent->handle($aiService, $prompt);
@@ -241,27 +249,89 @@ class GenerateSiteAiReport
                 ->all(),
             'sitemaps' => $site->searchConsoleSitemaps()
                 ->orderByDesc('errors')
+                ->orderByDesc('warnings')
                 ->orderBy('path')
                 ->get()
                 ->map(fn ($row) => [
                     'path' => $row->path,
                     'type' => $row->type,
+                    'is_pending' => $row->is_pending,
+                    'is_sitemaps_index' => $row->is_sitemaps_index,
+                    'last_downloaded_at' => $row->last_downloaded_at?->toIso8601String(),
+                    'last_submitted_at' => $row->last_submitted_at?->toIso8601String(),
                     'errors' => $row->errors,
                     'warnings' => $row->warnings,
-                    'is_pending' => $row->is_pending,
-                    'last_downloaded_at' => $row->last_downloaded_at?->toIso8601String(),
+                    'contents' => $row->contents ?? [],
                 ])
                 ->all(),
             'url_inspections' => $site->urlInspections()
                 ->orderByDesc('inspected_at')
+                ->orderBy('inspected_url')
                 ->get()
                 ->map(fn ($row) => [
                     'inspected_url' => $row->inspected_url,
                     'verdict' => $row->verdict,
-                    'page_fetch_state' => $row->page_fetch_state,
-                    'indexing_state' => $row->indexing_state,
                     'coverage_state' => $row->coverage_state,
+                    'indexing_state' => $row->indexing_state,
+                    'page_fetch_state' => $row->page_fetch_state,
+                    'robots_txt_state' => $row->robots_txt_state,
+                    'crawled_as' => $row->crawled_as,
                     'last_crawl_time' => $row->last_crawl_time?->toIso8601String(),
+                    'google_canonical' => $row->google_canonical,
+                    'user_canonical' => $row->user_canonical,
+                    'referring_urls' => $row->referring_urls ?? [],
+                    'sitemaps' => $row->sitemaps ?? [],
+                    'inspected_at' => $row->inspected_at?->toIso8601String(),
+                ])
+                ->all(),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     lab: list<array<string, mixed>>,
+     *     crux: list<array<string, mixed>>
+     * }
+     */
+    private function loadPageSpeed(Site $site): array
+    {
+        return [
+            'lab' => $site->pagespeedLabSnapshots()
+                ->orderByDesc('fetched_at')
+                ->orderByDesc('id')
+                ->limit(20)
+                ->get()
+                ->map(fn ($row) => [
+                    'url' => $row->url,
+                    'strategy' => $row->strategy,
+                    'fetched_at' => $row->fetched_at?->toIso8601String(),
+                    'performance_score' => $row->performance_score,
+                    'lcp_ms' => $row->lcp_ms,
+                    'inp_ms' => $row->inp_ms,
+                    'cls' => $row->cls,
+                    'fcp_ms' => $row->fcp_ms,
+                    'ttfb_ms' => $row->ttfb_ms,
+                    'tbt_ms' => $row->tbt_ms,
+                    'speed_index_ms' => $row->speed_index_ms,
+                ])
+                ->all(),
+            'crux' => $site->cruxSnapshots()
+                ->orderByDesc('fetched_at')
+                ->orderByDesc('id')
+                ->limit(40)
+                ->get()
+                ->map(fn ($row) => [
+                    'scope' => $row->scope,
+                    'url' => $row->url,
+                    'form_factor' => $row->form_factor,
+                    'collection_period_start' => $row->collection_period_start?->toDateString(),
+                    'collection_period_end' => $row->collection_period_end?->toDateString(),
+                    'lcp_p75_ms' => $row->lcp_p75_ms,
+                    'inp_p75_ms' => $row->inp_p75_ms,
+                    'cls_p75' => $row->cls_p75,
+                    'fcp_p75_ms' => $row->fcp_p75_ms,
+                    'ttfb_p75_ms' => $row->ttfb_p75_ms,
+                    'fetched_at' => $row->fetched_at?->toIso8601String(),
                 ])
                 ->all(),
         ];

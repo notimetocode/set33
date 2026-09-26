@@ -7,10 +7,14 @@ use App\Models\AiService;
 use App\Models\Site;
 use App\Models\SiteAiReport;
 use App\Models\SiteAnalyticsDaily;
+use App\Models\SiteCruxSnapshot;
 use App\Models\SiteEvent;
 use App\Models\SiteGithubCommit;
+use App\Models\SitePageSpeedLabSnapshot;
 use App\Models\SiteSearchConsoleDaily;
 use App\Models\SiteSearchConsoleDimension;
+use App\Models\SiteSearchConsoleSitemap;
+use App\Models\SiteUrlInspection;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -243,6 +247,42 @@ class SiteAiReportTest extends TestCase
             'ctr' => 0.051,
             'position' => 7.0,
         ]);
+        SiteSearchConsoleDimension::factory()->for($site)->create([
+            'period_from' => '2026-09-01',
+            'period_to' => '2026-09-07',
+            'dimension' => SearchConsoleDimension::SearchAppearance,
+            'value' => 'RICH_RESULT',
+            'rank' => 1,
+            'clicks' => 5,
+            'impressions' => 80,
+            'ctr' => 0.0625,
+            'position' => 2.1,
+        ]);
+        SiteSearchConsoleSitemap::factory()->for($site)->create([
+            'path' => 'https://example.com/sitemap.xml',
+            'errors' => 2,
+            'warnings' => 1,
+            'is_sitemaps_index' => false,
+        ]);
+        SiteUrlInspection::factory()->for($site)->create([
+            'inspected_url' => 'https://example.com/bikes',
+            'verdict' => 'PASS',
+            'page_fetch_state' => 'SUCCESSFUL',
+            'robots_txt_state' => 'ALLOWED',
+            'google_canonical' => 'https://example.com/bikes',
+        ]);
+        SitePageSpeedLabSnapshot::factory()->for($site)->create([
+            'url' => 'https://example.com/',
+            'strategy' => 'mobile',
+            'performance_score' => 91,
+            'lcp_ms' => 2100,
+        ]);
+        SiteCruxSnapshot::factory()->for($site)->create([
+            'scope' => 'origin',
+            'url' => 'https://example.com',
+            'form_factor' => 'PHONE',
+            'lcp_p75_ms' => 2400,
+        ]);
         SiteGithubCommit::factory()->for($site)->create([
             'message' => "Improve SEO meta\n\nDetails",
             'author_date' => '2026-09-02 10:00:00',
@@ -275,6 +315,11 @@ class SiteAiReportTest extends TestCase
             ->assertJsonPath('data_counts.search_console_pages', 1)
             ->assertJsonPath('data_counts.search_console_devices', 1)
             ->assertJsonPath('data_counts.search_console_countries', 1)
+            ->assertJsonPath('data_counts.search_console_appearances', 1)
+            ->assertJsonPath('data_counts.search_console_sitemaps', 1)
+            ->assertJsonPath('data_counts.search_console_url_inspections', 1)
+            ->assertJsonPath('data_counts.pagespeed_lab', 1)
+            ->assertJsonPath('data_counts.pagespeed_crux', 1)
             ->assertJsonPath('data_counts.github_commits', 1)
             ->assertJsonPath('data_counts.events', 1);
 
@@ -315,6 +360,15 @@ class SiteAiReportTest extends TestCase
                 && str_contains($prompt, 'MOBILE')
                 && str_contains($prompt, 'Страны')
                 && str_contains($prompt, 'rus')
+                && str_contains($prompt, 'RICH_RESULT')
+                && str_contains($prompt, 'Sitemaps')
+                && str_contains($prompt, 'https://example.com/sitemap.xml')
+                && str_contains($prompt, 'is_sitemaps_index')
+                && str_contains($prompt, 'URL Inspection')
+                && str_contains($prompt, 'robots_txt_state')
+                && str_contains($prompt, 'PageSpeed Insights / CrUX')
+                && str_contains($prompt, '"performance_score":91')
+                && str_contains($prompt, '"lcp_p75_ms":2400')
                 && str_contains($prompt, 'Improve SEO meta')
                 && str_contains($prompt, '"organic_sessions":40')
                 && str_contains($prompt, 'На портале Onliner вышла статья про наш сайт')

@@ -25,6 +25,8 @@
         "bootstrap": "^5.3.8",
         "chart.js": "^4.5.1",
         "dompurify": "^3.4.15",
+        "html2canvas": "^1.4.1",
+        "jspdf": "^4.2.1",
         "marked": "^18.0.14",
         "vue": "^3.5.42",
         "vue-router": "^5.3.1"

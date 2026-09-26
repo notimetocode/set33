@@ -1,5 +1,5 @@
 import { createApp } from 'vue';
-import AppAiReportBody from '../shared/components/AppAiReportBody.vue';
+import SharedAiReportApp from './SharedAiReportApp.vue';
 
 function mountSharedAiReport() {
     const root = document.querySelector('[data-shared-ai-report]');
@@ -17,9 +17,13 @@ function mountSharedAiReport() {
         payload = {};
     }
 
-    createApp(AppAiReportBody, {
+    createApp(SharedAiReportApp, {
         source: payload.reply || '',
         charts: Array.isArray(payload.charts) ? payload.charts : [],
+        siteName: payload.site?.name || '',
+        periodFrom: payload.period?.from || '',
+        periodTo: payload.period?.to || '',
+        formedAt: payload.created_at || '',
     }).mount(root);
 }
 

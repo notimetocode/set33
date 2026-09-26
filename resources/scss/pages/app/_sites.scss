@@ -391,6 +391,14 @@
     background: rgba($primary, 0.08);
   }
 
+  &__ai-report-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
   &__ai-report-share-btn {
     flex-shrink: 0;
     gap: 0.4rem;

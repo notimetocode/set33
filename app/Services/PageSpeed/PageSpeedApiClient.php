@@ -49,23 +49,34 @@ class PageSpeedApiClient
     public function runAudit(string $url, string $strategy): array
     {
         $baseUrl = rtrim((string) config('services.pagespeed.psi_base_url'), '/');
+        $apiKey = trim((string) config('services.pagespeed.api_key', ''));
+
+        $query = [
+            'url' => $url,
+            'strategy' => $strategy,
+            'category' => 'performance',
+        ];
+
+        if ($apiKey !== '') {
+            $query['key'] = $apiKey;
+        }
 
         try {
             $response = Http::baseUrl($baseUrl)
                 ->acceptJson()
                 ->connectTimeout(5)
                 ->timeout(90)
-                ->get('/pagespeedonline/v5/runPagespeed', [
-                    'url' => $url,
-                    'strategy' => $strategy,
-                    'category' => 'performance',
-                ]);
+                ->get('/pagespeedonline/v5/runPagespeed', $query);
         } catch (ConnectionException) {
             throw new RuntimeException('Не удалось подключиться к PageSpeed Insights API.');
         }
 
         if (! $response->successful()) {
-            throw new RuntimeException($this->errorMessage($response->json(), 'PageSpeed Insights API вернул ошибку.'));
+            throw new RuntimeException($this->errorMessage(
+                $response->json(),
+                'PageSpeed Insights API вернул ошибку.',
+                $apiKey === '',
+            ));
         }
 
         /** @var array<string, mixed> $json */
@@ -210,11 +221,21 @@ class PageSpeedApiClient
     /**
      * @param  array<string, mixed>|null  $json
      */
-    private function errorMessage(?array $json, string $fallback): string
+    private function errorMessage(?array $json, string $fallback, bool $missingApiKey = false): string
     {
         $message = $json['error']['message'] ?? null;
 
         if (is_string($message) && $message !== '') {
+            $normalized = mb_strtolower($message);
+
+            if (str_contains($normalized, 'quota') || str_contains($normalized, 'rate limit')) {
+                if ($missingApiKey) {
+                    return 'Превышена дневная квота PageSpeed Insights. Укажите PAGESPEED_API_KEY в .env (ключ Google Cloud с включённым PageSpeed Insights API).';
+                }
+
+                return 'Превышена квота PageSpeed Insights API. Попробуйте позже или увеличьте лимит в Google Cloud Console.';
+            }
+
             return mb_substr($message, 0, 500);
         }
 
