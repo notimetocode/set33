@@ -151,19 +151,42 @@
                 </button>
             </div>
         </form>
+
+        <section
+            class="page-app-profile__section page-app-profile__section--session"
+            aria-labelledby="profile-session-heading"
+        >
+            <h2 id="profile-session-heading" class="h6">Выход из аккаунта</h2>
+            <p class="page-app-profile__session-lead">
+                Завершить работу в личном кабинете на этом устройстве.
+            </p>
+            <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                :disabled="loggingOut"
+                @click="onLogout"
+            >
+                {{ loggingOut ? 'Выход…' : 'Выйти' }}
+            </button>
+        </section>
     </div>
 </template>
 
 <script setup>
 import { inject, onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import AppLoader from '../../shared/components/AppLoader.vue';
 import { toast } from '../../shared/toast';
+import { logout } from '../api/auth';
 import { getProfile, updateProfile } from '../api/profile';
+
+const router = useRouter();
 
 const refreshAppUser = inject('refreshAppUser', null);
 
 const loading = ref(true);
 const saving = ref(false);
+const loggingOut = ref(false);
 const loadError = ref('');
 const formError = ref('');
 const fieldErrors = ref({});
@@ -204,6 +227,17 @@ function buildPayload() {
         telegram: form.telegram || null,
         viber: form.viber || null,
     };
+}
+
+async function onLogout() {
+    loggingOut.value = true;
+
+    try {
+        await logout();
+        await router.push({ name: 'login' });
+    } finally {
+        loggingOut.value = false;
+    }
 }
 
 async function onSubmit() {

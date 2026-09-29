@@ -6,14 +6,6 @@
   @include soft-panel;
 }
 
-.metrics-coverage-timeline__title {
-  margin: 0;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--body-color, #{$body-color});
-}
-
 .metrics-coverage-timeline__empty {
   margin: 0;
   font-size: 0.8125rem;
@@ -62,15 +54,6 @@
   overflow: hidden;
 }
 
-.metrics-coverage-timeline__selected {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  border-radius: 999px;
-  background: rgba(11, 122, 75, 0.14);
-  pointer-events: none;
-}
-
 .metrics-coverage-timeline__bar {
   position: absolute;
   top: 0.1rem;
@@ -86,24 +69,6 @@
   font-weight: 600;
   color: var(--body-color, #{$body-color});
   text-align: right;
-}
-
-.metrics-coverage-timeline__legend {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-  font-size: 0.75rem;
-  line-height: 1.3;
-  color: var(--muted, #{$muted});
-}
-
-.metrics-coverage-timeline__legend-swatch {
-  width: 0.85rem;
-  height: 0.55rem;
-  border-radius: 999px;
-  background: rgba(11, 122, 75, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(11, 122, 75, 0.28);
 }
 
 @media (max-width: 767.98px) {

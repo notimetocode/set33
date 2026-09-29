@@ -22,8 +22,8 @@
                         class="page-home__brand"
                         src="{{ asset('images/logo.svg') }}"
                         alt="{{ config('app.name') }}"
-                        width="364"
-                        height="76"
+                        width="233"
+                        height="95"
                     >
 
                     <h1 id="home-hero-heading" class="page-home__headline">
@@ -84,7 +84,7 @@
                                 <circle cx="48" cy="36" r="5.5" class="page-home__step-svg-dot"/>
                                 <circle cx="120" cy="36" r="5.5" class="page-home__step-svg-dot page-home__step-svg-dot--mint"/>
                                 <circle cx="192" cy="36" r="5.5" class="page-home__step-svg-dot"/>
-                                <text x="48" y="56" text-anchor="middle" class="page-home__step-svg-label">GA4</text>
+                                <text x="48" y="56" text-anchor="middle" class="page-home__step-svg-label">Analytics</text>
                                 <text x="120" y="56" text-anchor="middle" class="page-home__step-svg-label">GSC</text>
                                 <text x="192" y="56" text-anchor="middle" class="page-home__step-svg-label">GitHub</text>
                                 <rect x="78" y="112" width="84" height="28" rx="10" class="page-home__step-svg-panel page-home__step-svg-panel--soft"/>

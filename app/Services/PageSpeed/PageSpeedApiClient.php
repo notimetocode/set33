@@ -148,7 +148,7 @@ class PageSpeedApiClient
         $parts = parse_url($url);
 
         if (! is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
-            throw new RuntimeException('Некорректный URL сайта для CrUX origin.');
+            throw new RuntimeException('Некорректный URL сайта для Chrome UX Report origin.');
         }
 
         return strtolower($parts['scheme']).'://'.strtolower($parts['host']);

@@ -2,7 +2,6 @@
     <div class="page-app-sites page-app-sites--show">
         <div class="page-app-sites__header">
             <div>
-                <p class="page-app-sites__eyebrow">Сайты</p>
                 <h1 class="page-app-sites__title">{{ site?.name || 'Сайт' }}</h1>
                 <p v-if="site" class="page-app-sites__lede">
                     <a :href="site.url" target="_blank" rel="noopener noreferrer">{{ site.url }}</a>
@@ -14,10 +13,12 @@
                     class="btn btn-secondary"
                     :to="{ name: 'sites.edit', params: { id: site.id } }"
                 >
-                    Изменить
+                    <FontAwesomeIcon :icon="['fas', 'pen']" aria-hidden="true" />
+                    <span>Изменить</span>
                 </RouterLink>
                 <RouterLink class="btn btn-secondary" :to="{ name: 'sites.index' }">
-                    К списку
+                    <FontAwesomeIcon :icon="['fas', 'arrow-left']" aria-hidden="true" />
+                    <span>К списку</span>
                 </RouterLink>
             </div>
         </div>
@@ -36,7 +37,7 @@
                     logo="/images/integrations/google-analytics.svg"
                     :connected="gaConnected"
                     :detail="gaDetail"
-                    empty-detail="Property GA4 не выбран"
+                    empty-detail="Property Google Analytics не выбран"
                     :disabled="busy"
                     @configure="openGaModal"
                 />
@@ -59,7 +60,7 @@
                     @configure="openGithubModal"
                 />
                 <SiteIntegrationCard
-                    title="PageSpeed / CrUX"
+                    title="PageSpeed / Chrome UX Report"
                     logo="/images/integrations/pagespeed.svg"
                     :connected="pagespeedConnected"
                     :detail="pagespeedDetail"
@@ -101,10 +102,11 @@
                     class="page-app-sites__panel page-app-sites__period mb-4"
                 >
                     <div class="page-app-sites__panel-head">
-                        <h2 class="h5 mb-0">Период данных</h2>
+                        <h2 class="h5 mb-0">Настройки выгрузки</h2>
                     </div>
                     <p class="text-muted small mb-3">
-                        Выберите даты для просмотра и выгрузки данных подключённых сервисов.
+                        Выберите период и данные для загрузки из подключённых сервисов.
+                        При загрузке предыдущие данные выбранных типов будут удалены.
                     </p>
                     <div class="page-app-sites__period-row">
                         <div class="page-app-sites__period-field">
@@ -132,42 +134,51 @@
                                 @change="onPeriodChange"
                             >
                         </div>
-                        <div class="page-app-sites__period-actions">
-                            <button
-                                type="button"
-                                class="btn btn-primary"
-                                :disabled="busy || !canSyncPeriod"
-                                @click="onSyncPeriod"
-                            >
-                                Загрузить данные
-                            </button>
-                        </div>
                     </div>
 
                     <div
                         v-if="availableSyncMetricGroups.length"
-                        class="page-app-sites__sync-metrics mt-3"
+                        class="page-app-sites__sync-metrics"
                     >
-                        <p class="text-muted small mb-2">
-                            Отметьте, какие данные загружать. При загрузке предыдущие данные выбранных типов будут удалены.
-                        </p>
                         <div
                             v-for="group in availableSyncMetricGroups"
                             :key="group.id"
                             class="page-app-sites__sync-metrics-group"
+                            :class="{ 'is-expanded': isSyncMetricGroupExpanded(group.id) }"
                         >
                             <div class="page-app-sites__sync-metrics-group-head">
-                                <span class="page-app-sites__sync-metrics-group-title">{{ group.label }}</span>
                                 <button
                                     type="button"
-                                    class="btn btn-link btn-sm p-0"
+                                    class="page-app-sites__sync-metrics-group-toggle"
+                                    :aria-expanded="isSyncMetricGroupExpanded(group.id) ? 'true' : 'false'"
+                                    :aria-controls="`sync-metrics-body-${group.id}`"
+                                    @click="toggleSyncMetricGroupExpanded(group.id)"
+                                >
+                                    <FontAwesomeIcon
+                                        class="page-app-sites__sync-metrics-group-chevron"
+                                        :icon="['fas', 'chevron-down']"
+                                        aria-hidden="true"
+                                    />
+                                    <span class="page-app-sites__sync-metrics-group-title">{{ group.label }}</span>
+                                    <span class="page-app-sites__sync-metrics-group-count">
+                                        {{ syncMetricGroupSelectedCount(group) }} из {{ group.metrics.length }}
+                                    </span>
+                                </button>
+                                <button
+                                    v-if="isSyncMetricGroupExpanded(group.id)"
+                                    type="button"
+                                    class="page-app-sites__sync-metrics-group-select"
                                     :disabled="busy"
                                     @click="toggleSyncMetricGroup(group)"
                                 >
                                     {{ isSyncMetricGroupFullySelected(group) ? 'Снять все' : 'Выбрать все' }}
                                 </button>
                             </div>
-                            <div class="page-app-sites__sync-metrics-list">
+                            <div
+                                v-show="isSyncMetricGroupExpanded(group.id)"
+                                :id="`sync-metrics-body-${group.id}`"
+                                class="page-app-sites__sync-metrics-list"
+                            >
                                 <div
                                     v-for="metric in group.metrics"
                                     :key="metric.key"
@@ -214,48 +225,87 @@
                             </div>
                         </div>
                     </div>
-                    <p v-if="integration?.last_synced_at" class="text-muted small mt-3 mb-0">
-                        Последняя загрузка Google: {{ formatDateTime(integration.last_synced_at) }}
-                    </p>
-                    <p v-if="githubIntegration?.last_synced_at" class="text-muted small mt-1 mb-0">
-                        Последняя загрузка GitHub: {{ formatDateTime(githubIntegration.last_synced_at) }}
-                    </p>
-                    <p v-if="pagespeedIntegration?.last_synced_at" class="text-muted small mt-1 mb-0">
-                        Последняя загрузка PageSpeed / CrUX: {{ formatDateTime(pagespeedIntegration.last_synced_at) }}
-                    </p>
-                    <p v-if="integration?.last_error" class="text-danger small mt-2 mb-0">
-                        Ошибка Google: {{ integration.last_error }}
-                    </p>
-                    <p v-if="githubIntegration?.last_error" class="text-danger small mt-2 mb-0">
-                        Ошибка GitHub: {{ githubIntegration.last_error }}
-                    </p>
-                    <p v-if="pagespeedIntegration?.last_error" class="text-danger small mt-2 mb-0">
-                        Ошибка PageSpeed / CrUX: {{ pagespeedIntegration.last_error }}
-                    </p>
 
-                    <div
-                        v-if="metricsCoverageItems.length || metricsCoverageEmpty"
-                        class="page-app-sites__data-coverage mt-3"
-                    >
-                        <h3 class="h6 mb-2">Выгруженные данные</h3>
-                        <ul
-                            v-if="metricsCoverageItems.length"
-                            class="page-app-sites__data-coverage-list"
+                    <div class="page-app-sites__period-actions">
+                        <button
+                            type="button"
+                            class="btn btn-primary"
+                            :disabled="busy || !canSyncPeriod"
+                            @click="onSyncPeriod"
                         >
+                            Загрузить данные
+                        </button>
+                    </div>
+                </section>
+
+                <section
+                    v-if="gaConnected || gscConnected || githubConnected || pagespeedConnected"
+                    class="page-app-sites__panel page-app-sites__sync-status mb-4"
+                    aria-label="Состояние выгрузки"
+                >
+                    <div class="page-app-sites__panel-head">
+                        <h2 class="h5 mb-0">Состояние выгрузки</h2>
+                    </div>
+
+                    <div class="page-app-sites__sync-status-section">
+                        <h3 class="page-app-sites__sync-status-title">Последняя загрузка</h3>
+                        <ul class="page-app-sites__sync-status-list">
                             <li
-                                v-for="item in metricsCoverageItems"
+                                v-for="item in syncStatusItems"
                                 :key="item.key"
-                                class="page-app-sites__data-coverage-item"
+                                class="page-app-sites__sync-status-item"
+                                :class="{ 'has-error': Boolean(item.error) }"
                             >
-                                <span class="page-app-sites__data-coverage-label">{{ item.label }}</span>
-                                <span class="page-app-sites__data-coverage-value">{{ item.period }}</span>
+                                <div class="page-app-sites__sync-status-item-main">
+                                    <span class="page-app-sites__sync-status-label">{{ item.label }}</span>
+                                    <span
+                                        class="page-app-sites__sync-status-value"
+                                        :class="{ 'is-empty': !item.at }"
+                                    >
+                                        {{ item.at ? formatDateTime(item.at) : 'Ещё не загружалось' }}
+                                    </span>
+                                </div>
+                                <p
+                                    v-if="item.error"
+                                    class="page-app-sites__sync-status-error"
+                                >
+                                    {{ item.error }}
+                                </p>
                             </li>
                         </ul>
+                    </div>
+
+                    <div class="page-app-sites__sync-status-section">
+                        <h3 class="page-app-sites__sync-status-title">Выгруженные данные</h3>
+                        <div
+                            v-if="metricsCoverageItems.length"
+                            class="table-responsive"
+                        >
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Источник</th>
+                                        <th>Период</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="item in metricsCoverageItems"
+                                        :key="item.key"
+                                    >
+                                        <td>{{ item.label }}</td>
+                                        <td>{{ item.period }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         <p
                             v-else
-                            class="text-muted small mb-0"
+                            class="page-app-sites__sync-status-empty"
                         >
-                            Выгруженных данных пока нет.
+                            {{ metricsCoverageLoaded
+                                ? 'Выгруженных данных пока нет.'
+                                : 'Загрузка сведений…' }}
                         </p>
                     </div>
                 </section>
@@ -293,11 +343,8 @@
                             role="tabpanel"
                             aria-labelledby="metrics-tab-ga4"
                         >
-                            <p class="text-muted small mb-3">
-                                «Орг.» — канал Organic Search (переходы из поисковых систем).
-                            </p>
                             <AppLoader v-if="metricsLoading" block label="Загрузка метрик…" />
-                            <div v-else-if="!gaConnected" class="text-muted">GA4 property не привязан</div>
+                            <div v-else-if="!gaConnected" class="text-muted">Google Analytics property не привязан</div>
                             <div v-else-if="!analyticsRows.length" class="text-muted">Нет данных за период</div>
                             <div v-else class="table-responsive">
                                 <table class="table table-sm align-middle mb-0">
@@ -651,7 +698,7 @@
                                     · URL: {{ pagespeedPageUrlsLabel }}
                                 </template>
                             </p>
-                            <AppLoader v-if="metricsLoading" block label="Загрузка PageSpeed / CrUX…" />
+                            <AppLoader v-if="metricsLoading" block label="Загрузка PageSpeed / Chrome UX Report…" />
                             <div v-else-if="!pagespeedConnected" class="text-muted">
                                 PageSpeed Insights не подключён
                             </div>
@@ -702,8 +749,8 @@
                                     </table>
                                 </div>
 
-                                <h3 class="h6 mb-2">CrUX (полевые данные)</h3>
-                                <div v-if="!pagespeedCruxRows.length" class="text-muted">Нет CrUX-снимков</div>
+                                <h3 class="h6 mb-2">Chrome UX Report (полевые данные)</h3>
+                                <div v-if="!pagespeedCruxRows.length" class="text-muted">Нет снимков Chrome UX Report</div>
                                 <div v-else class="table-responsive">
                                     <table class="table table-sm align-middle mb-0">
                                         <thead>
@@ -922,35 +969,8 @@
                                 :aria-labelledby="showEventTabs ? 'event-tab-saved' : undefined"
                             >
                                 <p class="text-muted small mb-3">
-                                    Выберите даты, чтобы просмотреть события и включить их в AI-отчёт.
+                                    События сайта за период отчёта передаются в AI-отчёт как дополнительный контекст.
                                 </p>
-                                <div class="page-app-sites__period-row mb-3">
-                                    <div class="page-app-sites__period-field">
-                                        <label class="form-label" for="events-from">С</label>
-                                        <input
-                                            id="events-from"
-                                            v-model="period.from"
-                                            type="date"
-                                            class="form-control"
-                                            :max="period.to || periodMax"
-                                            :disabled="busy || eventsLoading || eventSaving"
-                                            @change="onPeriodChange"
-                                        >
-                                    </div>
-                                    <div class="page-app-sites__period-field">
-                                        <label class="form-label" for="events-to">По</label>
-                                        <input
-                                            id="events-to"
-                                            v-model="period.to"
-                                            type="date"
-                                            class="form-control"
-                                            :min="period.from"
-                                            :max="periodMax"
-                                            :disabled="busy || eventsLoading || eventSaving"
-                                            @change="onPeriodChange"
-                                        >
-                                    </div>
-                                </div>
 
                                 <AppLoader
                                     v-if="eventsLoading"
@@ -961,34 +981,46 @@
                                     v-else-if="!eventRows.length"
                                     class="text-muted small mb-0"
                                 >
-                                    Нет событий за выбранный период
+                                    Пока нет событий
                                 </p>
                                 <div
                                     v-else
-                                    class="page-app-sites__event-cards"
+                                    class="page-app-sites__event-list"
                                     role="list"
                                 >
                                     <button
                                         v-for="row in eventRows"
                                         :key="row.id"
                                         type="button"
-                                        class="page-app-sites__event-card"
+                                        class="page-app-sites__event-card page-app-sites__event-card--wide"
                                         role="listitem"
                                         :disabled="busy || eventSaving"
-                                        @click="startEditEvent(row)"
+                                        @click="onEventRowClick(row)"
                                     >
-                                        <span class="page-app-sites__event-card-title">
-                                            {{ row.title }}
+                                        <span class="page-app-sites__event-card-head">
+                                            <span class="page-app-sites__event-card-title">
+                                                {{ row.title }}
+                                            </span>
+                                            <span class="page-app-sites__event-card-date">
+                                                {{ formatDate(row.occurred_on) }}
+                                            </span>
                                         </span>
                                         <span
                                             v-if="row.description"
                                             class="page-app-sites__event-card-meta"
                                         >
-                                            {{ eventCardDescription(row) }}
+                                            {{ row.description }}
                                         </span>
-                                        <span class="page-app-sites__event-card-date">
-                                            {{ formatDate(row.occurred_on) }}
-                                        </span>
+                                        <a
+                                            v-if="row.url"
+                                            class="page-app-sites__event-link"
+                                            :href="row.url"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            @click.stop
+                                        >
+                                            {{ row.url }}
+                                        </a>
                                     </button>
                                 </div>
                             </div>
@@ -1604,7 +1636,7 @@
                                 :aria-labelledby="showAiReportTabs ? 'ai-report-tab-new' : undefined"
                             >
                                 <p class="text-muted small mb-3">
-                                    В отчёт попадут данные GA4, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub, PageSpeed / CrUX, события и документы сайта. Срезы GSC появляются после загрузки метрик за тот же период
+                                    В отчёт попадут данные Google Analytics, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub, PageSpeed / Chrome UX Report, события и документы сайта. Срезы GSC появляются после загрузки метрик за тот же период
                                     (тот же, что на вкладках «Данные сервисов» и «События»).
                                 </p>
 
@@ -1768,7 +1800,7 @@
                     <p class="text-muted mb-3">
                         {{ connection?.needs_reauth
                             ? 'Нужна повторная авторизация Google.'
-                            : 'Подключите Google, чтобы выбрать GA4 property.' }}
+                            : 'Подключите Google, чтобы выбрать property Google Analytics.' }}
                     </p>
                     <button
                         type="button"
@@ -1785,7 +1817,7 @@
                 <div v-if="listsError" class="alert alert-danger py-2 mb-3">{{ listsError }}</div>
                 <AppLoader v-if="listsLoading" block label="Загрузка property…" />
                 <template v-else>
-                    <label class="form-label" for="ga4-property">GA4 property</label>
+                    <label class="form-label" for="ga4-property">Google Analytics property</label>
                     <select
                         id="ga4-property"
                         v-model="form.ga4_property_id"
@@ -2044,7 +2076,7 @@
 
         <AppModal
             v-model:open="pagespeedModalOpen"
-            title="PageSpeed Insights / CrUX"
+            title="PageSpeed Insights / Chrome UX Report"
             size="md"
             align="start"
             :show-confirm="false"
@@ -2078,7 +2110,7 @@
                     <p class="text-muted mb-3">
                         {{ connection?.needs_reauth
                             ? 'Нужна повторная авторизация Google.'
-                            : 'Подключите Google, чтобы включить PageSpeed Insights / CrUX.' }}
+                            : 'Подключите Google, чтобы включить PageSpeed Insights / Chrome UX Report.' }}
                     </p>
                     <button
                         type="button"
@@ -2264,13 +2296,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import SiteIntegrationCard from '../../components/SiteIntegrationCard.vue';
 import AppAiReportBody from '../../../shared/components/AppAiReportBody.vue';
 import AppLoader from '../../../shared/components/AppLoader.vue';
 import AppMetricsCoverageTimeline from '../../../shared/components/AppMetricsCoverageTimeline.vue';
 import AppModal from '../../../shared/components/AppModal.vue';
+import { setDynamicBreadcrumbLabel } from '../../../shared/dynamicBreadcrumbLabel';
 import {
     buildAiReportPdfFilename,
     downloadAiReportPdf,
@@ -2323,6 +2356,19 @@ import {
 const route = useRoute();
 
 const site = ref(null);
+
+watch(
+    () => site.value?.name,
+    (name) => {
+        setDynamicBreadcrumbLabel(name || null);
+    },
+    { immediate: true },
+);
+
+onUnmounted(() => {
+    setDynamicBreadcrumbLabel(null);
+});
+
 const connection = ref(null);
 const githubConnection = ref(null);
 const integration = ref(null);
@@ -2346,6 +2392,7 @@ const pagespeedLabRows = ref([]);
 const pagespeedCruxRows = ref([]);
 const metricsCoverage = ref(null);
 const metricsCoverageLoaded = ref(false);
+const periodDefaultsFromCoverageApplied = ref(false);
 const eventRows = ref([]);
 const documentRows = ref([]);
 
@@ -2457,10 +2504,10 @@ const documentTabs = [
 ];
 
 const metricsTabs = [
-    { id: 'ga4', label: 'GA4' },
+    { id: 'ga4', label: 'Google Analytics' },
     { id: 'gsc', label: 'Search Console' },
     { id: 'github', label: 'GitHub' },
-    { id: 'pagespeed', label: 'PageSpeed / CrUX' },
+    { id: 'pagespeed', label: 'PageSpeed / Chrome UX Report' },
 ];
 
 const pagespeedStrategyOptions = [
@@ -2528,7 +2575,7 @@ const metricsCoverageDefs = [
     },
     { key: 'github_commits', label: 'GitHub', available: () => githubConnected.value },
     { key: 'pagespeed_lab', label: 'PageSpeed Lab', available: () => pagespeedConnected.value },
-    { key: 'crux', label: 'CrUX', available: () => pagespeedConnected.value },
+    { key: 'crux', label: 'Chrome UX Report', available: () => pagespeedConnected.value },
 ];
 
 const metricsCoverageItems = computed(() => (
@@ -2575,6 +2622,37 @@ const metricsCoverageEmpty = computed(() => (
     && metricsCoverageDefs.some((item) => item.available())
     && metricsCoverageItems.value.length === 0
 ));
+
+const metricsCoverageBounds = computed(() => {
+    const items = aiReportCoverageTimelineItems.value;
+
+    if (!items.length) {
+        return null;
+    }
+
+    let from = items[0].from;
+    let to = items[0].to;
+
+    for (const item of items) {
+        if (item.from < from) {
+            from = item.from;
+        }
+
+        if (item.to > to) {
+            to = item.to;
+        }
+    }
+
+    if (to > periodMax) {
+        to = periodMax;
+    }
+
+    if (from > to) {
+        return null;
+    }
+
+    return { from, to };
+});
 
 const syncMetricGroups = [
     {
@@ -2638,12 +2716,12 @@ const syncMetricGroups = [
     },
     {
         id: 'pagespeed',
-        label: 'PageSpeed / CrUX',
+        label: 'PageSpeed / Chrome UX Report',
         available: () => pagespeedConnected.value,
         metrics: [
             { key: 'psi_lab', label: 'Lab (Lighthouse)', defaultSelected: true },
-            { key: 'crux_origin', label: 'CrUX origin', defaultSelected: true },
-            { key: 'crux_url', label: 'CrUX URL', defaultSelected: false, optional: true },
+            { key: 'crux_origin', label: 'Chrome UX Report origin', defaultSelected: true },
+            { key: 'crux_url', label: 'Chrome UX Report URL', defaultSelected: false, optional: true },
         ],
     },
 ];
@@ -2663,6 +2741,41 @@ const syncMetricLimits = reactive({
 const availableSyncMetricGroups = computed(() => (
     syncMetricGroups.filter((group) => group.available())
 ));
+
+const expandedSyncMetricGroups = reactive({});
+
+const syncStatusItems = computed(() => {
+    const items = [];
+
+    if (gaConnected.value || gscConnected.value) {
+        items.push({
+            key: 'google',
+            label: 'Google',
+            at: integration.value?.last_synced_at || null,
+            error: integration.value?.last_error || null,
+        });
+    }
+
+    if (githubConnected.value) {
+        items.push({
+            key: 'github',
+            label: 'GitHub',
+            at: githubIntegration.value?.last_synced_at || null,
+            error: githubIntegration.value?.last_error || null,
+        });
+    }
+
+    if (pagespeedConnected.value) {
+        items.push({
+            key: 'pagespeed',
+            label: 'PageSpeed / Chrome UX Report',
+            at: pagespeedIntegration.value?.last_synced_at || null,
+            error: pagespeedIntegration.value?.last_error || null,
+        });
+    }
+
+    return items;
+});
 
 const selectedSyncMetrics = computed(() => (
     availableSyncMetricGroups.value
@@ -2716,6 +2829,18 @@ const hasAnalyticsEngagement = computed(() => (
 
 function isSyncMetricGroupFullySelected(group) {
     return group.metrics.every((metric) => syncMetricSelection[metric.key]);
+}
+
+function syncMetricGroupSelectedCount(group) {
+    return group.metrics.filter((metric) => syncMetricSelection[metric.key]).length;
+}
+
+function isSyncMetricGroupExpanded(groupId) {
+    return Boolean(expandedSyncMetricGroups[groupId]);
+}
+
+function toggleSyncMetricGroupExpanded(groupId) {
+    expandedSyncMetricGroups[groupId] = !expandedSyncMetricGroups[groupId];
 }
 
 function toggleSyncMetricGroup(group) {
@@ -3340,10 +3465,12 @@ function applyAiReport(report) {
 
     if (report?.period?.from) {
         period.from = report.period.from;
+        periodDefaultsFromCoverageApplied.value = true;
     }
 
     if (report?.period?.to) {
         period.to = report.period.to;
+        periodDefaultsFromCoverageApplied.value = true;
     }
 }
 
@@ -3373,7 +3500,7 @@ function formatDataCounts(counts) {
     const parts = [];
 
     if (counts.analytics) {
-        parts.push(`GA4: ${counts.analytics}`);
+        parts.push(`Google Analytics: ${counts.analytics}`);
     }
 
     if (counts.search_console) {
@@ -3413,7 +3540,7 @@ function formatDataCounts(counts) {
     }
 
     if (counts.pagespeed_crux) {
-        parts.push(`CrUX: ${counts.pagespeed_crux}`);
+        parts.push(`Chrome UX Report: ${counts.pagespeed_crux}`);
     }
 
     if (counts.github_commits) {
@@ -3661,7 +3788,7 @@ watch(activeSiteView, (view) => {
 });
 
 async function loadEvents() {
-    if (!site.value || !period.from || !period.to || eventsLoading.value) {
+    if (!site.value || eventsLoading.value) {
         return;
     }
 
@@ -3669,10 +3796,7 @@ async function loadEvents() {
     eventsError.value = '';
 
     try {
-        eventRows.value = await listSiteEvents(site.value.id, {
-            from: period.from,
-            to: period.to,
-        });
+        eventRows.value = await listSiteEvents(site.value.id);
         eventsLoaded.value = true;
 
         if (
@@ -3730,18 +3854,12 @@ function startEditEvent(row) {
     eventForm.url = row.url || '';
 }
 
-function eventCardDescription(row) {
-    const text = String(row?.description || '').trim();
-
-    if (!text) {
-        return '';
+function onEventRowClick(row) {
+    if (busy.value || eventSaving.value || deletingEventId.value) {
+        return;
     }
 
-    if (text.length <= 120) {
-        return text;
-    }
-
-    return `${text.slice(0, 117).trimEnd()}…`;
+    startEditEvent(row);
 }
 
 function firstValidationError(errors) {
@@ -3778,39 +3896,31 @@ async function onSubmitEvent() {
     try {
         if (editingEventId.value) {
             const updated = await updateSiteEvent(site.value.id, editingEventId.value, payload);
-            const inPeriod = updated.occurred_on >= period.from && updated.occurred_on <= period.to;
 
-            if (inPeriod) {
-                eventRows.value = [
-                    updated,
-                    ...eventRows.value.filter((item) => item.id !== updated.id),
-                ].sort((a, b) => {
-                    if (a.occurred_on === b.occurred_on) {
-                        return b.id - a.id;
-                    }
+            eventRows.value = [
+                updated,
+                ...eventRows.value.filter((item) => item.id !== updated.id),
+            ].sort((a, b) => {
+                if (a.occurred_on === b.occurred_on) {
+                    return b.id - a.id;
+                }
 
-                    return a.occurred_on < b.occurred_on ? 1 : -1;
-                });
-            } else {
-                eventRows.value = eventRows.value.filter((item) => item.id !== updated.id);
-            }
+                return a.occurred_on < b.occurred_on ? 1 : -1;
+            });
 
             toast.show({ ok: true, message: 'Событие обновлено.' });
             resetEventForm();
             activeEventTab.value = eventRows.value.length ? 'saved' : 'new';
         } else {
             const created = await createSiteEvent(site.value.id, payload);
-            const inPeriod = created.occurred_on >= period.from && created.occurred_on <= period.to;
 
-            if (inPeriod) {
-                eventRows.value = [created, ...eventRows.value].sort((a, b) => {
-                    if (a.occurred_on === b.occurred_on) {
-                        return b.id - a.id;
-                    }
+            eventRows.value = [created, ...eventRows.value].sort((a, b) => {
+                if (a.occurred_on === b.occurred_on) {
+                    return b.id - a.id;
+                }
 
-                    return a.occurred_on < b.occurred_on ? 1 : -1;
-                });
-            }
+                return a.occurred_on < b.occurred_on ? 1 : -1;
+            });
 
             toast.show({ ok: true, message: 'Событие добавлено.' });
             resetEventForm();
@@ -4109,15 +4219,31 @@ async function loadMetricsCoverage() {
     }
 }
 
+function applyCoveragePeriodDefaults() {
+    if (periodDefaultsFromCoverageApplied.value) {
+        return false;
+    }
+
+    const bounds = metricsCoverageBounds.value;
+
+    if (!bounds) {
+        return false;
+    }
+
+    period.from = bounds.from;
+    period.to = bounds.to;
+    periodDefaultsFromCoverageApplied.value = true;
+
+    return true;
+}
+
 async function onPeriodChange() {
     if (!period.from || !period.to || period.from > period.to) {
         return;
     }
 
-    await Promise.all([
-        loadMetrics(),
-        loadEvents(),
-    ]);
+    periodDefaultsFromCoverageApplied.value = true;
+    await loadMetrics();
 }
 
 async function loadPropertyLists() {
@@ -4279,9 +4405,11 @@ async function reload() {
             : '';
 
         preferConnectedMetricsTab();
+        await loadMetricsCoverage();
+        applyCoveragePeriodDefaults();
+
         await Promise.all([
             loadMetrics(),
-            loadMetricsCoverage(),
             loadEvents(),
         ]);
     } catch (e) {
@@ -4618,14 +4746,13 @@ async function onSyncPeriod() {
                 if (e.response?.data?.data) {
                     pagespeedIntegration.value = e.response.data.data;
                 }
-                errors.push(e.response?.data?.message || 'Не удалось загрузить PageSpeed / CrUX');
+                errors.push(e.response?.data?.message || 'Не удалось загрузить PageSpeed / Chrome UX Report');
             }
         }
 
-        await Promise.all([
-            loadMetrics(),
-            loadMetricsCoverage(),
-        ]);
+        await loadMetricsCoverage();
+        applyCoveragePeriodDefaults();
+        await loadMetrics();
 
         if (errors.length && syncedAny) {
             toast.show({

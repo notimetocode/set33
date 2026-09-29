@@ -14,7 +14,7 @@
             <div class="layout-public__start">
                 <a href="{{ route('public.home') }}" class="layout-public__brand">
                     <span class="logo">
-                        <img class="logo__mark" src="{{ asset('images/logo.svg') }}" alt="{{ config('app.name') }}" width="96" height="20">
+                        <img class="logo__mark" src="{{ asset('images/logo.svg') }}" alt="{{ config('app.name') }}" width="96" height="39">
                     </span>
                 </a>
 

@@ -76,7 +76,7 @@ class SitePageSpeedIntegrationController extends Controller
             $integration = $sync->handle($integration, $request->metrics());
         } catch (Throwable $e) {
             return response()->json([
-                'message' => $e->getMessage() ?: 'Не удалось загрузить данные PageSpeed / CrUX.',
+                'message' => $e->getMessage() ?: 'Не удалось загрузить данные PageSpeed / Chrome UX Report.',
                 'data' => new SitePageSpeedIntegrationResource($integration->refresh()->load('googleConnection')),
             ], 422);
         }

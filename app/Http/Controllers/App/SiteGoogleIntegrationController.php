@@ -71,7 +71,7 @@ class SiteGoogleIntegrationController extends Controller
 
         if ($integration === null || ! $integration->isConfigured()) {
             return response()->json([
-                'message' => 'Сначала настройте GA4 и/или Search Console для сайта.',
+                'message' => 'Сначала настройте Google Analytics и/или Search Console для сайта.',
             ], 422);
         }
 

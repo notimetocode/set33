@@ -75,7 +75,7 @@ class GoogleConnectionController extends Controller
             ]);
         } catch (Throwable $e) {
             return response()->json([
-                'message' => $e->getMessage() ?: 'Не удалось получить список GA4 property.',
+                'message' => $e->getMessage() ?: 'Не удалось получить список Google Analytics property.',
             ], 422);
         }
     }

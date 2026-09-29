@@ -68,10 +68,10 @@ class BuildSiteAiReportPrompt
 
 Задачи анализа:
 1. Найди закономерности, тренды и аномалии в метриках за указанный период.
-2. Оцени динамику органического трафика (GA4: organic_*) и поисковой видимости (Search Console: клики, показы, CTR, средняя позиция).
+2. Оцени динамику органического трафика (Google Analytics: organic_*) и поисковой видимости (Search Console: клики, показы, CTR, средняя позиция).
 3. Разбери топ-запросы и топ-страницы: что даёт клики, где высокий CTR или слабая позиция при больших показах; учти разрезы по устройствам и странам.
 4. Учти типы отображения в поиске, sitemaps и URL Inspection: ошибки индексации, проблемы обхода, расхождения canonical.
-5. Оцени скорость и Core Web Vitals (PageSpeed lab и CrUX field data): LCP, INP, CLS, TTFB и связанные метрики; свяжи с SEO и UX, если данные есть.
+5. Оцени скорость и Core Web Vitals (PageSpeed lab и Chrome UX Report field data): LCP, INP, CLS, TTFB и связанные метрики; свяжи с SEO и UX, если данные есть.
 6. Сопоставь изменения метрик с активностью разработки (коммиты GitHub), если такие данные есть: возможные корреляции деплоев/изменений с ростом или падением показателей.
 7. Учти ручные события периода (упоминания в СМИ, публикации, акции, инциденты и т.п.): оцени их возможное влияние на трафик и видимость.
 8. Учти приложенные Markdown-документы сайта (брендбук, ТЗ, семантика, контент-гайд и т.п.): используй их как контекст о продукте, аудитории и ограничениях; не выдумывай факты вне документов и метрик.
@@ -126,10 +126,10 @@ PROMPT;
     private function analyticsSection(array $analytics): string
     {
         if ($analytics === []) {
-            return "## Google Analytics 4\nДанные за период отсутствуют.";
+            return "## Google Analytics\nДанные за период отсутствуют.";
         }
 
-        return "## Google Analytics 4 (ежедневные метрики)\n"
+        return "## Google Analytics (ежедневные метрики)\n"
             .'Поля: date, sessions, total_users, new_users, screen_page_views, '
             .'organic_sessions, organic_total_users, organic_new_users; '
             .'опционально: engaged_sessions, engagement_rate, bounce_rate, '
@@ -239,10 +239,10 @@ PROMPT;
         $crux = $pageSpeed['crux'] ?? [];
 
         if ($lab === [] && $crux === []) {
-            return "## PageSpeed Insights / CrUX\nДанные отсутствуют.";
+            return "## PageSpeed Insights / Chrome UX Report\nДанные отсутствуют.";
         }
 
-        $parts = ['## PageSpeed Insights / CrUX'];
+        $parts = ['## PageSpeed Insights / Chrome UX Report'];
 
         if ($lab !== []) {
             $parts[] = "### Lab (Lighthouse)\n"
@@ -257,14 +257,14 @@ PROMPT;
         }
 
         if ($crux !== []) {
-            $parts[] = "### CrUX (field data)\n"
+            $parts[] = "### Chrome UX Report (field data)\n"
                 .'Поля: scope (origin|url), url, form_factor, overall_category, collection_period_start, '
                 ."collection_period_end, lcp_p75_ms, inp_p75_ms, cls_p75, fcp_p75_ms, ttfb_p75_ms, fetched_at.\n"
                 ."```json\n"
                 .$this->encodeJson($crux)
                 ."\n```";
         } else {
-            $parts[] = "### CrUX (field data)\nДанные отсутствуют.";
+            $parts[] = "### Chrome UX Report (field data)\nДанные отсутствуют.";
         }
 
         return implode("\n\n", $parts);

@@ -2,14 +2,13 @@
     <div class="layout-app">
         <aside class="layout-app__sidebar">
             <RouterLink class="layout-app__brand text-decoration-none" :to="{ name: 'sites.index' }">
-                <span class="logo logo--sm">
-                    <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="20">
+                <span class="logo">
+                    <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="39">
                 </span>
                 <span class="layout-app__brand-label">Личный кабинет</span>
             </RouterLink>
 
             <nav class="layout-app__nav" aria-label="Навигация личного кабинета">
-                <p class="layout-app__nav-group">Меню</p>
                 <RouterLink
                     v-for="item in navItems"
                     :key="item.name"
@@ -17,10 +16,7 @@
                     :class="{ 'is-active': item.isActive(route) }"
                     :to="{ name: item.name }"
                 >
-                    <span class="layout-app__nav-icon" aria-hidden="true">
-                        <FontAwesomeIcon :icon="item.icon" />
-                    </span>
-                    <span class="layout-app__nav-label">{{ item.label }}</span>
+                    {{ item.label }}
                 </RouterLink>
             </nav>
 
@@ -31,7 +27,6 @@
                     :full-name="fullName"
                     :subtitle="user?.email || ''"
                 />
-                <LogoutButton @click="onLogout" />
             </div>
         </aside>
 
@@ -54,10 +49,7 @@
                 :class="{ 'is-active': item.isActive(route) }"
                 :to="{ name: item.name }"
             >
-                <span class="layout-app__tab-icon" aria-hidden="true">
-                    <FontAwesomeIcon :icon="item.icon" />
-                </span>
-                <span class="layout-app__tab-label">{{ item.label }}</span>
+                {{ item.label }}
             </RouterLink>
         </nav>
 
@@ -71,7 +63,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { logout, me } from '../api/auth';
 import AppToastHost from '../../shared/components/AppToastHost.vue';
 import Breadcrumbs from '../../shared/components/Breadcrumbs.vue';
-import LogoutButton from '../../shared/components/LogoutButton.vue';
 import NavUserCard from '../../shared/components/NavUserCard.vue';
 import { resolveBreadcrumbs } from '../../shared/breadcrumbs';
 import { formatUserFio } from '../../shared/userDisplay';
@@ -86,19 +77,16 @@ const navItems = [
     {
         name: 'sites.index',
         label: 'Сайты',
-        icon: ['fas', 'globe'],
         isActive: (r) => String(r.name || '').startsWith('sites'),
     },
     {
         name: 'profile',
         label: 'Профиль',
-        icon: ['fas', 'user'],
         isActive: (r) => r.name === 'profile',
     },
     {
         name: 'ai-services.index',
         label: 'AI-сервисы',
-        icon: ['fas', 'robot'],
         isActive: (r) => String(r.name || '').startsWith('ai-services'),
     },
 ];
@@ -132,8 +120,4 @@ onMounted(async () => {
     }
 });
 
-async function onLogout() {
-    await logout();
-    await router.push({ name: 'login' });
-}
 </script>

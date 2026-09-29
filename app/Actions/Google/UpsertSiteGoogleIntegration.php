@@ -33,7 +33,7 @@ class UpsertSiteGoogleIntegration
         }
 
         if ($ga4 === null && $gsc === null) {
-            throw new InvalidArgumentException('Выберите property GA4 и/или сайт Search Console.');
+            throw new InvalidArgumentException('Выберите property Google Analytics и/или сайт Search Console.');
         }
 
         if ($ga4 !== null && ! str_starts_with($ga4, 'properties/')) {

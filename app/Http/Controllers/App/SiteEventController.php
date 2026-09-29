@@ -6,7 +6,6 @@ use App\Actions\Site\CreateSiteEvent;
 use App\Actions\Site\DeleteSiteEvent;
 use App\Actions\Site\UpdateSiteEvent;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\App\Site\SiteMetricsRequest;
 use App\Http\Requests\App\Site\StoreSiteEventRequest;
 use App\Http\Requests\App\Site\UpdateSiteEventRequest;
 use App\Http\Resources\App\SiteEventResource;
@@ -18,15 +17,11 @@ use Illuminate\Support\Facades\Gate;
 
 class SiteEventController extends Controller
 {
-    public function index(SiteMetricsRequest $request, Site $site): AnonymousResourceCollection
+    public function index(Site $site): AnonymousResourceCollection
     {
         Gate::authorize('app.sites.view', $site);
 
-        $from = $request->date('from')->toDateString();
-        $to = $request->date('to')->toDateString();
-
         $events = $site->events()
-            ->whereBetween('occurred_on', [$from, $to])
             ->orderByDesc('occurred_on')
             ->orderByDesc('id')
             ->get();

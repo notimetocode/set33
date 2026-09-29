@@ -28,7 +28,7 @@ class UpdateSiteGoogleIntegrationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'ga4_property_id.max' => 'Слишком длинный идентификатор GA4 property.',
+            'ga4_property_id.max' => 'Слишком длинный идентификатор Google Analytics property.',
             'gsc_site_url.max' => 'Слишком длинный URL сайта Search Console.',
         ];
     }

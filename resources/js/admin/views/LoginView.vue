@@ -3,7 +3,7 @@
         <form class="auth-form" @submit.prevent="submit">
             <div class="page-admin-login__brand">
                 <span class="logo">
-                    <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="20">
+                    <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="39">
                 </span>
                 Панель администратора
             </div>

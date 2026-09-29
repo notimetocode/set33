@@ -8,7 +8,9 @@
                 width="48"
                 height="48"
             >
-            <span v-else class="nav-user-card__initials">{{ initials }}</span>
+            <span v-else class="nav-user-card__icon-placeholder">
+                <FontAwesomeIcon :icon="['fas', 'user']" />
+            </span>
         </div>
         <div class="nav-user-card__body">
             <p class="nav-user-card__name">{{ fullName || 'Пользователь' }}</p>
@@ -18,9 +20,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { FontAwesomeIcon } from '../icons';
 
-const props = defineProps({
+defineProps({
     loading: {
         type: Boolean,
         default: false,
@@ -37,19 +39,5 @@ const props = defineProps({
         type: String,
         default: '',
     },
-});
-
-const initials = computed(() => {
-    const parts = String(props.fullName || '')
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2);
-
-    if (parts.length === 0) {
-        return '?';
-    }
-
-    return parts.map((part) => part.charAt(0).toUpperCase()).join('');
 });
 </script>

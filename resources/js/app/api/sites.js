@@ -118,8 +118,8 @@ export async function getSiteSearchConsoleMetrics(siteId, params) {
     };
 }
 
-export async function listSiteEvents(siteId, params) {
-    const { data } = await http.get(`/sites/${siteId}/events`, { params });
+export async function listSiteEvents(siteId) {
+    const { data } = await http.get(`/sites/${siteId}/events`);
 
     return data.data ?? [];
 }

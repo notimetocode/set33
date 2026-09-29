@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { isAuthenticated } from '../api/auth';
+import { dynamicBreadcrumbLabel } from '../../shared/dynamicBreadcrumbLabel';
 import AppLayout from '../layouts/AppLayout.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
@@ -57,9 +58,9 @@ const router = createRouter({
                     name: 'sites.show',
                     component: SitesShowView,
                     meta: {
-                        breadcrumbs: [
+                        breadcrumbs: () => [
                             { label: 'Сайты', name: 'sites.index' },
-                            { label: 'Карточка' },
+                            { label: dynamicBreadcrumbLabel.value || 'Сайт' },
                         ],
                     },
                 },

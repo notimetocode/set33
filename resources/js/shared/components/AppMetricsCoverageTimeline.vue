@@ -1,20 +1,18 @@
 <template>
     <div
         class="metrics-coverage-timeline"
-        aria-label="Периоды выгруженных данных"
+        aria-label="Данные за выбранный период"
     >
-        <h3 class="metrics-coverage-timeline__title">Выгруженные данные</h3>
-
         <AppLoader
             v-if="loading"
             block
             label="Загрузка периодов…"
         />
         <p
-            v-else-if="empty || !items.length"
+            v-else-if="emptyMessage"
             class="metrics-coverage-timeline__empty"
         >
-            Выгруженных данных пока нет.
+            {{ emptyMessage }}
         </p>
         <template v-else>
             <div class="metrics-coverage-timeline__axis">
@@ -35,12 +33,6 @@
                         :aria-label="`${row.label}: ${row.periodLabel}`"
                     >
                         <span
-                            v-if="selectedStyle"
-                            class="metrics-coverage-timeline__selected"
-                            :style="selectedStyle"
-                            aria-hidden="true"
-                        />
-                        <span
                             class="metrics-coverage-timeline__bar"
                             :style="row.barStyle"
                             aria-hidden="true"
@@ -49,17 +41,6 @@
                     <span class="metrics-coverage-timeline__period">{{ row.periodLabel }}</span>
                 </li>
             </ul>
-
-            <p
-                v-if="selectedStyle"
-                class="metrics-coverage-timeline__legend"
-            >
-                <span
-                    class="metrics-coverage-timeline__legend-swatch"
-                    aria-hidden="true"
-                />
-                Выбранный период отчёта
-            </p>
         </template>
     </div>
 </template>
@@ -189,91 +170,105 @@ function rangeStyle(fromMs, toMs, axisMinMs, axisSpan) {
     };
 }
 
-const axisBounds = computed(() => {
-    const dayValues = [];
-
-    for (const item of props.items) {
-        const fromMs = parseDay(item?.from);
-        const toMs = parseDay(item?.to);
-
-        if (fromMs !== null) {
-            dayValues.push(fromMs);
-        }
-
-        if (toMs !== null) {
-            dayValues.push(toMs);
-        }
-    }
-
-    const selectedFromMs = parseDay(props.selectedFrom);
-    const selectedToMs = parseDay(props.selectedTo);
-
+function intersectRange(fromMs, toMs, selectedFromMs, selectedToMs) {
     if (
-        selectedFromMs !== null
-        && selectedToMs !== null
-        && selectedToMs >= selectedFromMs
+        fromMs === null
+        || toMs === null
+        || selectedFromMs === null
+        || selectedToMs === null
+        || selectedToMs < selectedFromMs
+        || toMs < selectedFromMs
+        || fromMs > selectedToMs
     ) {
-        dayValues.push(selectedFromMs, selectedToMs);
-    }
-
-    if (!dayValues.length) {
         return null;
     }
 
-    const minMs = Math.min(...dayValues);
-    const maxMs = Math.max(...dayValues);
+    return {
+        fromMs: Math.max(fromMs, selectedFromMs),
+        toMs: Math.min(toMs, selectedToMs),
+    };
+}
+
+const selectedBounds = computed(() => {
+    const fromMs = parseDay(props.selectedFrom);
+    const toMs = parseDay(props.selectedTo);
+
+    if (fromMs === null || toMs === null || toMs < fromMs) {
+        return null;
+    }
 
     return {
-        minMs,
-        maxMs,
-        span: (maxMs - minMs) + MS_PER_DAY,
-        minDate: toDateString(minMs),
-        maxDate: toDateString(maxMs),
+        fromMs,
+        toMs,
+        span: (toMs - fromMs) + MS_PER_DAY,
+        minDate: props.selectedFrom,
+        maxDate: props.selectedTo,
     };
 });
 
-const axisMin = computed(() => axisBounds.value?.minDate || '');
-const axisMax = computed(() => axisBounds.value?.maxDate || '');
+const overlappingItems = computed(() => {
+    const selected = selectedBounds.value;
 
-const selectedStyle = computed(() => {
-    const bounds = axisBounds.value;
-
-    if (!bounds) {
-        return null;
-    }
-
-    return rangeStyle(
-        parseDay(props.selectedFrom),
-        parseDay(props.selectedTo),
-        bounds.minMs,
-        bounds.span,
-    );
-});
-
-const rows = computed(() => {
-    const bounds = axisBounds.value;
-
-    if (!bounds) {
+    if (!selected) {
         return [];
     }
 
     return props.items
         .map((item) => {
-            const fromMs = parseDay(item?.from);
-            const toMs = parseDay(item?.to);
-            const barStyle = rangeStyle(fromMs, toMs, bounds.minMs, bounds.span);
+            const intersection = intersectRange(
+                parseDay(item?.from),
+                parseDay(item?.to),
+                selected.fromMs,
+                selected.toMs,
+            );
 
-            if (!barStyle) {
+            if (!intersection) {
                 return null;
             }
 
             return {
                 key: item.key,
                 label: item.label,
-                periodLabel: formatPeriod(item.from, item.to),
-                barStyle,
+                from: toDateString(intersection.fromMs),
+                to: toDateString(intersection.toMs),
+                fromMs: intersection.fromMs,
+                toMs: intersection.toMs,
             };
         })
         .filter(Boolean);
+});
+
+const emptyMessage = computed(() => {
+    if (props.empty || !props.items.length) {
+        return 'Выгруженных данных пока нет.';
+    }
+
+    if (!selectedBounds.value) {
+        return 'Укажите период отчёта.';
+    }
+
+    if (!overlappingItems.value.length) {
+        return 'Нет данных за выбранный период.';
+    }
+
+    return '';
+});
+
+const axisMin = computed(() => selectedBounds.value?.minDate || '');
+const axisMax = computed(() => selectedBounds.value?.maxDate || '');
+
+const rows = computed(() => {
+    const selected = selectedBounds.value;
+
+    if (!selected) {
+        return [];
+    }
+
+    return overlappingItems.value.map((item) => ({
+        key: item.key,
+        label: item.label,
+        periodLabel: formatPeriod(item.from, item.to),
+        barStyle: rangeStyle(item.fromMs, item.toMs, selected.fromMs, selected.span),
+    }));
 });
 </script>

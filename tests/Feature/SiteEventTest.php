@@ -26,7 +26,7 @@ class SiteEventTest extends TestCase
     {
         $site = Site::factory()->create();
 
-        $this->getJson("/api/app/sites/{$site->id}/events?from=2026-09-01&to=2026-09-07")
+        $this->getJson("/api/app/sites/{$site->id}/events")
             ->assertUnauthorized();
 
         $this->postJson("/api/app/sites/{$site->id}/events", [
@@ -45,7 +45,7 @@ class SiteEventTest extends TestCase
         ]);
         $this->actingAsAppUser();
 
-        $this->getJson("/api/app/sites/{$site->id}/events?from=2026-09-01&to=2026-09-07")
+        $this->getJson("/api/app/sites/{$site->id}/events")
             ->assertForbidden();
 
         $this->postJson("/api/app/sites/{$site->id}/events", [
@@ -69,19 +69,19 @@ class SiteEventTest extends TestCase
 
         SiteEvent::factory()->for($site)->create([
             'occurred_on' => '2026-08-20',
-            'title' => 'Вне периода',
+            'title' => 'Раннее событие',
         ]);
-        $inPeriod = SiteEvent::factory()->for($site)->create([
+        $latest = SiteEvent::factory()->for($site)->create([
             'occurred_on' => '2026-09-02',
             'title' => 'Старое событие',
             'description' => 'Описание',
             'url' => 'https://example.com/old',
         ]);
 
-        $this->getJson("/api/app/sites/{$site->id}/events?from=2026-09-01&to=2026-09-07")
+        $this->getJson("/api/app/sites/{$site->id}/events")
             ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $inPeriod->id)
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.id', $latest->id)
             ->assertJsonPath('data.0.title', 'Старое событие');
 
         $created = $this->postJson("/api/app/sites/{$site->id}/events", [

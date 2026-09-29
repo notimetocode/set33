@@ -24,7 +24,7 @@
 
 .data-table__grid {
   --bs-table-bg: transparent;
-  --bs-table-hover-bg: #f8fafc;
+  --bs-table-hover-bg: #{$body-bg};
   --bs-table-border-color: #eef2f6;
   margin-bottom: 0;
 
@@ -54,8 +54,8 @@
     border-bottom: 0;
   }
 
-  &.table-hover tbody tr:hover {
-    --bs-table-bg: var(--bs-table-hover-bg);
+  &.table-hover > tbody > tr:hover > * {
+    --bs-table-bg-state: var(--bs-table-hover-bg);
   }
 }
 
