@@ -2,8 +2,13 @@
   --home-line: #{$color-line};
   --home-line-soft: #{$color-line-soft};
   --home-dot: rgba(18, 21, 26, 0.28);
+  --home-rail-height: 4.5rem;
   background: $surface;
   overflow: clip;
+
+  @media (min-width: 768px) {
+    --home-rail-height: 6rem;
+  }
 
   // ---------------------------------------------------------------------------
   // Shared dots + rails
@@ -60,7 +65,6 @@
     z-index: 2;
     max-width: 42rem;
     margin-inline: auto;
-    animation: page-home-rise 0.75s ease-out both;
   }
 
   &__headline {
@@ -85,7 +89,6 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.75rem;
-    animation: page-home-rise 0.75s ease-out 0.1s both;
   }
 
   // ---------------------------------------------------------------------------
@@ -93,17 +96,11 @@
   // ---------------------------------------------------------------------------
 
   &__features {
-    --bento-rail-height: 4.5rem;
     position: relative;
     isolation: isolate;
     background: $surface;
-    padding-bottom: 4.5rem;
+    padding-bottom: calc(var(--home-rail-height) * 2);
     scroll-margin-top: 5rem;
-
-    @media (min-width: 768px) {
-      --bento-rail-height: 6rem;
-      padding-bottom: 5.5rem;
-    }
   }
 
   &__features-track {
@@ -112,6 +109,12 @@
     display: flex;
     justify-content: center;
     border-top: 1px solid var(--home-line);
+    // Inset tabs on phones so the frame isn't flush with the viewport.
+    padding-inline: 1.75rem;
+
+    @media (min-width: 768px) {
+      padding-inline: 0;
+    }
   }
 
   &__tabs {
@@ -122,31 +125,29 @@
     max-width: 100%;
     margin: 0;
     background: $surface;
+    // L/R/B frame; top edge is the full-bleed track line above.
     border-left: 1px solid var(--home-line);
     border-right: 1px solid var(--home-line);
     border-bottom: 1px solid var(--home-line);
-    // Outer frame (L/R/B) as inset shadow so corners meet without 1px gaps.
-    // Top edge is the full-bleed track line.
-    box-shadow:
-      inset 1px 0 0 var(--home-line),
-      inset -1px 0 0 var(--home-line),
-      inset 0 -1px 0 var(--home-line);
 
     @media (min-width: 768px) {
-      flex-direction: row;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 13.75rem));
       width: max-content;
     }
 
     // Vertical border from the tabs block center down to the bento panel.
+    // Align with the 2nd tab's border-right (last 1px of the left half), not to the right of 50%.
     &::after {
       content: '';
       position: absolute;
       top: 100%;
       left: 50%;
       z-index: 1;
-      width: 0;
-      height: var(--bento-rail-height);
-      border-left: 1px solid var(--home-line);
+      width: 1px;
+      height: calc(var(--home-rail-height) * 2);
+      background: var(--home-line);
+      transform: translateX(-1px);
       pointer-events: none;
     }
   }
@@ -169,14 +170,18 @@
     color: inherit;
     transition: background-color 0.15s ease;
 
+    // Frame bottom edge lives on &__tabs — avoid a double line under the last tab.
+    &:last-child {
+      border-bottom: 0;
+    }
+
     @media (min-width: 768px) {
-      flex: 0 0 auto;
       width: auto;
-      min-width: 11.5rem;
+      min-width: 0;
       border-bottom: 0;
       border-right: 1px solid var(--home-line);
       min-height: 5.75rem;
-      padding: 1.65rem 1.75rem 1.85rem;
+      padding: 1.65rem 1.25rem 1.85rem;
 
       &:last-child {
         border-right: 0;
@@ -213,7 +218,7 @@
     letter-spacing: -0.025em;
     color: $body-color;
     line-height: 1.25;
-    white-space: nowrap;
+    text-wrap: balance;
 
     @media (min-width: 768px) {
       font-size: 1rem;
@@ -224,7 +229,7 @@
     font-size: 0.8125rem;
     line-height: 1.4;
     color: var(--muted);
-    max-width: 12.5rem;
+    max-width: 100%;
   }
 
   // ---------------------------------------------------------------------------
@@ -234,7 +239,21 @@
   &__bento {
     position: relative;
     z-index: 1;
-    padding-top: var(--bento-rail-height);
+    padding-top: calc(var(--home-rail-height) * 2);
+
+    // Vertical border from bento center down to the outcome block.
+    &::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      z-index: 1;
+      width: 1px;
+      height: calc(var(--home-rail-height) * 2);
+      background: var(--home-line);
+      transform: translateX(-1px);
+      pointer-events: none;
+    }
   }
 
   &__bento-panel {
@@ -459,27 +478,54 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Pricing
+  // Outcome: what you get
   // ---------------------------------------------------------------------------
 
-  &__pricing {
+  &__outcome {
     position: relative;
+    isolation: isolate;
     background: $surface;
-    padding: 4.5rem 0 5rem;
+    padding-bottom: var(--home-rail-height);
     scroll-margin-top: 5rem;
+  }
 
-    @media (min-width: 768px) {
-      padding: 5.5rem 0 6rem;
+  &__outcome-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 36rem;
+    margin-inline: auto;
+
+    // Vertical border from outcome down to pricing.
+    &::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      z-index: 1;
+      width: 1px;
+      height: var(--home-rail-height);
+      background: var(--home-line);
+      transform: translateX(-1px);
+      pointer-events: none;
     }
   }
 
-  &__pricing-intro {
-    max-width: 34rem;
-    margin-bottom: 2.5rem;
+  &__outcome-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    border: 1px solid var(--home-line);
+    background: $surface;
+    padding: 1.75rem 1.35rem 1.85rem;
+
+    @media (min-width: 768px) {
+      gap: 2rem;
+      padding: 2rem 1.85rem 2.1rem;
+    }
   }
 
-  &__pricing-title {
-    font-size: clamp(1.55rem, 3vw, 2.15rem);
+  &__outcome-title {
+    font-size: clamp(1.45rem, 2.8vw, 1.95rem);
     font-weight: 700;
     letter-spacing: -0.035em;
     line-height: 1.2;
@@ -487,9 +533,379 @@
     color: $body-color;
   }
 
+  &__outcome-lead {
+    font-size: 1.02rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 0 0 1.15rem;
+  }
+
+  &__outcome-points {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    li {
+      position: relative;
+      padding-left: 1.2rem;
+      font-size: 0.925rem;
+      line-height: 1.5;
+      color: $body-color;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.45rem;
+        width: 0.4rem;
+        height: 0.4rem;
+        border-radius: 50%;
+        background: $primary;
+      }
+    }
+  }
+
+  &__outcome-visual {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0 0.25rem;
+    // Keep the diagram from overflowing the panel on narrow phones.
+    overflow: hidden;
+  }
+
+  &__flow {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) auto minmax(2.5rem, 0.85fr) auto;
+    align-items: center;
+    width: 100%;
+    max-width: 28rem;
+
+    @media (max-width: 767.98px) {
+      // Give the fan more width so preserveAspectRatio="none" doesn't warp paths.
+      grid-template-columns: minmax(0, 1.35fr) auto minmax(1.35rem, 0.45fr) auto;
+      max-width: 100%;
+    }
+  }
+
+  &__flow-in {
+    display: grid;
+    grid-template-columns: auto minmax(3rem, 1fr);
+    align-items: stretch;
+    min-width: 0;
+
+    @media (max-width: 767.98px) {
+      grid-template-columns: auto minmax(4.25rem, 1fr);
+    }
+  }
+
+  &__flow-sources {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    z-index: 1;
+
+    @media (max-width: 767.98px) {
+      // Keep S/G ratio so fan path Y% still hits icon centers.
+      gap: 0.5rem;
+    }
+  }
+
+  &__flow-source,
+  &__flow-result,
+  &__flow-hub-core {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--home-line);
+    background: $surface;
+    border-radius: 50%;
+  }
+
+  &__flow-source {
+    width: 2.55rem;
+    height: 2.55rem;
+    flex: 0 0 auto;
+
+    @media (max-width: 767.98px) {
+      width: 2.1rem;
+      height: 2.1rem;
+    }
+
+    img {
+      display: block;
+      width: 1.25rem;
+      height: 1.25rem;
+      object-fit: contain;
+
+      @media (max-width: 767.98px) {
+        width: 1.05rem;
+        height: 1.05rem;
+      }
+    }
+  }
+
+  &__flow-result {
+    width: 3.5rem;
+    height: 3.5rem;
+    color: $body-color;
+    z-index: 1;
+
+    @media (max-width: 767.98px) {
+      width: 2.75rem;
+      height: 2.75rem;
+
+      svg {
+        width: 1.35rem;
+        height: 1.35rem;
+      }
+    }
+  }
+
+  &__flow-fan {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  &__flow-fan-line {
+    fill: none;
+    stroke: var(--home-line);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  &__flow-fan-pulse {
+    fill: none;
+    stroke: $primary;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 14 100;
+    vector-effect: non-scaling-stroke;
+    animation: page-home-flow-fan-pulse 2.8s ease-in-out infinite;
+
+    &:nth-of-type(5) {
+      animation-delay: 0s;
+    }
+
+    &:nth-of-type(6) {
+      animation-delay: 0.35s;
+    }
+
+    &:nth-of-type(7) {
+      animation-delay: 0.7s;
+    }
+
+    &:nth-of-type(8) {
+      animation-delay: 1.05s;
+    }
+  }
+
+  &__flow-hub {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 9.5rem;
+    height: 9.5rem;
+
+    @media (max-width: 767.98px) {
+      width: 6.25rem;
+      height: 6.25rem;
+    }
+  }
+
+  &__flow-hub-ring {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    border: 1px dashed var(--home-line);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: page-home-flow-spin 22s linear infinite;
+
+    &:nth-child(1) {
+      width: 6.2rem;
+      height: 6.2rem;
+
+      @media (max-width: 767.98px) {
+        width: 4.1rem;
+        height: 4.1rem;
+      }
+    }
+
+    &:nth-child(2) {
+      width: 8.75rem;
+      height: 8.75rem;
+      animation-duration: 32s;
+      animation-direction: reverse;
+
+      @media (max-width: 767.98px) {
+        width: 5.75rem;
+        height: 5.75rem;
+      }
+    }
+  }
+
+  &__flow-hub-core {
+    position: relative;
+    z-index: 1;
+    width: 3.85rem;
+    height: 3.85rem;
+    box-shadow: 0 8px 18px rgba(18, 21, 26, 0.06);
+
+    @media (max-width: 767.98px) {
+      width: 3rem;
+      height: 3rem;
+    }
+  }
+
+  &__flow-chip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.15rem;
+    height: 2.15rem;
+    border: 1.5px solid $body-color;
+    border-radius: 0.35rem;
+
+    @media (max-width: 767.98px) {
+      width: 1.7rem;
+      height: 1.7rem;
+    }
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 0.28rem;
+      height: 1.15rem;
+      border-top: 1.5px solid $body-color;
+      border-bottom: 1.5px solid $body-color;
+      background:
+        linear-gradient($body-color, $body-color) center / 1.5px 0.28rem no-repeat;
+      transform: translateY(-50%);
+    }
+
+    &::before {
+      left: -0.35rem;
+    }
+
+    &::after {
+      right: -0.35rem;
+    }
+  }
+
+  &__flow-chip-body {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: $body-color;
+    line-height: 1;
+
+    @media (max-width: 767.98px) {
+      font-size: 0.62rem;
+    }
+  }
+
+  &__flow-rail {
+    position: relative;
+    height: 1px;
+    align-self: center;
+    min-width: 0;
+  }
+
+  &__flow-rail-line {
+    position: absolute;
+    inset: 0;
+    background: var(--home-line);
+  }
+
+  &__flow-rail-pulse {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 2rem;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      #22d3ee 35%,
+      $primary 55%,
+      #38bdf8 75%,
+      transparent
+    );
+    transform: translateY(-50%);
+    animation: page-home-flow-pulse 2.8s ease-in-out infinite;
+    pointer-events: none;
+
+    @media (max-width: 767.98px) {
+      width: 1.25rem;
+    }
+  }
+
+  &__flow-rail--out &__flow-rail-pulse {
+    animation-delay: 1.4s;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pricing
+  // ---------------------------------------------------------------------------
+
+  &__pricing {
+    position: relative;
+    isolation: isolate;
+    background: $surface;
+    padding-bottom: 4.5rem;
+    scroll-margin-top: 5rem;
+
+    @media (min-width: 768px) {
+      padding-bottom: 5.5rem;
+    }
+  }
+
+  &__pricing-inner {
+    position: relative;
+    z-index: 1;
+  }
+
+  &__pricing-panel {
+    border: 1px solid var(--home-line);
+    background: $surface;
+    overflow: hidden;
+  }
+
+  &__pricing-intro {
+    max-width: 42rem;
+    padding: 1.5rem 1.35rem 1.25rem;
+
+    @media (min-width: 768px) {
+      padding: 1.75rem 1.75rem 1.35rem;
+    }
+  }
+
+  &__pricing-title {
+    font-size: clamp(1.45rem, 2.8vw, 1.95rem);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.2;
+    margin: 0 0 0.45rem;
+    color: $body-color;
+  }
+
   &__pricing-lead {
-    font-size: 1.0625rem;
-    line-height: 1.55;
+    font-size: 0.975rem;
+    line-height: 1.5;
     color: var(--muted);
     margin: 0;
   }
@@ -497,7 +913,7 @@
   &__plans {
     display: grid;
     gap: 0;
-    border: 1px solid var(--home-line);
+    border-top: 1px solid var(--home-line);
 
     @media (min-width: 768px) {
       grid-template-columns: repeat(3, 1fr);
@@ -508,13 +924,13 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    padding: 1.65rem 1.4rem 1.4rem;
+    padding: 1.5rem 1.35rem 1.4rem;
     border: 0;
     border-bottom: 1px solid var(--home-line);
     background: $surface;
-    border-radius: 0;
 
     @media (min-width: 768px) {
+      padding: 1.75rem 1.65rem 1.55rem;
       border-bottom: 0;
       border-right: 1px solid var(--home-line);
 
@@ -528,38 +944,39 @@
     }
 
     &--featured {
-      background:
-        linear-gradient(180deg, rgba(11, 122, 75, 0.05) 0%, transparent 42%),
-        $surface;
-      padding-top: 2.15rem;
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: $primary;
+      }
     }
   }
 
   &__plan-badge {
-    position: absolute;
-    top: 0.85rem;
-    left: 1.4rem;
-    margin: 0;
-    padding: 0.2rem 0.55rem;
-    border-radius: 0.35rem;
-    font-size: 0.7rem;
+    margin: 0 0 0.85rem;
+    padding: 0;
+    font-size: 0.75rem;
     font-weight: 650;
     letter-spacing: 0.02em;
-    color: #0a6b42;
-    background: rgba(11, 122, 75, 0.1);
+    color: $primary;
+    background: none;
   }
 
   &__plan-head {
     margin-bottom: 1.15rem;
     padding-bottom: 1.15rem;
-    border-bottom: 1px solid var(--home-line-soft);
+    border-bottom: 1px solid var(--home-line);
   }
 
   &__plan-name {
-    font-size: 1.125rem;
-    font-weight: 600;
+    font-size: 1.02rem;
+    font-weight: 650;
     letter-spacing: -0.02em;
-    margin-bottom: 0.65rem;
+    margin: 0 0 0.65rem;
     color: $body-color;
   }
 
@@ -571,7 +988,7 @@
   }
 
   &__plan-amount {
-    font-size: clamp(2rem, 3.5vw, 2.55rem);
+    font-size: clamp(1.85rem, 3.2vw, 2.35rem);
     font-weight: 700;
     letter-spacing: -0.04em;
     line-height: 1;
@@ -585,10 +1002,10 @@
   }
 
   &__plan-desc {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     line-height: 1.45;
     color: var(--muted);
-    margin-bottom: 0;
+    margin: 0;
   }
 
   &__plan-features {
@@ -602,18 +1019,18 @@
 
     li {
       position: relative;
-      padding-left: 1.35rem;
-      font-size: 0.9rem;
-      line-height: 1.4;
+      padding-left: 1.2rem;
+      font-size: 0.875rem;
+      line-height: 1.45;
       color: $body-color;
 
       &::before {
         content: '';
         position: absolute;
         left: 0;
-        top: 0.4rem;
-        width: 0.45rem;
-        height: 0.45rem;
+        top: 0.45rem;
+        width: 0.4rem;
+        height: 0.4rem;
         border-radius: 50%;
         background: $primary;
       }
@@ -621,22 +1038,61 @@
   }
 }
 
-@keyframes page-home-rise {
-  from {
+@keyframes page-home-flow-pulse {
+  0% {
+    left: 0;
     opacity: 0;
-    transform: translateY(0.75rem);
   }
 
-  to {
+  12% {
     opacity: 1;
-    transform: translateY(0);
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    left: calc(100% - 2rem);
+    opacity: 0;
+  }
+}
+
+@keyframes page-home-flow-fan-pulse {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    stroke-dashoffset: -14;
+    opacity: 0;
+  }
+}
+
+@keyframes page-home-flow-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .page-home {
-    &__hero-inner,
-    &__cta {
+    &__flow-rail-pulse,
+    &__flow-fan-pulse {
+      animation: none;
+      opacity: 0;
+    }
+
+    &__flow-hub-ring {
       animation: none;
     }
   }

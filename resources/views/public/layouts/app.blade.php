@@ -11,24 +11,22 @@
 <body class="layout-public">
     <header class="layout-public__header" data-public-header>
         <div class="container layout-public__header-inner">
-            <div class="layout-public__start">
-                <a href="{{ route('public.home') }}" class="layout-public__brand">
-                    <span class="logo">
-                        <img class="logo__mark" src="{{ asset('images/logo.svg') }}" alt="{{ config('app.name') }}" width="96" height="39">
-                    </span>
-                </a>
+            <nav class="layout-public__nav layout-public__nav--desktop" aria-label="Основная навигация">
+                <ul class="layout-public__nav-list">
+                    <li>
+                        <a href="{{ route('public.home') }}#how-it-works" class="layout-public__nav-link">Как это работает</a>
+                    </li>
+                    <li>
+                        <a href="{{ route('public.home') }}#pricing" class="layout-public__nav-link">Цены</a>
+                    </li>
+                </ul>
+            </nav>
 
-                <nav class="layout-public__nav layout-public__nav--desktop" aria-label="Основная навигация">
-                    <ul class="layout-public__nav-list">
-                        <li>
-                            <a href="{{ route('public.home') }}#how-it-works" class="layout-public__nav-link">Как это работает</a>
-                        </li>
-                        <li>
-                            <a href="{{ route('public.home') }}#pricing" class="layout-public__nav-link">Цены</a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
+            <a href="{{ route('public.home') }}" class="layout-public__brand">
+                <span class="logo">
+                    <img class="logo__mark" src="{{ asset('images/logo.svg') }}" alt="{{ config('app.name') }}" width="120" height="49">
+                </span>
+            </a>
 
             <div class="layout-public__actions">
                 <a
@@ -106,21 +104,53 @@
 
     <footer class="layout-public__footer">
         <div class="container layout-public__footer-inner">
-            <p class="layout-public__footer-copy">
-                &copy; {{ date('Y') }} {{ config('app.name') }}
-            </p>
+            <div class="layout-public__footer-brand">
+                <a href="{{ route('public.home') }}" class="layout-public__footer-logo">
+                    <img
+                        src="{{ asset('images/logo.svg') }}"
+                        alt="{{ config('app.name') }}"
+                        width="80"
+                        height="32"
+                        decoding="async"
+                    >
+                </a>
+                <p class="layout-public__footer-copy">
+                    &copy; {{ date('Y') }} {{ config('app.name') }}
+                </p>
+            </div>
 
-            <nav class="layout-public__footer-nav" aria-label="Навигация в подвале">
-                <a href="{{ route('public.home') }}#how-it-works" class="layout-public__footer-link">Как это работает</a>
-                <a href="{{ route('public.home') }}#pricing" class="layout-public__footer-link">Цены</a>
-                <a href="{{ route('public.privacy') }}" class="layout-public__footer-link">Политика конфиденциальности</a>
-                <a href="{{ route('public.terms') }}" class="layout-public__footer-link">Условия использования</a>
-                <a
-                    href="{{ url('/app/login') }}"
-                    class="layout-public__footer-link"
-                    data-public-auth-cta="login"
-                >Войти</a>
-            </nav>
+            <div class="layout-public__footer-menus">
+                <nav class="layout-public__footer-col" aria-label="Разделы">
+                    <p class="layout-public__footer-label">Разделы</p>
+                    <ul class="layout-public__footer-list">
+                        <li>
+                            <a href="{{ route('public.home') }}#how-it-works" class="layout-public__footer-link">Как это работает</a>
+                        </li>
+                        <li>
+                            <a href="{{ route('public.home') }}#pricing" class="layout-public__footer-link">Цены</a>
+                        </li>
+                        <li>
+                            <a
+                                href="{{ url('/app/login') }}"
+                                class="layout-public__footer-link"
+                                data-public-auth-cta="login"
+                            >Войти</a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <nav class="layout-public__footer-col" aria-label="Документы">
+                    <p class="layout-public__footer-label">Документы</p>
+                    <ul class="layout-public__footer-list">
+                        <li>
+                            <a href="{{ route('public.privacy') }}" class="layout-public__footer-link">Конфиденциальность</a>
+                        </li>
+                        <li>
+                            <a href="{{ route('public.terms') }}" class="layout-public__footer-link">Условия использования</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </footer>
 
