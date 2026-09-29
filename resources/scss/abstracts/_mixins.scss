@@ -47,6 +47,37 @@
   );
 }
 
+/// Vertical fade: dots nearly invisible at the top, denser lower
+@mixin dot-field-fade-y(
+  $from: 0%,
+  $soft: 18%,
+  $mid: 45%,
+  $full: 72%
+) {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent #{$from},
+    rgba(0, 0, 0, 0.12) #{$soft},
+    rgba(0, 0, 0, 0.65) #{$mid},
+    #000 #{$full}
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent #{$from},
+    rgba(0, 0, 0, 0.12) #{$soft},
+    rgba(0, 0, 0, 0.65) #{$mid},
+    #000 #{$full}
+  );
+}
+
+/// Diagonal dashed hatch (Materio-style section backdrop)
+@mixin hatch-field {
+  background-color: var(--hatch-bg, #{$body-bg});
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath d='M-4 32L32-4' fill='none' stroke='%2312151a' stroke-opacity='0.09' stroke-width='1' stroke-dasharray='5 7'/%3E%3C/svg%3E");
+  background-size: var(--hatch-gap, 28px) var(--hatch-gap, 28px);
+  background-repeat: repeat;
+}
+
 /// Full-page / shell surface with dotted backdrop via ::before
 @mixin dot-field-surface($fade-at: 50% 35%) {
   position: relative;

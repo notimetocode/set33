@@ -3,7 +3,6 @@
         <div class="page-app-ai-services__header">
             <div>
                 <h1 class="page-app-ai-services__title">AI-сервисы</h1>
-                <p class="page-app-ai-services__lede">Подключения к моделям и сервисам ИИ</p>
             </div>
             <RouterLink class="btn btn-primary" :to="{ name: 'ai-services.create' }">
                 Добавить
@@ -18,53 +17,6 @@
         <div v-else-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
         <template v-else>
-            <section
-                v-if="globalServices.length"
-                class="page-app-ai-services__section"
-                aria-labelledby="ai-services-global-title"
-            >
-                <div class="page-app-ai-services__section-head">
-                    <h2 id="ai-services-global-title" class="page-app-ai-services__section-title">
-                        Общие сервисы
-                    </h2>
-                    <p class="page-app-ai-services__section-lede">
-                        Доступны всем пользователям. Настраивает только администратор.
-                    </p>
-                </div>
-
-                <div class="data-table">
-                    <table class="table table-sm table-hover align-middle data-table__grid">
-                        <thead>
-                            <tr>
-                                <th>Сервис</th>
-                                <th class="page-app-ai-services__col-status">Статус</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="service in globalServices"
-                                :key="service.id"
-                                class="page-app-ai-services__row page-app-ai-services__row--readonly"
-                            >
-                                <td>
-                                    <span class="page-app-ai-services__service-name">
-                                        {{ service.name }}
-                                    </span>
-                                </td>
-                                <td class="page-app-ai-services__col-status">
-                                    <span
-                                        class="status-tag"
-                                        :class="statusTagClass(service.status)"
-                                    >
-                                        {{ service.status_label }}
-                                    </span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
             <section
                 class="page-app-ai-services__section"
                 aria-labelledby="ai-services-own-title"
@@ -171,6 +123,50 @@
                             </tr>
                             <tr v-if="!ownServices.length">
                                 <td colspan="4" class="text-muted">Пока нет личных AI-сервисов</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section
+                v-if="globalServices.length"
+                class="page-app-ai-services__section page-app-ai-services__section--global"
+                aria-labelledby="ai-services-global-title"
+            >
+                <div class="page-app-ai-services__section-head">
+                    <h2 id="ai-services-global-title" class="page-app-ai-services__section-title">
+                        Базовые сервисы
+                    </h2>
+                </div>
+
+                <div class="data-table">
+                    <table class="table table-sm table-hover align-middle data-table__grid">
+                        <thead>
+                            <tr>
+                                <th>Сервис</th>
+                                <th class="page-app-ai-services__col-status">Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="service in globalServices"
+                                :key="service.id"
+                                class="page-app-ai-services__row page-app-ai-services__row--readonly"
+                            >
+                                <td>
+                                    <span class="page-app-ai-services__service-name">
+                                        {{ service.name }}
+                                    </span>
+                                </td>
+                                <td class="page-app-ai-services__col-status">
+                                    <span
+                                        class="status-tag"
+                                        :class="statusTagClass(service.status)"
+                                    >
+                                        {{ service.status_label }}
+                                    </span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>

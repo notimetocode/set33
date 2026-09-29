@@ -1,7 +1,7 @@
 import * as bootstrap from 'bootstrap';
 import { getToken } from '../shared/api/http';
 import { initCookieConsent } from './cookie-consent';
-import { initHeroTorus } from './hero-torus';
+import { initHomeTabs } from './home-tabs';
 
 function syncPublicAuthCtas() {
     const authed = Boolean(getToken('/api/app'));
@@ -124,7 +124,7 @@ function initPublicUi() {
     initPublicHeaderScroll();
     initPublicNav();
     initCookieConsent();
-    initHeroTorus();
+    initHomeTabs();
 }
 
 if (document.readyState === 'loading') {

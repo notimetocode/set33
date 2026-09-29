@@ -1,158 +1,243 @@
 @extends('public.layouts.app')
 
-@section('title', config('app.name').' — AI анализ SEO сайта')
+@section('title', config('app.name').' — AI-отчёты по SEO сайта')
 @section('meta_description', 'AI-отчёты по сайту на основе Google Analytics, Search Console, GitHub и других сервисов. Подключите источники — получайте понятные выводы по трафику, поиску и релизам.')
 
 @section('content')
-    <div class="page-home">
+    <div class="page-home" data-home-tabs>
         <section class="page-home__hero" aria-labelledby="home-hero-heading">
-            <div class="page-home__hero-bg" aria-hidden="true"></div>
+            <div class="page-home__dots" aria-hidden="true"></div>
 
-            <canvas
-                class="page-home__torus"
-                data-hero-torus
-                width="640"
-                height="640"
-                aria-hidden="true"
-            ></canvas>
-
-            <div class="container page-home__hero-grid">
-                <div class="page-home__hero-inner">
-                    <img
-                        class="page-home__brand"
-                        src="{{ asset('images/logo.svg') }}"
-                        alt="{{ config('app.name') }}"
-                        width="233"
-                        height="95"
-                    >
-
-                    <h1 id="home-hero-heading" class="page-home__headline">
-                        AI анализ SEO сайта
-                    </h1>
-
-                    <p class="page-home__lead">
-                        AI-отчёты по сайту на основе Google Analytics, Search Console, GitHub и других сервисов. Подключите источники — получайте понятные выводы по трафику, поиску и релизам.
-                    </p>
-
-                    <div class="page-home__cta">
-                        <a
-                            href="{{ url('/app/register') }}"
-                            class="btn btn-primary btn-lg"
-                            data-public-auth-cta="register"
-                            data-public-auth-keep
-                        >Зарегистрироваться</a>
-                        <a href="#how-it-works" class="btn btn-secondary btn-lg">
-                            Как это работает
-                            <span class="page-home__cta-arrow" aria-hidden="true">→</span>
-                        </a>
-                    </div>
-                </div>
-
-                <div
-                    class="page-home__hero-visual"
-                    data-hero-torus-hit
-                    aria-hidden="true"
-                >
-                    <span class="page-home__torus-word page-home__torus-word--data" data-torus-word="data">Данные</span>
-                    <span class="page-home__torus-word page-home__torus-word--chaos" data-torus-word="chaos">Хаос</span>
+            <div class="container page-home__hero-inner">
+                <h1 id="home-hero-heading" class="page-home__headline">
+                    Меньше рутины — больше ясности по сайту
+                </h1>
+                <p class="page-home__lead">
+                    AI-отчёты на основе Analytics, Search Console и GitHub —
+                    выводы по трафику, поиску и релизам без ручной сводки.
+                </p>
+                <div class="page-home__cta">
+                    <a href="#how-it-works" class="btn btn-secondary btn-lg">
+                        Как это работает
+                    </a>
+                    <a
+                        href="{{ url('/app/register') }}"
+                        class="btn btn-primary btn-lg"
+                        data-public-auth-cta="register"
+                        data-public-auth-keep
+                    >Попробовать</a>
                 </div>
             </div>
         </section>
 
         <section
             id="how-it-works"
-            class="page-home__section page-home__section--how"
+            class="page-home__features"
             aria-labelledby="how-heading"
         >
-            <div class="container">
-                <header class="page-home__section-intro">
-                    <p class="page-home__section-eyebrow">Процесс</p>
-                    <h2 id="how-heading" class="page-home__section-title">Как это работает</h2>
-                    <p class="page-home__section-lead">
-                        Три шага от подключения источников до готового AI-отчёта
-                    </p>
-                </header>
+            <div class="page-home__dots page-home__dots--flat" aria-hidden="true"></div>
 
-                <ol class="page-home__steps">
-                    <li class="page-home__step">
-                        <div class="page-home__step-visual" aria-hidden="true">
-                            <svg class="page-home__step-svg" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M48 72V88L120 112M120 72V112M192 72V88L120 112" class="page-home__step-svg-link" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-                                <rect x="18" y="18" width="60" height="54" rx="12" class="page-home__step-svg-panel"/>
-                                <rect x="90" y="18" width="60" height="54" rx="12" class="page-home__step-svg-panel page-home__step-svg-panel--accent"/>
-                                <rect x="162" y="18" width="60" height="54" rx="12" class="page-home__step-svg-panel"/>
-                                <circle cx="48" cy="36" r="5.5" class="page-home__step-svg-dot"/>
-                                <circle cx="120" cy="36" r="5.5" class="page-home__step-svg-dot page-home__step-svg-dot--mint"/>
-                                <circle cx="192" cy="36" r="5.5" class="page-home__step-svg-dot"/>
-                                <text x="48" y="56" text-anchor="middle" class="page-home__step-svg-label">Analytics</text>
-                                <text x="120" y="56" text-anchor="middle" class="page-home__step-svg-label">GSC</text>
-                                <text x="192" y="56" text-anchor="middle" class="page-home__step-svg-label">GitHub</text>
-                                <rect x="78" y="112" width="84" height="28" rx="10" class="page-home__step-svg-panel page-home__step-svg-panel--soft"/>
-                                <text x="120" y="130" text-anchor="middle" class="page-home__step-svg-label">Сайт</text>
-                            </svg>
-                        </div>
-                        <span class="page-home__step-num" aria-hidden="true">01</span>
-                        <div class="page-home__step-body">
-                            <h3 class="page-home__step-title">Подключите источники</h3>
-                            <p class="page-home__step-text">
-                                Добавьте сайт и свяжите Google Analytics, Search Console и GitHub
+            <div class="page-home__features-track">
+                <div
+                    class="page-home__tabs"
+                    role="tablist"
+                    aria-label="Возможности продукта"
+                >
+                    <button
+                        type="button"
+                        class="page-home__tab is-active"
+                        role="tab"
+                        id="home-tab-sources"
+                        data-home-tab="sources"
+                        aria-selected="true"
+                        tabindex="0"
+                    >
+                        <span class="page-home__tab-title">Источники</span>
+                        <span class="page-home__tab-caption">не разрозненные дашборды</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="page-home__tab"
+                        role="tab"
+                        id="home-tab-metrics"
+                        data-home-tab="metrics"
+                        aria-selected="false"
+                        tabindex="-1"
+                    >
+                        <span class="page-home__tab-title">Метрики и события</span>
+                        <span class="page-home__tab-caption">полный контекст периода</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="page-home__tab"
+                        role="tab"
+                        id="home-tab-reports"
+                        data-home-tab="reports"
+                        aria-selected="false"
+                        tabindex="-1"
+                    >
+                        <span class="page-home__tab-title">AI-отчёты</span>
+                        <span class="page-home__tab-caption">выводы, а не сырые цифры</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="page-home__tab"
+                        role="tab"
+                        id="home-tab-sites"
+                        data-home-tab="sites"
+                        aria-selected="false"
+                        tabindex="-1"
+                    >
+                        <span class="page-home__tab-title">Несколько сайтов</span>
+                        <span class="page-home__tab-caption">один кабинет на портфель</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="container page-home__bento">
+                <div class="page-home__bento-panel">
+                    <header class="page-home__bento-intro">
+                        <h2 id="how-heading" class="page-home__bento-title">
+                            Готовая система, а не шаблон
+                        </h2>
+                        <p class="page-home__bento-lead">
+                            Подключаем сервисы, события и документы сайта —
+                            в отчёт попадает то, что реально влияет на SEO.
+                        </p>
+                    </header>
+
+                    <div class="page-home__bento-grid" role="list">
+                        <article class="page-home__bento-cell page-home__bento-cell--sm" role="listitem">
+                            <div class="page-home__bento-source-head">
+                                <img
+                                    class="page-home__bento-source-logo"
+                                    src="{{ asset('images/integrations/google-analytics.svg') }}"
+                                    alt=""
+                                    width="24"
+                                    height="24"
+                                    decoding="async"
+                                >
+                                <h3 class="page-home__bento-cell-title">Google Analytics</h3>
+                            </div>
+                            <p class="page-home__bento-source-data">
+                                Сессии, пользователи, просмотры и органический трафик
+                                с вовлечённостью по дням.
                             </p>
-                        </div>
-                    </li>
-                    <li class="page-home__step">
-                        <div class="page-home__step-visual" aria-hidden="true">
-                            <svg class="page-home__step-svg" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="28" y="24" width="184" height="112" rx="14" class="page-home__step-svg-panel"/>
-                                <path d="M48 108V84M72 108V64M96 108V92M120 108V52M144 108V70M168 108V44M192 108V78" class="page-home__step-svg-bar" stroke-width="10" stroke-linecap="round"/>
-                                <path d="M48 96C72 96 72 58 96 58C120 58 120 88 144 72C168 56 168 40 192 48" class="page-home__step-svg-trend" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                <circle cx="192" cy="48" r="5" class="page-home__step-svg-dot page-home__step-svg-dot--mint"/>
-                                <rect x="44" y="34" width="40" height="8" rx="4" class="page-home__step-svg-chip"/>
-                                <rect x="92" y="34" width="28" height="8" rx="4" class="page-home__step-svg-chip page-home__step-svg-chip--mint"/>
-                            </svg>
-                        </div>
-                        <span class="page-home__step-num" aria-hidden="true">02</span>
-                        <div class="page-home__step-body">
-                            <h3 class="page-home__step-title">Соберите данные</h3>
-                            <p class="page-home__step-text">
-                                Синхронизируйте метрики и зафиксируйте важные события по сайту
+                            <p class="page-home__bento-cell-text">
+                                Видно, как меняется поведение аудитории после SEO-работ —
+                                не только визиты, но и качество трафика.
                             </p>
-                        </div>
-                    </li>
-                    <li class="page-home__step">
-                        <div class="page-home__step-visual" aria-hidden="true">
-                            <svg class="page-home__step-svg" viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="52" y="20" width="136" height="120" rx="14" class="page-home__step-svg-panel page-home__step-svg-panel--accent"/>
-                                <rect x="68" y="38" width="72" height="8" rx="4" class="page-home__step-svg-chip"/>
-                                <rect x="68" y="56" width="104" height="6" rx="3" class="page-home__step-svg-line"/>
-                                <rect x="68" y="70" width="88" height="6" rx="3" class="page-home__step-svg-line"/>
-                                <rect x="68" y="84" width="96" height="6" rx="3" class="page-home__step-svg-line"/>
-                                <rect x="68" y="106" width="48" height="18" rx="6" class="page-home__step-svg-panel page-home__step-svg-panel--soft"/>
-                                <path d="M168 34l4.5 9.5L183 48l-9.5 4.5L168 62l-4.5-9.5L154 48l9.5-4.5L168 34z" class="page-home__step-svg-spark"/>
-                                <circle cx="176" cy="112" r="18" class="page-home__step-svg-glow"/>
-                                <text x="176" y="117" text-anchor="middle" class="page-home__step-svg-ai">AI</text>
-                            </svg>
-                        </div>
-                        <span class="page-home__step-num" aria-hidden="true">03</span>
-                        <div class="page-home__step-body">
-                            <h3 class="page-home__step-title">Получите отчёт</h3>
-                            <p class="page-home__step-text">
-                                Сгенерируйте AI-отчёт за выбранный период с выводами и рекомендациями
+                        </article>
+
+                        <article class="page-home__bento-cell page-home__bento-cell--lg" role="listitem">
+                            <div class="page-home__bento-source-head">
+                                <img
+                                    class="page-home__bento-source-logo"
+                                    src="{{ asset('images/integrations/google-search-console.svg') }}"
+                                    alt=""
+                                    width="24"
+                                    height="24"
+                                    decoding="async"
+                                >
+                                <h3 class="page-home__bento-cell-title">Search Console</h3>
+                            </div>
+                            <p class="page-home__bento-source-data">
+                                Клики, показы, CTR, позиции; топ-запросы и страницы;
+                                устройства, страны, sitemaps и URL Inspection.
                             </p>
-                        </div>
-                    </li>
-                </ol>
+                            <p class="page-home__bento-cell-text">
+                                Прямые данные поиска Google: видимость, индексация
+                                и запросы, по которым вас находят.
+                            </p>
+                        </article>
+
+                        <article class="page-home__bento-cell page-home__bento-cell--lg" role="listitem">
+                            <div class="page-home__bento-source-head">
+                                <img
+                                    class="page-home__bento-source-logo"
+                                    src="{{ asset('images/integrations/github.svg') }}"
+                                    alt=""
+                                    width="24"
+                                    height="24"
+                                    decoding="async"
+                                >
+                                <h3 class="page-home__bento-cell-title">GitHub</h3>
+                            </div>
+                            <p class="page-home__bento-source-data">
+                                Коммиты за период: сообщения, авторы и даты
+                                из привязанного репозитория.
+                            </p>
+                            <p class="page-home__bento-cell-text">
+                                Связывает релизы и правки кода со скачками метрик —
+                                что в разработке могло повлиять на SEO.
+                            </p>
+                        </article>
+
+                        <article class="page-home__bento-cell page-home__bento-cell--sm" role="listitem">
+                            <div class="page-home__bento-source-head">
+                                <img
+                                    class="page-home__bento-source-logo"
+                                    src="{{ asset('images/integrations/pagespeed.svg') }}"
+                                    alt=""
+                                    width="24"
+                                    height="24"
+                                    decoding="async"
+                                >
+                                <h3 class="page-home__bento-cell-title">PageSpeed / CrUX</h3>
+                            </div>
+                            <p class="page-home__bento-source-data">
+                                Core Web Vitals (LCP, INP, CLS), оценки Lighthouse
+                                и полевые данные Chrome UX Report.
+                            </p>
+                            <p class="page-home__bento-cell-text">
+                                Скорость и стабильность — фактор ранжирования и UX;
+                                без них SEO-отчёт неполный.
+                            </p>
+                        </article>
+
+                        <article class="page-home__bento-cell page-home__bento-cell--full" role="listitem">
+                            <div class="page-home__bento-wide-copy">
+                                <h3 class="page-home__bento-cell-title">События и документы</h3>
+                                <p class="page-home__bento-source-data">
+                                    Ручные заметки за период и Markdown-файлы сайта:
+                                    публикации, акции, инциденты, брендбук, ТЗ, семантика.
+                                </p>
+                                <p class="page-home__bento-cell-text">
+                                    Внешние факторы объясняют скачки метрик, а документы
+                                    дают AI рамку продукта — рекомендации не из шаблона.
+                                </p>
+                            </div>
+                            <div class="page-home__bento-wide-illus" aria-hidden="true">
+                                <div class="page-home__bento-stack">
+                                    <div class="page-home__bento-mini page-home__bento-mini--event">
+                                        <span class="page-home__bento-mini-label">Событие</span>
+                                        <span class="page-home__bento-mini-title">Запуск раздела блога</span>
+                                        <span class="page-home__bento-mini-meta">12 сен · ссылка</span>
+                                    </div>
+                                    <div class="page-home__bento-mini page-home__bento-mini--doc">
+                                        <span class="page-home__bento-mini-label">Документ</span>
+                                        <span class="page-home__bento-mini-title">Семантика · brand.md</span>
+                                        <span class="page-home__bento-mini-lines">
+                                            <span></span><span></span><span></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
             </div>
         </section>
 
         <section
             id="pricing"
-            class="page-home__section page-home__section--pricing"
+            class="page-home__pricing"
             aria-labelledby="pricing-heading"
         >
             <div class="container">
-                <header class="page-home__section-intro">
-                    <h2 id="pricing-heading" class="page-home__section-title">Цены</h2>
-                    <p class="page-home__section-lead">
+                <header class="page-home__pricing-intro">
+                    <h2 id="pricing-heading" class="page-home__pricing-title">Цены</h2>
+                    <p class="page-home__pricing-lead">
                         Выберите объём отчётов под задачу — от разового анализа до агентского потока
                     </p>
                 </header>

@@ -45,6 +45,12 @@
     &:last-of-type {
       margin-bottom: 0;
     }
+
+    &--global {
+      margin-top: 0.5rem;
+      padding-top: 1.75rem;
+      border-top: 1px solid var(--border, #{$color-line-soft});
+    }
   }
 
   &__section-head {
