@@ -12,7 +12,7 @@
             </div>
             <div class="page-app-ai-services__header-actions">
                 <RouterLink
-                    v-if="service"
+                    v-if="service && !service.is_global"
                     class="btn btn-secondary"
                     :to="{ name: 'ai-services.edit', params: { id: service.id } }"
                 >

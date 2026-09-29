@@ -1,6 +1,6 @@
 .page-app-ai-services {
-  max-width: 52rem;
-  padding-bottom: 3rem;
+  max-width: none;
+  padding-bottom: 0.5rem;
 
   &--form {
     max-width: 40rem;
@@ -20,7 +20,50 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.75rem;
+  }
+
+  &__title {
+    margin: 0 0 0.4rem;
+    font-size: 1.65rem;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    color: var(--body-color, #{$body-color});
+  }
+
+  &__lede {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--muted, #{$muted});
+  }
+
+  &__section {
+    margin-bottom: 2rem;
+
+    &:last-of-type {
+      margin-bottom: 0;
+    }
+  }
+
+  &__section-head {
+    margin-bottom: 0.85rem;
+  }
+
+  &__section-title {
+    margin: 0 0 0.25rem;
+    font-size: 1.05rem;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    color: var(--body-color, #{$body-color});
+  }
+
+  &__section-lede {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: var(--muted, #{$muted});
   }
 
   &__header-actions {
@@ -32,10 +75,10 @@
   &__eyebrow {
     margin: 0 0 0.35rem;
     font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-weight: 650;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--brand, #{$primary});
+    color: var(--muted, #{$muted});
   }
 
   &__title {
@@ -79,6 +122,14 @@
       outline: 2px solid rgba(11, 122, 75, 0.35);
       outline-offset: -2px;
     }
+
+    &--readonly {
+      cursor: default;
+
+      &:focus-visible {
+        outline: none;
+      }
+    }
   }
 
   &__service-link {
@@ -90,7 +141,7 @@
     text-decoration: none;
 
     &:hover {
-      color: var(--brand, #{$primary});
+      color: #111827;
       text-decoration: underline;
     }
   }
@@ -116,8 +167,9 @@
   &__check-reply {
     margin: 0;
     padding: 0.75rem 0.85rem;
-    border-radius: 0.65rem;
-    background: rgba(18, 21, 26, 0.04);
+    border-radius: $border-radius;
+    border: 1px solid var(--border);
+    background: #fff;
     color: var(--body-color);
     font-size: 0.875rem;
     line-height: 1.45;
@@ -133,9 +185,9 @@
   &__reply {
     margin-top: 0.35rem;
     padding: 1rem;
-    border-radius: $border-radius;
-    background: rgba(18, 21, 26, 0.02);
-    border: 1px solid rgba(18, 21, 26, 0.06);
+    border-radius: $border-radius-lg;
+    background: #fff;
+    border: 1px solid var(--border);
   }
 
   &__reply-head {
@@ -189,8 +241,9 @@
     width: 2rem;
     height: 2rem;
     border-radius: 999px;
-    border: 1px solid rgba(18, 21, 26, 0.1);
+    border: 0;
     background: var(--surface, #{$surface});
+    box-shadow: var(--shadow-soft);
     color: var(--muted, #{$muted});
     font-size: 0.8125rem;
     font-weight: 600;
@@ -201,16 +254,16 @@
       box-shadow 0.2s ease;
 
     .is-active & {
-      background: var(--brand, #{$primary});
-      border-color: var(--brand, #{$primary});
+      background: #111827;
+      border-color: #111827;
       color: #fff;
-      box-shadow: 0 0 0 4px rgba(11, 122, 75, 0.12);
+      box-shadow: none;
     }
 
     .is-done & {
-      background: rgba(11, 122, 75, 0.12);
-      border-color: transparent;
-      color: var(--brand, #{$primary});
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      color: #64748b;
     }
   }
 
@@ -250,18 +303,16 @@
     transition: background-color 0.25s ease;
 
     &.is-done {
-      background: rgba(11, 122, 75, 0.45);
+      background: #111827;
     }
   }
 
   &__panel {
-    padding: 1.35rem 1.35rem 1.25rem;
-    border: 1px solid rgba(11, 122, 75, 0.1);
+    padding: 1.25rem 1.25rem 1.15rem;
+    border: 1px solid var(--border);
     border-radius: $border-radius-lg;
-    background:
-      linear-gradient(180deg, rgba(11, 122, 75, 0.035), transparent 7.5rem),
-      var(--surface, #{$surface});
-    box-shadow: 0 1px 2px rgba(18, 21, 26, 0.04);
+    background: #fff;
+    box-shadow: none;
   }
 
   &__panel-body {
@@ -283,7 +334,7 @@
 
   &__label-icon {
     font-size: 0.8em;
-    color: var(--brand, #{$primary});
+    color: #64748b;
     opacity: 0.85;
   }
 
@@ -299,14 +350,12 @@
     gap: 0.85rem;
     margin: 0;
     padding: 0.9rem 1rem;
-    border: 1px solid rgba(18, 21, 26, 0.08);
-    border-radius: $border-radius;
-    background: rgba(11, 122, 75, 0.03);
+    border: 1px solid var(--border);
+    border-radius: $border-radius-lg;
+    background: #fff;
+    box-shadow: none;
     cursor: pointer;
-    transition:
-      border-color 0.18s ease,
-      background-color 0.18s ease,
-      box-shadow 0.18s ease;
+    transition: border-color 0.18s ease;
 
     input {
       position: absolute;
@@ -317,14 +366,14 @@
     }
 
     &:hover:not(.is-active) {
-      background: rgba(11, 122, 75, 0.055);
-      border-color: rgba(11, 122, 75, 0.18);
+      border-color: #cbd5e1;
+      background: #fff;
     }
 
     &.is-active {
-      background: rgba(11, 122, 75, 0.08);
-      border-color: rgba(11, 122, 75, 0.42);
-      box-shadow: 0 0 0 3px rgba(11, 122, 75, 0.1);
+      background: #fff;
+      border-color: #111827;
+      box-shadow: none;
     }
 
     &.is-invalid {
@@ -345,8 +394,9 @@
     width: 2.25rem;
     height: 2.25rem;
     border-radius: $border-radius-sm;
-    background: rgba(11, 122, 75, 0.12);
-    color: var(--brand, #{$primary});
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--body-color, #{$body-color});
     font-size: 0.95rem;
   }
 
@@ -378,9 +428,10 @@
     justify-content: space-between;
     gap: 0.75rem 1rem;
     padding: 0.85rem 1rem;
-    border-radius: $border-radius;
-    background: rgba(11, 122, 75, 0.06);
-    border: 1px solid rgba(11, 122, 75, 0.1);
+    border-radius: $border-radius-lg;
+    background: #fff;
+    border: 1px solid var(--border);
+    border: 0;
   }
 
   &__summary-main {
@@ -403,9 +454,9 @@
 
   &__params {
     padding: 1rem;
-    border-radius: $border-radius;
-    background: rgba(18, 21, 26, 0.02);
-    border: 1px solid rgba(18, 21, 26, 0.06);
+    border-radius: $border-radius-lg;
+    background: #fff;
+    border: 1px solid var(--border);
   }
 
   &__params-title {

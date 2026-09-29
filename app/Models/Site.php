@@ -134,4 +134,12 @@ class Site extends Model
     {
         return $this->hasMany(SiteEvent::class);
     }
+
+    /**
+     * @return HasMany<SiteDocument, $this>
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(SiteDocument::class);
+    }
 }

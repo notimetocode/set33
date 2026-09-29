@@ -4,6 +4,20 @@
   flex-direction: column;
 }
 
+/// White panel on gray canvas — hairline edge, no heavy shadow (eyris)
+@mixin soft-panel($radius: $border-radius-lg) {
+  border: 1px solid var(--border);
+  border-radius: $radius;
+  background: var(--surface);
+  box-shadow: none;
+}
+
+/// Quiet fill panel (sidebar chips, muted groups)
+@mixin soft-fill($bg: var(--surface-muted)) {
+  border: 0;
+  background: $bg;
+}
+
 /// Barely-visible dot field. Tune with CSS vars:
 /// --dot-color, --dot-size, --dot-gap, --dot-opacity
 @mixin dot-field {

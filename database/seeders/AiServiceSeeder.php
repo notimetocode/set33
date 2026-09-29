@@ -11,20 +11,20 @@ use RuntimeException;
 
 class AiServiceSeeder extends Seeder
 {
-    private const USER_EMAIL = 'user@example.com';
+    private const ADMIN_EMAIL = 'admin@example.com';
 
     /**
-     * Актуальная модель для user@example.com (рекомендация Google для новых ключей).
+     * Актуальная модель для глобального Gemini (рекомендация Google для новых ключей).
      */
     private const MODEL = 'gemini-3.6-flash';
 
     public function run(): void
     {
-        $user = User::query()->where('email', self::USER_EMAIL)->first();
+        $admin = User::query()->where('email', self::ADMIN_EMAIL)->first();
 
-        if ($user === null) {
+        if ($admin === null) {
             throw new RuntimeException(
-                'Пользователь «'.self::USER_EMAIL.'» не найден. Сначала запустите AppUserSeeder.',
+                'Пользователь «'.self::ADMIN_EMAIL.'» не найден. Сначала запустите AdminUserSeeder.',
             );
         }
 
@@ -39,12 +39,19 @@ class AiServiceSeeder extends Seeder
         $type = AiServiceType::Gemini;
         $model = self::MODEL;
 
+        AiService::query()
+            ->where('is_global', false)
+            ->where('type', $type)
+            ->whereHas('user', fn ($query) => $query->where('email', 'user@example.com'))
+            ->delete();
+
         AiService::query()->updateOrCreate(
             [
-                'user_id' => $user->id,
+                'is_global' => true,
                 'type' => $type,
             ],
             [
+                'user_id' => $admin->id,
                 'name' => $type->serviceName($model),
                 'api_key' => $apiKey,
                 'settings' => [

@@ -2,38 +2,39 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 1.5rem;
-  padding: 0.2rem 0.65rem;
+  min-height: 1.45rem;
+  padding: 0.15rem 0.55rem;
   border: 1px solid transparent;
-  border-radius: 999px;
-  font-size: 0.75rem;
+  border-radius: $border-radius-sm;
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.2;
   white-space: nowrap;
   vertical-align: middle;
+  background: transparent;
 }
 
 .status-tag--ok {
-  color: #08653e;
-  background: rgba(11, 122, 75, 0.12);
-  border-color: rgba(11, 122, 75, 0.14);
+  color: #334155;
+  border-color: #e2e8f0;
+  background: transparent;
 }
 
 .status-tag--muted {
-  color: #5c6670;
-  background: rgba(18, 21, 26, 0.06);
-  border-color: rgba(18, 21, 26, 0.06);
+  color: #64748b;
+  border-color: #e2e8f0;
+  background: transparent;
 }
 
 .status-tag--danger {
-  color: #b42318;
-  background: rgba(180, 35, 24, 0.1);
-  border-color: rgba(180, 35, 24, 0.12);
+  color: #b91c1c;
+  border-color: rgba(185, 28, 28, 0.28);
+  background: transparent;
 }
 
 .status-tag--warning {
-  color: #9a3412;
-  background: rgba(180, 83, 9, 0.12);
-  border-color: rgba(180, 83, 9, 0.14);
+  color: #b45309;
+  border-color: rgba(180, 83, 9, 0.28);
+  background: transparent;
 }

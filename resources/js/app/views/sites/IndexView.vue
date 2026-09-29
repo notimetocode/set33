@@ -2,8 +2,8 @@
     <div class="page-app-sites">
         <div class="page-app-sites__header">
             <div>
-                <h1 class="h4 mb-1">Сайты</h1>
-                <p class="text-muted mb-0">Проекты и подключения Google Analytics / Search Console</p>
+                <h1 class="page-app-sites__title">Сайты</h1>
+                <p class="page-app-sites__lede">Проекты и подключения Google Analytics / Search Console</p>
             </div>
             <RouterLink class="btn btn-primary" :to="{ name: 'sites.create' }">
                 Добавить

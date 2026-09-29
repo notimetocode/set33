@@ -20,6 +20,7 @@ class SitePageSpeedIntegrationResource extends JsonResource
             'id' => $this->id,
             'strategy' => $this->strategy->value,
             'strategy_label' => $this->strategy->label(),
+            'page_urls' => is_array($this->page_urls) ? array_values($this->page_urls) : [],
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'last_synced_at' => $this->last_synced_at?->toIso8601String(),

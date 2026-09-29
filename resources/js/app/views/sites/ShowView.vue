@@ -63,7 +63,7 @@
                     logo="/images/integrations/pagespeed.svg"
                     :connected="pagespeedConnected"
                     :detail="pagespeedDetail"
-                    empty-detail="Не подключено"
+                    empty-detail="PageSpeed Insights не подключён"
                     :disabled="busy"
                     @configure="openPagespeedModal"
                 />
@@ -232,6 +232,32 @@
                     <p v-if="pagespeedIntegration?.last_error" class="text-danger small mt-2 mb-0">
                         Ошибка PageSpeed / CrUX: {{ pagespeedIntegration.last_error }}
                     </p>
+
+                    <div
+                        v-if="metricsCoverageItems.length || metricsCoverageEmpty"
+                        class="page-app-sites__data-coverage mt-3"
+                    >
+                        <h3 class="h6 mb-2">Выгруженные данные</h3>
+                        <ul
+                            v-if="metricsCoverageItems.length"
+                            class="page-app-sites__data-coverage-list"
+                        >
+                            <li
+                                v-for="item in metricsCoverageItems"
+                                :key="item.key"
+                                class="page-app-sites__data-coverage-item"
+                            >
+                                <span class="page-app-sites__data-coverage-label">{{ item.label }}</span>
+                                <span class="page-app-sites__data-coverage-value">{{ item.period }}</span>
+                            </li>
+                        </ul>
+                        <p
+                            v-else
+                            class="text-muted small mb-0"
+                        >
+                            Выгруженных данных пока нет.
+                        </p>
+                    </div>
                 </section>
 
                 <section
@@ -621,6 +647,9 @@
                         >
                             <p v-if="pagespeedIntegration?.strategy_label" class="text-muted small mb-3">
                                 Стратегия: {{ pagespeedIntegration.strategy_label }}
+                                <template v-if="pagespeedPageUrlsLabel">
+                                    · URL: {{ pagespeedPageUrlsLabel }}
+                                </template>
                             </p>
                             <AppLoader v-if="metricsLoading" block label="Загрузка PageSpeed / CrUX…" />
                             <div v-else-if="!pagespeedConnected" class="text-muted">
@@ -633,8 +662,12 @@
                                     <table class="table table-sm align-middle mb-0">
                                         <thead>
                                             <tr>
+                                                <th>URL</th>
                                                 <th>Стратегия</th>
-                                                <th>Score</th>
+                                                <th>Perf</th>
+                                                <th>A11y</th>
+                                                <th>BP</th>
+                                                <th>SEO</th>
                                                 <th>LCP</th>
                                                 <th>INP</th>
                                                 <th>CLS</th>
@@ -648,10 +681,14 @@
                                         <tbody>
                                             <tr
                                                 v-for="(row, index) in pagespeedLabRows"
-                                                :key="`lab-${row.strategy}-${row.fetched_at}-${index}`"
+                                                :key="`lab-${row.url}-${row.strategy}-${row.fetched_at}-${index}`"
                                             >
+                                                <td class="text-break">{{ row.url || '—' }}</td>
                                                 <td>{{ formatPagespeedStrategy(row.strategy) }}</td>
                                                 <td>{{ formatPagespeedScore(row.performance_score) }}</td>
+                                                <td>{{ formatPagespeedScore(row.accessibility_score) }}</td>
+                                                <td>{{ formatPagespeedScore(row.best_practices_score) }}</td>
+                                                <td>{{ formatPagespeedScore(row.seo_score) }}</td>
                                                 <td>{{ formatMs(row.lcp_ms) }}</td>
                                                 <td>{{ formatMs(row.inp_ms) }}</td>
                                                 <td>{{ formatCls(row.cls) }}</td>
@@ -672,7 +709,9 @@
                                         <thead>
                                             <tr>
                                                 <th>Scope</th>
+                                                <th>URL</th>
                                                 <th>Form factor</th>
+                                                <th>Категория</th>
                                                 <th>LCP p75</th>
                                                 <th>INP p75</th>
                                                 <th>CLS p75</th>
@@ -685,10 +724,12 @@
                                         <tbody>
                                             <tr
                                                 v-for="(row, index) in pagespeedCruxRows"
-                                                :key="`crux-${row.scope}-${row.form_factor}-${row.fetched_at}-${index}`"
+                                                :key="`crux-${row.scope}-${row.url}-${row.form_factor}-${row.fetched_at}-${index}`"
                                             >
                                                 <td>{{ formatCruxScope(row.scope) }}</td>
+                                                <td class="text-break">{{ row.url || '—' }}</td>
                                                 <td>{{ formatCruxFormFactor(row.form_factor) }}</td>
+                                                <td>{{ formatCruxOverallCategory(row.overall_category) }}</td>
                                                 <td>{{ formatMs(row.lcp_p75_ms) }}</td>
                                                 <td>{{ formatMs(row.inp_p75_ms) }}</td>
                                                 <td>{{ formatCls(row.cls_p75) }}</td>
@@ -1046,6 +1087,307 @@
             </div>
 
             <div
+                v-show="activeSiteView === 'documents'"
+                id="site-view-pane-documents"
+                role="tabpanel"
+                aria-labelledby="site-view-tab-documents"
+            >
+                <section
+                    class="page-app-sites__panel page-app-sites__documents"
+                    aria-label="Документы сайта"
+                >
+                    <div class="page-app-sites__panel-head">
+                        <h2 class="h5 mb-0">Документы</h2>
+                    </div>
+
+                    <template v-if="isDocumentEditing">
+                        <div class="page-app-sites__event-actions mb-3">
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                :disabled="documentSaving || Boolean(deletingDocumentId)"
+                                @click="onBackFromDocumentEdit"
+                            >
+                                Назад
+                            </button>
+                        </div>
+
+                        <p class="text-muted small mb-3">
+                            Редактирование сохранённого документа.
+                        </p>
+
+                        <div
+                            v-if="documentFormError"
+                            class="alert alert-danger py-2 mb-3"
+                        >
+                            {{ documentFormError }}
+                        </div>
+
+                        <form
+                            class="page-app-sites__event-form"
+                            @submit.prevent="onSubmitDocument"
+                        >
+                            <div class="page-app-sites__event-form-grid">
+                                <div class="page-app-sites__event-field page-app-sites__event-field--title">
+                                    <label class="form-label" for="document-edit-title">Название</label>
+                                    <input
+                                        id="document-edit-title"
+                                        v-model="documentForm.title"
+                                        type="text"
+                                        class="form-control"
+                                        maxlength="255"
+                                        :disabled="busy || documentSaving || Boolean(deletingDocumentId)"
+                                        required
+                                    >
+                                </div>
+                                <div class="page-app-sites__event-field page-app-sites__event-field--description">
+                                    <label class="form-label" for="document-edit-description">Краткое описание</label>
+                                    <textarea
+                                        id="document-edit-description"
+                                        v-model="documentForm.description"
+                                        class="form-control"
+                                        rows="3"
+                                        maxlength="2000"
+                                        placeholder="О чём документ и зачем он нужен для отчёта"
+                                        :disabled="busy || documentSaving || Boolean(deletingDocumentId)"
+                                    />
+                                </div>
+                                <div class="page-app-sites__event-field page-app-sites__event-field--file">
+                                    <label class="form-label" for="document-edit-file">Файл Markdown</label>
+                                    <input
+                                        id="document-edit-file"
+                                        ref="documentFileInput"
+                                        type="file"
+                                        class="form-control"
+                                        accept=".md,.txt,text/markdown,text/plain"
+                                        :disabled="busy || documentSaving || Boolean(deletingDocumentId)"
+                                        @change="onDocumentFileChange"
+                                    >
+                                    <p
+                                        v-if="editingDocumentFilename"
+                                        class="form-text mb-0"
+                                    >
+                                        Текущий файл: {{ editingDocumentFilename }}
+                                    </p>
+                                    <p class="form-text mb-0">
+                                        Чтобы заменить содержимое, выберите новый файл .md (до 512 КБ).
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="page-app-sites__event-form-actions">
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                    :disabled="busy || documentSaving || Boolean(deletingDocumentId) || !canSaveDocument"
+                                >
+                                    <AppLoader
+                                        v-if="documentSaving"
+                                        size="sm"
+                                    />
+                                    <span>
+                                        {{ documentSaving ? 'Сохранение…' : 'Сохранить' }}
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn btn-secondary"
+                                    :disabled="busy || documentSaving || Boolean(deletingDocumentId)"
+                                    @click="onBackFromDocumentEdit"
+                                >
+                                    Отмена
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-danger"
+                                    :disabled="busy || documentSaving || Boolean(deletingDocumentId)"
+                                    @click="onDeleteEditingDocument"
+                                >
+                                    <AppLoader
+                                        v-if="deletingDocumentId"
+                                        size="sm"
+                                    />
+                                    <span>
+                                        {{ deletingDocumentId ? 'Удаление…' : 'Удалить' }}
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                    </template>
+
+                    <template v-else>
+                        <AppLoader
+                            v-if="!documentsLoaded && documentsLoading"
+                            block
+                            label="Загрузка документов…"
+                        />
+
+                        <template v-else>
+                            <div
+                                v-if="documentsError"
+                                class="alert alert-danger py-2 mb-3"
+                            >
+                                {{ documentsError }}
+                            </div>
+
+                            <div
+                                v-if="showDocumentTabs"
+                                class="page-app-sites__view-switch page-app-sites__event-tabs"
+                                role="tablist"
+                                aria-label="Разделы документов"
+                            >
+                                <button
+                                    v-for="tab in documentTabs"
+                                    :id="`document-tab-${tab.id}`"
+                                    :key="tab.id"
+                                    type="button"
+                                    class="page-app-sites__view-switch-btn"
+                                    :class="{ 'is-active': activeDocumentTab === tab.id }"
+                                    role="tab"
+                                    :aria-selected="activeDocumentTab === tab.id"
+                                    :aria-controls="`document-pane-${tab.id}`"
+                                    @click="activeDocumentTab = tab.id"
+                                >
+                                    {{ tab.label }}
+                                </button>
+                            </div>
+
+                            <div
+                                v-show="activeDocumentTab === 'saved'"
+                                id="document-pane-saved"
+                                role="tabpanel"
+                                :aria-labelledby="showDocumentTabs ? 'document-tab-saved' : undefined"
+                            >
+                                <p class="text-muted small mb-3">
+                                    Markdown-документы сайта передаются в AI-отчёт как дополнительный контекст.
+                                </p>
+
+                                <AppLoader
+                                    v-if="documentsLoading"
+                                    block
+                                    label="Загрузка документов…"
+                                />
+                                <p
+                                    v-else-if="!documentRows.length"
+                                    class="text-muted small mb-0"
+                                >
+                                    Документы ещё не загружены
+                                </p>
+                                <div
+                                    v-else
+                                    class="page-app-sites__event-cards"
+                                    role="list"
+                                >
+                                    <button
+                                        v-for="row in documentRows"
+                                        :key="row.id"
+                                        type="button"
+                                        class="page-app-sites__event-card"
+                                        role="listitem"
+                                        :disabled="busy || documentSaving"
+                                        @click="startEditDocument(row)"
+                                    >
+                                        <span class="page-app-sites__event-card-title">
+                                            {{ row.title }}
+                                        </span>
+                                        <span
+                                            v-if="row.description"
+                                            class="page-app-sites__event-card-meta"
+                                        >
+                                            {{ documentCardDescription(row) }}
+                                        </span>
+                                        <span class="page-app-sites__event-card-date">
+                                            {{ row.original_filename || 'Markdown' }}
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div
+                                v-show="activeDocumentTab === 'new'"
+                                id="document-pane-new"
+                                role="tabpanel"
+                                :aria-labelledby="showDocumentTabs ? 'document-tab-new' : undefined"
+                            >
+                                <p class="text-muted small mb-3">
+                                    Например: брендбук, ТЗ, семантика или контент-гайд в формате Markdown.
+                                </p>
+
+                                <div
+                                    v-if="documentFormError"
+                                    class="alert alert-danger py-2 mb-3"
+                                >
+                                    {{ documentFormError }}
+                                </div>
+
+                                <form
+                                    class="page-app-sites__event-form"
+                                    @submit.prevent="onSubmitDocument"
+                                >
+                                    <div class="page-app-sites__event-form-grid">
+                                        <div class="page-app-sites__event-field page-app-sites__event-field--title">
+                                            <label class="form-label" for="document-title">Название</label>
+                                            <input
+                                                id="document-title"
+                                                v-model="documentForm.title"
+                                                type="text"
+                                                class="form-control"
+                                                maxlength="255"
+                                                :disabled="busy || documentSaving"
+                                                required
+                                            >
+                                        </div>
+                                        <div class="page-app-sites__event-field page-app-sites__event-field--description">
+                                            <label class="form-label" for="document-description">Краткое описание</label>
+                                            <textarea
+                                                id="document-description"
+                                                v-model="documentForm.description"
+                                                class="form-control"
+                                                rows="3"
+                                                maxlength="2000"
+                                                placeholder="О чём документ и зачем он нужен для отчёта"
+                                                :disabled="busy || documentSaving"
+                                            />
+                                        </div>
+                                        <div class="page-app-sites__event-field page-app-sites__event-field--file">
+                                            <label class="form-label" for="document-file">Файл Markdown</label>
+                                            <input
+                                                id="document-file"
+                                                ref="documentFileInput"
+                                                type="file"
+                                                class="form-control"
+                                                accept=".md,.txt,text/markdown,text/plain"
+                                                :disabled="busy || documentSaving"
+                                                required
+                                                @change="onDocumentFileChange"
+                                            >
+                                            <p class="form-text mb-0">
+                                                Допустимы файлы .md и .txt до 512 КБ.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="page-app-sites__event-form-actions">
+                                        <button
+                                            type="submit"
+                                            class="btn btn-primary"
+                                            :disabled="busy || documentSaving || !canSaveDocument"
+                                        >
+                                            <AppLoader
+                                                v-if="documentSaving"
+                                                size="sm"
+                                            />
+                                            <span>
+                                                {{ documentSaving ? 'Сохранение…' : 'Добавить' }}
+                                            </span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </template>
+                    </template>
+                </section>
+            </div>
+
+            <div
                 v-show="activeSiteView === 'ai-report'"
                 id="site-view-pane-ai-report"
                 role="tabpanel"
@@ -1262,7 +1604,7 @@
                                 :aria-labelledby="showAiReportTabs ? 'ai-report-tab-new' : undefined"
                             >
                                 <p class="text-muted small mb-3">
-                                    В отчёт попадут данные GA4, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub, PageSpeed / CrUX и события. Срезы GSC появляются после загрузки метрик за тот же период.
+                                    В отчёт попадут данные GA4, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub, PageSpeed / CrUX, события и документы сайта. Срезы GSC появляются после загрузки метрик за тот же период
                                     (тот же, что на вкладках «Данные сервисов» и «События»).
                                 </p>
 
@@ -1294,6 +1636,15 @@
                                     </div>
                                 </div>
 
+                                <AppMetricsCoverageTimeline
+                                    class="mb-3"
+                                    :items="aiReportCoverageTimelineItems"
+                                    :selected-from="period.from"
+                                    :selected-to="period.to"
+                                    :loading="!metricsCoverageLoaded"
+                                    :empty="metricsCoverageEmpty"
+                                />
+
                                 <AppLoader
                                     v-if="aiServicesLoading"
                                     block
@@ -1317,13 +1668,30 @@
                                             <option value="">
                                                 {{ aiServices.length ? 'Выберите сервис' : 'Нет доступных сервисов' }}
                                             </option>
-                                            <option
-                                                v-for="service in aiServices"
-                                                :key="service.id"
-                                                :value="String(service.id)"
+                                            <optgroup
+                                                v-if="globalAiServices.length"
+                                                label="Общие"
                                             >
-                                                {{ aiServiceOptionLabel(service) }}
-                                            </option>
+                                                <option
+                                                    v-for="service in globalAiServices"
+                                                    :key="service.id"
+                                                    :value="String(service.id)"
+                                                >
+                                                    {{ aiServiceOptionLabel(service) }}
+                                                </option>
+                                            </optgroup>
+                                            <optgroup
+                                                v-if="ownAiServices.length"
+                                                label="Мои"
+                                            >
+                                                <option
+                                                    v-for="service in ownAiServices"
+                                                    :key="service.id"
+                                                    :value="String(service.id)"
+                                                >
+                                                    {{ aiServiceOptionLabel(service) }}
+                                                </option>
+                                            </optgroup>
                                         </select>
                                         <p v-if="!aiServices.length" class="form-text mb-0">
                                             Сначала
@@ -1345,7 +1713,7 @@
                                                 size="sm"
                                             />
                                             <span>
-                                                {{ aiReportGenerating ? 'Формирование…' : 'Сформировать отчёт' }}
+                                                {{ aiReportGenerateButtonLabel }}
                                             </span>
                                         </button>
                                     </div>
@@ -1739,6 +2107,21 @@
                         {{ option.label }}
                     </option>
                 </select>
+
+                <label class="form-label" for="pagespeed-page-urls">URL страниц для теста</label>
+                <textarea
+                    id="pagespeed-page-urls"
+                    v-model="pagespeedForm.pageUrlsText"
+                    class="form-control mb-2"
+                    rows="4"
+                    :disabled="busy"
+                    placeholder="https://example.com/&#10;https://example.com/catalog&#10;/about"
+                />
+                <p class="form-text mb-3">
+                    По одному URL на строку, до 10 адресов. Можно указывать относительные пути
+                    относительно URL сайта. Если список пуст, тестируется только главная страница сайта.
+                </p>
+
                 <div class="page-app-sites__modal-actions">
                     <button
                         type="button"
@@ -1886,6 +2269,7 @@ import { useRoute } from 'vue-router';
 import SiteIntegrationCard from '../../components/SiteIntegrationCard.vue';
 import AppAiReportBody from '../../../shared/components/AppAiReportBody.vue';
 import AppLoader from '../../../shared/components/AppLoader.vue';
+import AppMetricsCoverageTimeline from '../../../shared/components/AppMetricsCoverageTimeline.vue';
 import AppModal from '../../../shared/components/AppModal.vue';
 import {
     buildAiReportPdfFilename,
@@ -1912,21 +2296,26 @@ import {
 } from '../../api/pagespeed';
 import {
     disconnectGoogle,
+    createSiteDocument,
     createSiteEvent,
+    deleteSiteDocument,
     deleteSiteEvent,
     generateSiteAiReport,
     getGoogleConnection,
     getSite,
     getSiteAiReport,
     getSiteAnalyticsMetrics,
+    getSiteMetricsCoverage,
     getSiteSearchConsoleMetrics,
     listGa4Properties,
     listGscSites,
     listSiteAiReports,
+    listSiteDocuments,
     listSiteEvents,
     startGoogleOAuth,
     syncSiteGoogleIntegration,
     updateSiteAiReportSharing,
+    updateSiteDocument,
     updateSiteEvent,
     updateSiteGoogleIntegration,
 } from '../../api/sites';
@@ -1955,7 +2344,10 @@ const gscUrlInspections = ref([]);
 const commitRows = ref([]);
 const pagespeedLabRows = ref([]);
 const pagespeedCruxRows = ref([]);
+const metricsCoverage = ref(null);
+const metricsCoverageLoaded = ref(false);
 const eventRows = ref([]);
+const documentRows = ref([]);
 
 const loading = ref(true);
 const listsLoading = ref(false);
@@ -1966,6 +2358,10 @@ const eventsLoading = ref(false);
 const eventsLoaded = ref(false);
 const eventSaving = ref(false);
 const deletingEventId = ref(null);
+const documentsLoading = ref(false);
+const documentsLoaded = ref(false);
+const documentSaving = ref(false);
+const deletingDocumentId = ref(null);
 const busy = ref(false);
 const error = ref('');
 const listsError = ref('');
@@ -1975,6 +2371,13 @@ const eventsError = ref('');
 const eventFormError = ref('');
 const editingEventId = ref(null);
 const activeEventTab = ref('saved');
+const documentsError = ref('');
+const documentFormError = ref('');
+const editingDocumentId = ref(null);
+const editingDocumentFilename = ref('');
+const activeDocumentTab = ref('saved');
+const documentFile = ref(null);
+const documentFileInput = ref(null);
 
 const gaModalOpen = ref(false);
 const gscModalOpen = ref(false);
@@ -1988,9 +2391,15 @@ const aiServicesLoading = ref(false);
 const aiServicesError = ref('');
 const aiServicesLoaded = ref(false);
 const aiReportServiceId = ref('');
+
+const globalAiServices = computed(() => aiServices.value.filter((service) => service.is_global));
+const ownAiServices = computed(() => aiServices.value.filter((service) => !service.is_global));
 const aiReportGenerating = ref(false);
+const aiReportAttempt = ref(0);
 const aiReportLoading = ref(false);
 const aiReportError = ref('');
+const AI_REPORT_MAX_ATTEMPTS = 5;
+const AI_REPORT_RETRY_DELAY_MS = 2500;
 const aiReportReply = ref('');
 const aiReportCharts = ref([]);
 const aiReportModel = ref('');
@@ -2028,6 +2437,7 @@ const aiReportSharingOptions = [
 const siteViewTabs = [
     { id: 'data', label: 'Данные сервисов' },
     { id: 'events', label: 'События' },
+    { id: 'documents', label: 'Документы' },
     { id: 'ai-report', label: 'AI отчёт' },
 ];
 
@@ -2039,6 +2449,11 @@ const aiReportTabs = [
 const eventTabs = [
     { id: 'saved', label: 'Сохранённые события' },
     { id: 'new', label: 'Новое событие' },
+];
+
+const documentTabs = [
+    { id: 'saved', label: 'Сохранённые документы' },
+    { id: 'new', label: 'Новый документ' },
 ];
 
 const metricsTabs = [
@@ -2073,6 +2488,7 @@ const githubForm = reactive({
 
 const pagespeedForm = reactive({
     strategy: 'mobile',
+    pageUrlsText: '',
 });
 
 const eventForm = reactive({
@@ -2080,6 +2496,11 @@ const eventForm = reactive({
     title: '',
     description: '',
     url: '',
+});
+
+const documentForm = reactive({
+    title: '',
+    description: '',
 });
 
 const gaConnected = computed(() => Boolean(integration.value?.ga4_property_id));
@@ -2096,6 +2517,64 @@ const hasGscMetrics = computed(() => (
 ));
 const githubConnected = computed(() => Boolean(githubIntegration.value?.is_configured));
 const pagespeedConnected = computed(() => Boolean(pagespeedIntegration.value?.is_configured));
+
+const metricsCoverageDefs = [
+    { key: 'analytics', label: 'Google Analytics', available: () => gaConnected.value },
+    { key: 'search_console_daily', label: 'Search Console (по дням)', available: () => gscConnected.value },
+    {
+        key: 'search_console_dimensions',
+        label: 'Search Console (разрезы)',
+        available: () => gscConnected.value,
+    },
+    { key: 'github_commits', label: 'GitHub', available: () => githubConnected.value },
+    { key: 'pagespeed_lab', label: 'PageSpeed Lab', available: () => pagespeedConnected.value },
+    { key: 'crux', label: 'CrUX', available: () => pagespeedConnected.value },
+];
+
+const metricsCoverageItems = computed(() => (
+    metricsCoverageDefs
+        .filter((item) => item.available())
+        .map((item) => {
+            const range = metricsCoverage.value?.[item.key];
+
+            if (!range?.from || !range?.to) {
+                return null;
+            }
+
+            return {
+                key: item.key,
+                label: item.label,
+                period: formatCoveragePeriod(range.from, range.to),
+            };
+        })
+        .filter(Boolean)
+));
+
+const aiReportCoverageTimelineItems = computed(() => (
+    metricsCoverageDefs
+        .filter((item) => item.available())
+        .map((item) => {
+            const range = metricsCoverage.value?.[item.key];
+
+            if (!range?.from || !range?.to) {
+                return null;
+            }
+
+            return {
+                key: item.key,
+                label: item.label,
+                from: range.from,
+                to: range.to,
+            };
+        })
+        .filter(Boolean)
+));
+
+const metricsCoverageEmpty = computed(() => (
+    metricsCoverageLoaded.value
+    && metricsCoverageDefs.some((item) => item.available())
+    && metricsCoverageItems.value.length === 0
+));
 
 const syncMetricGroups = [
     {
@@ -2265,6 +2744,18 @@ const canGenerateAiReport = computed(() => (
     && !aiServicesLoading.value
 ));
 
+const aiReportGenerateButtonLabel = computed(() => {
+    if (!aiReportGenerating.value) {
+        return 'Сформировать отчёт';
+    }
+
+    if (aiReportAttempt.value > 1) {
+        return `Попытка ${aiReportAttempt.value} из ${AI_REPORT_MAX_ATTEMPTS}`;
+    }
+
+    return 'Формирование…';
+});
+
 const isAiReportOpen = computed(() => Boolean(selectedAiReportId.value));
 
 const aiReportUsageItems = computed(() => {
@@ -2321,6 +2812,22 @@ const canSaveEvent = computed(() => (
     && !eventSaving.value
 ));
 
+const isDocumentEditing = computed(() => Boolean(editingDocumentId.value));
+
+const showDocumentTabs = computed(() => documentsLoaded.value);
+
+const canSaveDocument = computed(() => {
+    if (!String(documentForm.title || '').trim() || documentSaving.value) {
+        return false;
+    }
+
+    if (editingDocumentId.value) {
+        return true;
+    }
+
+    return Boolean(documentFile.value);
+});
+
 const gaDetail = computed(() => {
     const id = integration.value?.ga4_property_id;
 
@@ -2350,7 +2857,28 @@ const pagespeedDetail = computed(() => {
         return '';
     }
 
-    return pagespeedIntegration.value?.strategy_label || 'Подключено';
+    const strategy = pagespeedIntegration.value?.strategy_label || 'Подключено';
+    const urls = pagespeedIntegration.value?.page_urls;
+
+    if (Array.isArray(urls) && urls.length) {
+        return `${strategy} · ${urls.length} URL`;
+    }
+
+    return strategy;
+});
+
+const pagespeedPageUrlsLabel = computed(() => {
+    const urls = pagespeedIntegration.value?.page_urls;
+
+    if (!Array.isArray(urls) || !urls.length) {
+        return '';
+    }
+
+    if (urls.length <= 2) {
+        return urls.join(', ');
+    }
+
+    return `${urls[0]}, ${urls[1]} и ещё ${urls.length - 2}`;
 });
 
 const repoInList = computed(() => {
@@ -2413,6 +2941,22 @@ function formatDate(value) {
     } catch {
         return value;
     }
+}
+
+function formatCoveragePeriod(from, to) {
+    const fromLabel = formatDate(from);
+    const toLabel = formatDate(to);
+    const days = aiReportPeriodDays(from, to);
+
+    if (days === null) {
+        return `${fromLabel} — ${toLabel}`;
+    }
+
+    if (from === to) {
+        return `${fromLabel} (1 день)`;
+    }
+
+    return `${fromLabel} — ${toLabel} (${days} ${pluralDays(days)})`;
 }
 
 function formatPct(value) {
@@ -2550,6 +3094,20 @@ function formatCruxFormFactor(value) {
     };
 
     return map[String(value)] || value || '—';
+}
+
+function formatCruxOverallCategory(value) {
+    if (!value) {
+        return '—';
+    }
+
+    const map = {
+        FAST: 'Быстро',
+        AVERAGE: 'Средне',
+        SLOW: 'Медленно',
+    };
+
+    return map[String(value).toUpperCase()] || value;
 }
 
 function formatCruxPeriod(row) {
@@ -2866,6 +3424,10 @@ function formatDataCounts(counts) {
         parts.push(`События: ${counts.events}`);
     }
 
+    if (counts.documents) {
+        parts.push(`Документы: ${counts.documents}`);
+    }
+
     return parts.length ? `В промпт передано — ${parts.join(', ')}.` : '';
 }
 
@@ -3000,42 +3562,87 @@ async function onGenerateAiReport() {
     }
 
     aiReportGenerating.value = true;
+    aiReportAttempt.value = 0;
     aiReportError.value = '';
     clearAiReportView();
     selectedAiReportId.value = '';
 
+    const payload = {
+        ai_service_id: Number(aiReportServiceId.value),
+        from: period.from,
+        to: period.to,
+    };
+
     try {
-        const result = await generateSiteAiReport(site.value.id, {
-            ai_service_id: Number(aiReportServiceId.value),
-            from: period.from,
-            to: period.to,
-        });
+        for (let attempt = 1; attempt <= AI_REPORT_MAX_ATTEMPTS; attempt += 1) {
+            aiReportAttempt.value = attempt;
 
-        if (!result.ok) {
-            aiReportError.value = result.message || 'Не удалось сформировать отчёт';
-            aiReportMeta.value = formatDataCounts(result.data_counts);
+            try {
+                const result = await generateSiteAiReport(site.value.id, payload);
 
-            return;
+                if (result.ok) {
+                    const report = result.data;
+
+                    if (report) {
+                        upsertAiReportListItem(report);
+                        applyAiReport(report);
+                    }
+
+                    return;
+                }
+
+                const canRetry = Boolean(result.retryable) && attempt < AI_REPORT_MAX_ATTEMPTS;
+
+                if (canRetry) {
+                    aiReportAttempt.value = attempt + 1;
+
+                    await new Promise((resolve) => {
+                        setTimeout(resolve, AI_REPORT_RETRY_DELAY_MS);
+                    });
+
+                    continue;
+                }
+
+                aiReportError.value = result.message || 'Не удалось сформировать отчёт';
+                aiReportMeta.value = formatDataCounts(result.data_counts);
+
+                return;
+            } catch (e) {
+                const canRetry = attempt < AI_REPORT_MAX_ATTEMPTS
+                    && !e.response?.status;
+
+                if (canRetry) {
+                    aiReportAttempt.value = attempt + 1;
+
+                    await new Promise((resolve) => {
+                        setTimeout(resolve, AI_REPORT_RETRY_DELAY_MS);
+                    });
+
+                    continue;
+                }
+
+                aiReportError.value = e.response?.data?.message
+                    || e.response?.data?.errors?.ai_service_id?.[0]
+                    || 'Не удалось сформировать отчёт';
+
+                return;
+            }
         }
-
-        const report = result.data;
-
-        if (report) {
-            upsertAiReportListItem(report);
-            applyAiReport(report);
-        }
-    } catch (e) {
-        aiReportError.value = e.response?.data?.message
-            || e.response?.data?.errors?.ai_service_id?.[0]
-            || 'Не удалось сформировать отчёт';
     } finally {
         aiReportGenerating.value = false;
+        aiReportAttempt.value = 0;
     }
 }
 
 watch(activeSiteView, (view) => {
     if (view === 'events' && site.value) {
         loadEvents();
+
+        return;
+    }
+
+    if (view === 'documents' && site.value) {
+        loadDocuments();
 
         return;
     }
@@ -3259,6 +3866,190 @@ async function onDeleteEvent(row) {
     }
 }
 
+async function loadDocuments() {
+    if (!site.value || documentsLoading.value) {
+        return;
+    }
+
+    documentsLoading.value = true;
+    documentsError.value = '';
+
+    try {
+        documentRows.value = await listSiteDocuments(site.value.id);
+        documentsLoaded.value = true;
+
+        if (
+            editingDocumentId.value
+            && !documentRows.value.some((item) => item.id === editingDocumentId.value)
+        ) {
+            resetDocumentForm();
+        }
+
+        syncDocumentTab();
+    } catch (e) {
+        documentRows.value = [];
+        documentsLoaded.value = true;
+        documentsError.value = e.response?.data?.message || 'Не удалось загрузить документы';
+        syncDocumentTab();
+    } finally {
+        documentsLoading.value = false;
+    }
+}
+
+function syncDocumentTab() {
+    if (!documentRows.value.length) {
+        if (activeDocumentTab.value !== 'saved') {
+            activeDocumentTab.value = 'new';
+        }
+
+        return;
+    }
+
+    if (activeDocumentTab.value !== 'new') {
+        activeDocumentTab.value = 'saved';
+    }
+}
+
+function clearDocumentFileInput() {
+    documentFile.value = null;
+
+    if (documentFileInput.value) {
+        documentFileInput.value.value = '';
+    }
+}
+
+function resetDocumentForm() {
+    editingDocumentId.value = null;
+    editingDocumentFilename.value = '';
+    documentFormError.value = '';
+    documentForm.title = '';
+    documentForm.description = '';
+    clearDocumentFileInput();
+}
+
+function onBackFromDocumentEdit() {
+    resetDocumentForm();
+    activeDocumentTab.value = documentRows.value.length ? 'saved' : 'new';
+}
+
+function startEditDocument(row) {
+    editingDocumentId.value = row.id;
+    editingDocumentFilename.value = row.original_filename || '';
+    documentFormError.value = '';
+    documentForm.title = row.title || '';
+    documentForm.description = row.description || '';
+    clearDocumentFileInput();
+}
+
+function onDocumentFileChange(event) {
+    const file = event?.target?.files?.[0] || null;
+    documentFile.value = file;
+}
+
+function documentCardDescription(row) {
+    const text = String(row?.description || '').trim();
+
+    if (!text) {
+        return '';
+    }
+
+    if (text.length <= 120) {
+        return text;
+    }
+
+    return `${text.slice(0, 117).trimEnd()}…`;
+}
+
+async function onSubmitDocument() {
+    if (!canSaveDocument.value || !site.value) {
+        return;
+    }
+
+    documentSaving.value = true;
+    documentFormError.value = '';
+
+    const payload = {
+        title: String(documentForm.title || '').trim(),
+        description: String(documentForm.description || '').trim() || null,
+        document: documentFile.value || null,
+    };
+
+    try {
+        if (editingDocumentId.value) {
+            const updated = await updateSiteDocument(site.value.id, editingDocumentId.value, payload);
+
+            documentRows.value = [
+                updated,
+                ...documentRows.value.filter((item) => item.id !== updated.id),
+            ].sort((a, b) => b.id - a.id);
+
+            toast.show({ ok: true, message: 'Документ обновлён.' });
+            resetDocumentForm();
+            activeDocumentTab.value = documentRows.value.length ? 'saved' : 'new';
+        } else {
+            if (!payload.document) {
+                documentFormError.value = 'Прикрепите файл Markdown (.md).';
+
+                return;
+            }
+
+            const created = await createSiteDocument(site.value.id, payload);
+            documentRows.value = [created, ...documentRows.value].sort((a, b) => b.id - a.id);
+
+            toast.show({ ok: true, message: 'Документ добавлен.' });
+            resetDocumentForm();
+            activeDocumentTab.value = documentRows.value.length ? 'saved' : 'new';
+        }
+    } catch (e) {
+        documentFormError.value = firstValidationError(e.response?.data?.errors)
+            || e.response?.data?.message
+            || 'Не удалось сохранить документ';
+    } finally {
+        documentSaving.value = false;
+    }
+}
+
+async function onDeleteEditingDocument() {
+    if (!editingDocumentId.value) {
+        return;
+    }
+
+    await onDeleteDocument({ id: editingDocumentId.value });
+}
+
+async function onDeleteDocument(row) {
+    if (!site.value || !row?.id) {
+        return;
+    }
+
+    if (!window.confirm('Удалить этот документ?')) {
+        return;
+    }
+
+    deletingDocumentId.value = row.id;
+
+    try {
+        await deleteSiteDocument(site.value.id, row.id);
+        documentRows.value = documentRows.value.filter((item) => item.id !== row.id);
+
+        if (editingDocumentId.value === row.id) {
+            resetDocumentForm();
+            activeDocumentTab.value = documentRows.value.length ? 'saved' : 'new';
+        } else {
+            syncDocumentTab();
+        }
+
+        toast.show({ ok: true, message: 'Документ удалён.' });
+    } catch (e) {
+        toast.show({
+            ok: false,
+            message: e.response?.data?.message || 'Не удалось удалить документ',
+        });
+    } finally {
+        deletingDocumentId.value = null;
+    }
+}
+
 async function loadMetrics() {
     if (!site.value || !period.from || !period.to) {
         return;
@@ -3301,6 +4092,20 @@ async function loadMetrics() {
         pagespeedCruxRows.value = [];
     } finally {
         metricsLoading.value = false;
+    }
+}
+
+async function loadMetricsCoverage() {
+    if (!site.value) {
+        return;
+    }
+
+    try {
+        metricsCoverage.value = await getSiteMetricsCoverage(site.value.id);
+    } catch {
+        metricsCoverage.value = null;
+    } finally {
+        metricsCoverageLoaded.value = true;
     }
 }
 
@@ -3440,6 +4245,9 @@ async function openGithubModal() {
 
 async function openPagespeedModal() {
     pagespeedForm.strategy = pagespeedIntegration.value?.strategy || 'mobile';
+    pagespeedForm.pageUrlsText = Array.isArray(pagespeedIntegration.value?.page_urls)
+        ? pagespeedIntegration.value.page_urls.join('\n')
+        : '';
     pagespeedModalOpen.value = true;
 }
 
@@ -3466,10 +4274,14 @@ async function reload() {
         githubForm.repository_id = githubIntegration.value?.repository_id || null;
         githubForm.default_branch = githubIntegration.value?.default_branch || '';
         pagespeedForm.strategy = pagespeedIntegration.value?.strategy || 'mobile';
+        pagespeedForm.pageUrlsText = Array.isArray(pagespeedIntegration.value?.page_urls)
+            ? pagespeedIntegration.value.page_urls.join('\n')
+            : '';
 
         preferConnectedMetricsTab();
         await Promise.all([
             loadMetrics(),
+            loadMetricsCoverage(),
             loadEvents(),
         ]);
     } catch (e) {
@@ -3509,6 +4321,7 @@ async function onDisconnectGoogle() {
         form.ga4_property_id = '';
         form.gsc_site_url = '';
         pagespeedForm.strategy = 'mobile';
+        pagespeedForm.pageUrlsText = '';
         pagespeedLabRows.value = [];
         pagespeedCruxRows.value = [];
         ga4Properties.value = [];
@@ -3685,9 +4498,18 @@ async function onSavePagespeedIntegration() {
     busy.value = true;
 
     try {
+        const pageUrls = pagespeedForm.pageUrlsText
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean);
+
         pagespeedIntegration.value = await upsertSitePageSpeedIntegration(site.value.id, {
             strategy: pagespeedForm.strategy,
+            page_urls: pageUrls,
         });
+        pagespeedForm.pageUrlsText = Array.isArray(pagespeedIntegration.value?.page_urls)
+            ? pagespeedIntegration.value.page_urls.join('\n')
+            : '';
         toast.show({
             ok: true,
             message: 'PageSpeed Insights подключён к сайту.',
@@ -3715,6 +4537,7 @@ async function onDisconnectPagespeedIntegration() {
         await deleteSitePageSpeedIntegration(site.value.id);
         pagespeedIntegration.value = null;
         pagespeedForm.strategy = 'mobile';
+        pagespeedForm.pageUrlsText = '';
         pagespeedLabRows.value = [];
         pagespeedCruxRows.value = [];
         pagespeedModalOpen.value = false;
@@ -3799,7 +4622,10 @@ async function onSyncPeriod() {
             }
         }
 
-        await loadMetrics();
+        await Promise.all([
+            loadMetrics(),
+            loadMetricsCoverage(),
+        ]);
 
         if (errors.length && syncedAny) {
             toast.show({

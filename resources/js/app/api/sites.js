@@ -86,6 +86,12 @@ export async function getSiteAnalyticsMetrics(siteId, params) {
     return data.data ?? [];
 }
 
+export async function getSiteMetricsCoverage(siteId) {
+    const { data } = await http.get(`/sites/${siteId}/metrics/coverage`);
+
+    return data.data ?? {};
+}
+
 export async function getSiteSearchConsoleMetrics(siteId, params) {
     const { data } = await http.get(`/sites/${siteId}/metrics/search-console`, { params });
     const payload = data.data ?? {};
@@ -132,6 +138,46 @@ export async function updateSiteEvent(siteId, eventId, payload) {
 
 export async function deleteSiteEvent(siteId, eventId) {
     await http.delete(`/sites/${siteId}/events/${eventId}`);
+}
+
+export async function listSiteDocuments(siteId) {
+    const { data } = await http.get(`/sites/${siteId}/documents`);
+
+    return data.data ?? [];
+}
+
+export async function createSiteDocument(siteId, { title, description, document }) {
+    const formData = new FormData();
+    formData.append('title', title);
+    if (description) {
+        formData.append('description', description);
+    }
+    formData.append('document', document);
+
+    const { data } = await http.post(`/sites/${siteId}/documents`, formData);
+
+    return data.data ?? data;
+}
+
+export async function updateSiteDocument(siteId, documentId, { title, description, document }) {
+    const formData = new FormData();
+    formData.append('title', title);
+    if (description) {
+        formData.append('description', description);
+    } else {
+        formData.append('description', '');
+    }
+    if (document) {
+        formData.append('document', document);
+    }
+
+    const { data } = await http.post(`/sites/${siteId}/documents/${documentId}`, formData);
+
+    return data.data ?? data;
+}
+
+export async function deleteSiteDocument(siteId, documentId) {
+    await http.delete(`/sites/${siteId}/documents/${documentId}`);
 }
 
 export async function listSiteAiReports(siteId) {

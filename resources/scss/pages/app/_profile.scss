@@ -1,6 +1,22 @@
 .page-app-profile {
   max-width: 48rem;
-  padding-bottom: 3rem;
+  padding-bottom: 0.5rem;
+
+  &__title {
+    margin: 0 0 1.5rem;
+    font-size: 1.65rem;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    color: var(--body-color, #{$body-color});
+  }
+
+  &__form {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
 
   &__card-title {
     font-weight: 600;
@@ -10,15 +26,18 @@
   &__section {
     margin-bottom: 1.75rem;
     padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border, rgba(11, 122, 75, 0.12));
+    border-bottom: 1px solid #eef2f6;
 
     &:last-of-type {
       margin-bottom: 1.25rem;
+      padding-bottom: 0;
+      border-bottom: 0;
     }
 
     .h6 {
       margin-bottom: 1rem;
-      font-weight: 600;
+      font-weight: 650;
+      letter-spacing: -0.02em;
     }
   }
 
@@ -42,9 +61,9 @@
     gap: 0.25rem;
     padding: 0.25rem;
     min-height: calc(1.5em + 0.75rem + 2px);
-    border: 1px solid var(--bs-border-color, #dee2e6);
+    border: 1px solid #e2e8f0;
     border-radius: $input-border-radius;
-    background: rgba(11, 122, 75, 0.04);
+    background: #fff;
   }
 
   &__gender-option {
@@ -62,8 +81,7 @@
     user-select: none;
     transition:
       background-color 0.18s ease,
-      color 0.18s ease,
-      box-shadow 0.18s ease;
+      color 0.18s ease;
 
     input {
       position: absolute;
@@ -80,18 +98,18 @@
     }
 
     &:hover:not(.is-active) {
-      color: var(--text, #1a1f1c);
-      background: rgba(255, 255, 255, 0.55);
+      color: #111827;
+      background: #f8fafc;
     }
 
     &.is-active {
       color: #fff;
-      background: var(--brand, #{$primary});
-      box-shadow: 0 1px 2px rgba(11, 122, 75, 0.28);
+      background: #111827;
+      box-shadow: none;
     }
 
     &:focus-within:not(.is-active) {
-      outline: 2px solid rgba(11, 122, 75, 0.35);
+      outline: 2px solid rgba(15, 23, 42, 0.25);
       outline-offset: 1px;
     }
   }
@@ -108,7 +126,7 @@
     height: 96px;
     border-radius: 50%;
     overflow: hidden;
-    background: rgba(11, 122, 75, 0.08);
+    background: #f1f5f9;
     display: flex;
     align-items: center;
     justify-content: center;

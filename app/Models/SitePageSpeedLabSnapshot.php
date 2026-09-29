@@ -23,6 +23,9 @@ class SitePageSpeedLabSnapshot extends Model
         'strategy',
         'fetched_at',
         'performance_score',
+        'accessibility_score',
+        'best_practices_score',
+        'seo_score',
         'lcp_ms',
         'inp_ms',
         'cls',
@@ -30,6 +33,7 @@ class SitePageSpeedLabSnapshot extends Model
         'ttfb_ms',
         'tbt_ms',
         'speed_index_ms',
+        'payload',
     ];
 
     /**
@@ -40,6 +44,9 @@ class SitePageSpeedLabSnapshot extends Model
         return [
             'fetched_at' => 'datetime',
             'performance_score' => 'integer',
+            'accessibility_score' => 'integer',
+            'best_practices_score' => 'integer',
+            'seo_score' => 'integer',
             'lcp_ms' => 'integer',
             'inp_ms' => 'integer',
             'cls' => 'float',
@@ -47,6 +54,7 @@ class SitePageSpeedLabSnapshot extends Model
             'ttfb_ms' => 'integer',
             'tbt_ms' => 'integer',
             'speed_index_ms' => 'integer',
+            'payload' => 'array',
         ];
     }
 

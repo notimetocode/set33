@@ -24,6 +24,7 @@ class SitePageSpeedIntegration extends Model
         'site_id',
         'google_connection_id',
         'strategy',
+        'page_urls',
         'status',
         'last_synced_at',
         'last_error',
@@ -36,6 +37,7 @@ class SitePageSpeedIntegration extends Model
     {
         return [
             'strategy' => PageSpeedStrategy::class,
+            'page_urls' => 'array',
             'status' => SitePageSpeedIntegrationStatus::class,
             'last_synced_at' => 'datetime',
         ];

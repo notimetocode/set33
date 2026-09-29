@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AiServiceController;
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\Auth\LogoutController;
 use App\Http\Controllers\Admin\Auth\MeController;
@@ -19,4 +20,13 @@ Route::middleware(['auth:sanctum', 'ability:admin', 'role:admin'])->group(functi
 
     Route::get('/users/meta', [UserController::class, 'meta'])->name('admin.users.meta');
     Route::get('/users', [UserController::class, 'index'])->name('admin.users.index');
+
+    Route::get('/ai-services/meta', [AiServiceController::class, 'meta'])->name('admin.ai-services.meta');
+    Route::post('/ai-services/models', [AiServiceController::class, 'models'])
+        ->middleware('throttle:ai-service-models')
+        ->name('admin.ai-services.models');
+    Route::post('/ai-services/{ai_service}/check', [AiServiceController::class, 'check'])
+        ->middleware('throttle:ai-service-check')
+        ->name('admin.ai-services.check');
+    Route::apiResource('ai-services', AiServiceController::class)->names('admin.ai-services');
 });

@@ -22,6 +22,9 @@ class SitePageSpeedLabSnapshotFactory extends Factory
             'strategy' => 'mobile',
             'fetched_at' => now(),
             'performance_score' => fake()->numberBetween(40, 100),
+            'accessibility_score' => fake()->numberBetween(40, 100),
+            'best_practices_score' => fake()->numberBetween(40, 100),
+            'seo_score' => fake()->numberBetween(40, 100),
             'lcp_ms' => fake()->numberBetween(1000, 4000),
             'inp_ms' => fake()->numberBetween(50, 300),
             'cls' => fake()->randomFloat(3, 0, 0.3),
@@ -29,6 +32,7 @@ class SitePageSpeedLabSnapshotFactory extends Factory
             'ttfb_ms' => fake()->numberBetween(100, 800),
             'tbt_ms' => fake()->numberBetween(50, 600),
             'speed_index_ms' => fake()->numberBetween(1000, 5000),
+            'payload' => null,
         ];
     }
 }

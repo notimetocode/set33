@@ -20,6 +20,7 @@ class AiServiceFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
+            'is_global' => false,
             'name' => fake()->words(3, true),
             'type' => AiServiceType::Gemini,
             'api_key' => 'test-gemini-api-key-'.fake()->uuid(),
@@ -46,5 +47,13 @@ class AiServiceFactory extends Factory
             'status_message' => null,
             'status_checked_at' => null,
         ];
+    }
+
+    public function global(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'user_id' => User::factory()->admin(),
+            'is_global' => true,
+        ]);
     }
 }

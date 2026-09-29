@@ -5,19 +5,11 @@
                 <span class="logo logo--sm">
                     <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="20">
                 </span>
-                Личный кабинет
+                <span class="layout-app__brand-label">Личный кабинет</span>
             </RouterLink>
 
-            <div class="layout-app__nav-header">
-                <NavUserCard
-                    :loading="userLoading"
-                    :avatar-url="avatarUrl"
-                    :full-name="fullName"
-                    :subtitle="user?.email || ''"
-                />
-            </div>
-
             <nav class="layout-app__nav" aria-label="Навигация личного кабинета">
+                <p class="layout-app__nav-group">Меню</p>
                 <RouterLink
                     v-for="item in navItems"
                     :key="item.name"
@@ -25,22 +17,33 @@
                     :class="{ 'is-active': item.isActive(route) }"
                     :to="{ name: item.name }"
                 >
-                    {{ item.label }}
+                    <span class="layout-app__nav-icon" aria-hidden="true">
+                        <FontAwesomeIcon :icon="item.icon" />
+                    </span>
+                    <span class="layout-app__nav-label">{{ item.label }}</span>
                 </RouterLink>
             </nav>
 
             <div class="layout-app__sidebar-footer">
+                <NavUserCard
+                    :loading="userLoading"
+                    :avatar-url="avatarUrl"
+                    :full-name="fullName"
+                    :subtitle="user?.email || ''"
+                />
                 <LogoutButton @click="onLogout" />
             </div>
         </aside>
 
         <main class="layout-app__main">
-            <Breadcrumbs :items="breadcrumbItems" />
-            <RouterView v-slot="{ Component, route: pageRoute }">
-                <Transition name="page-fade" mode="out-in">
-                    <component :is="Component" :key="pageRoute.path" />
-                </Transition>
-            </RouterView>
+            <div class="layout-app__canvas">
+                <Breadcrumbs :items="breadcrumbItems" />
+                <RouterView v-slot="{ Component, route: pageRoute }">
+                    <Transition name="page-fade" mode="out-in">
+                        <component :is="Component" :key="pageRoute.path" />
+                    </Transition>
+                </RouterView>
+            </div>
         </main>
 
         <nav class="layout-app__tabbar" aria-label="Основная навигация">

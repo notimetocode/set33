@@ -18,6 +18,7 @@ class AiServiceResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'is_global' => (bool) $this->is_global,
             'name' => $this->name,
             'type' => $this->type->value,
             'type_label' => $this->type->label(),

@@ -1,6 +1,6 @@
 <template>
     <div class="page-app-profile">
-        <h1 class="h4 mb-3">Личные данные</h1>
+        <h1 class="page-app-profile__title">Личные данные</h1>
 
         <AppLoader
             v-if="loading"

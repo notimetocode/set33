@@ -60,6 +60,7 @@ class SiteAiReportController extends Controller
             return response()->json([
                 'ok' => false,
                 'message' => $result['message'] ?? 'Не удалось сформировать отчёт.',
+                'retryable' => (bool) ($result['retryable'] ?? false),
                 'period' => $result['period'],
                 'data_counts' => $result['data_counts'],
                 'data' => null,

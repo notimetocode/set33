@@ -1,13 +1,15 @@
 .table {
   --bs-table-bg: transparent;
-  --bs-table-border-color: rgba(0, 0, 0, 0.08);
+  --bs-table-border-color: #eef2f6;
 }
 
+// Inside ЛК canvas — flat table, no nested card chrome
 .data-table {
   max-width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 0.9rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
@@ -22,25 +24,30 @@
 
 .data-table__grid {
   --bs-table-bg: transparent;
-  --bs-table-hover-bg: rgba(18, 21, 26, 0.03);
+  --bs-table-hover-bg: #f8fafc;
+  --bs-table-border-color: #eef2f6;
   margin-bottom: 0;
 
   thead th {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 650;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--muted);
-    border-bottom-color: var(--border);
-    padding: 0.85rem 1rem;
+    color: #94a3b8;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.7rem 0.35rem 0.75rem;
     white-space: nowrap;
-    background: rgba(18, 21, 26, 0.02);
+    background: transparent;
   }
 
   tbody td {
-    padding: 0.9rem 1rem;
-    border-bottom-color: var(--border);
+    padding: 1rem 0.35rem;
+    border-bottom: 1px solid #eef2f6;
     vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background-color 0.12s ease;
   }
 
   tbody tr:last-child td {
@@ -53,21 +60,16 @@
 }
 
 @media (max-width: 767.98px) {
-  .data-table {
-    border-radius: 0.7rem;
-  }
-
   .data-table__grid {
     font-size: 0.8125rem;
 
     thead th {
-      padding: 0.45rem 0.55rem;
-      font-size: 0.65rem;
-      letter-spacing: 0.03em;
+      padding: 0.5rem 0.25rem 0.45rem;
+      font-size: 0.62rem;
     }
 
     tbody td {
-      padding: 0.5rem 0.55rem;
+      padding: 0.7rem 0.25rem;
     }
   }
 }

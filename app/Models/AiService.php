@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AiServiceStatus;
 use App\Enums\AiServiceType;
 use Database\Factories\AiServiceFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +20,7 @@ class AiService extends Model
      */
     protected $fillable = [
         'user_id',
+        'is_global',
         'name',
         'type',
         'api_key',
@@ -26,6 +28,13 @@ class AiService extends Model
         'status',
         'status_message',
         'status_checked_at',
+    ];
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_global' => false,
     ];
 
     /**
@@ -41,6 +50,7 @@ class AiService extends Model
     protected function casts(): array
     {
         return [
+            'is_global' => 'boolean',
             'type' => AiServiceType::class,
             'status' => AiServiceStatus::class,
             'api_key' => 'encrypted',
@@ -55,6 +65,32 @@ class AiService extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @param  Builder<AiService>  $query
+     * @return Builder<AiService>
+     */
+    public function scopeGlobal(Builder $query): Builder
+    {
+        return $query->where('is_global', true);
+    }
+
+    /**
+     * @param  Builder<AiService>  $query
+     * @return Builder<AiService>
+     */
+    public function scopeAccessibleBy(Builder $query, User $user): Builder
+    {
+        return $query->where(function (Builder $scoped) use ($user): void {
+            $scoped->where('user_id', $user->id)
+                ->orWhere('is_global', true);
+        });
+    }
+
+    public function isOwnedBy(User $user): bool
+    {
+        return (int) $this->user_id === (int) $user->id;
     }
 
     public function hasApiKey(): bool

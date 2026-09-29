@@ -28,6 +28,7 @@ class GenerateSiteAiReport
      *         series: list<array{name: string, values: list<float|int>}>
      *     }>,
      *     message: string|null,
+     *     retryable: bool,
      *     model: string|null,
      *     usage: array{
      *         prompt_tokens: int|null,
@@ -49,7 +50,8 @@ class GenerateSiteAiReport
      *         pagespeed_lab: int,
      *         pagespeed_crux: int,
      *         github_commits: int,
-     *         events: int
+     *         events: int,
+     *         documents: int
      *     }
      * }
      */
@@ -61,6 +63,7 @@ class GenerateSiteAiReport
         $pageSpeed = $this->loadPageSpeed($site);
         $commits = $this->loadCommits($site, $from, $to);
         $events = $this->loadEvents($site, $from, $to);
+        $documents = $this->loadDocuments($site);
 
         $dataCounts = [
             'analytics' => count($analytics),
@@ -76,6 +79,7 @@ class GenerateSiteAiReport
             'pagespeed_crux' => count($pageSpeed['crux']),
             'github_commits' => count($commits),
             'events' => count($events),
+            'documents' => count($documents),
         ];
 
         if ($dataCounts['analytics'] === 0
@@ -96,6 +100,7 @@ class GenerateSiteAiReport
                 'reply' => null,
                 'charts' => [],
                 'message' => 'Нет данных сервисов за выбранный период. Загрузите метрики на вкладке «Данные сервисов» и повторите попытку.',
+                'retryable' => false,
                 'model' => null,
                 'usage' => null,
                 'period' => ['from' => $from, 'to' => $to],
@@ -113,6 +118,7 @@ class GenerateSiteAiReport
             $commits,
             $events,
             $pageSpeed,
+            $documents,
         );
 
         $result = $this->generateContent->handle($aiService, $prompt);
@@ -123,6 +129,7 @@ class GenerateSiteAiReport
                 'reply' => $result['reply'],
                 'charts' => [],
                 'message' => $result['message'],
+                'retryable' => (bool) ($result['retryable'] ?? false),
                 'model' => $result['model'],
                 'usage' => $result['usage'],
                 'period' => ['from' => $from, 'to' => $to],
@@ -137,6 +144,7 @@ class GenerateSiteAiReport
             'reply' => $parsed['reply'],
             'charts' => $parsed['charts'],
             'message' => null,
+            'retryable' => false,
             'model' => $result['model'],
             'usage' => $result['usage'],
             'period' => ['from' => $from, 'to' => $to],
@@ -306,6 +314,9 @@ class GenerateSiteAiReport
                     'strategy' => $row->strategy,
                     'fetched_at' => $row->fetched_at?->toIso8601String(),
                     'performance_score' => $row->performance_score,
+                    'accessibility_score' => $row->accessibility_score,
+                    'best_practices_score' => $row->best_practices_score,
+                    'seo_score' => $row->seo_score,
                     'lcp_ms' => $row->lcp_ms,
                     'inp_ms' => $row->inp_ms,
                     'cls' => $row->cls,
@@ -324,6 +335,7 @@ class GenerateSiteAiReport
                     'scope' => $row->scope,
                     'url' => $row->url,
                     'form_factor' => $row->form_factor,
+                    'overall_category' => $row->overall_category,
                     'collection_period_start' => $row->collection_period_start?->toDateString(),
                     'collection_period_end' => $row->collection_period_end?->toDateString(),
                     'lcp_p75_ms' => $row->lcp_p75_ms,
@@ -375,6 +387,23 @@ class GenerateSiteAiReport
                 'title' => $row->title,
                 'description' => $row->description,
                 'url' => $row->url,
+            ])
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function loadDocuments(Site $site): array
+    {
+        return $site->documents()
+            ->orderBy('id')
+            ->get()
+            ->map(fn ($row) => [
+                'title' => $row->title,
+                'description' => $row->description,
+                'content' => $row->content,
+                'original_filename' => $row->original_filename,
             ])
             ->all();
     }

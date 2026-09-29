@@ -23,6 +23,7 @@ class SitePageSpeedIntegrationFactory extends Factory
             'site_id' => Site::factory(),
             'google_connection_id' => GoogleConnection::factory(),
             'strategy' => PageSpeedStrategy::Mobile,
+            'page_urls' => null,
             'status' => SitePageSpeedIntegrationStatus::Active,
             'last_synced_at' => null,
             'last_error' => null,

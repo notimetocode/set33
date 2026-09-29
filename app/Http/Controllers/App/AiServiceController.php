@@ -27,8 +27,9 @@ class AiServiceController extends Controller
     {
         Gate::authorize('app.ai-services.viewAny');
 
-        $services = $request->user()
-            ->aiServices()
+        $services = AiService::query()
+            ->accessibleBy($request->user())
+            ->orderByDesc('is_global')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->get();
@@ -103,6 +104,7 @@ class AiServiceController extends Controller
             'ok' => $result['ok'],
             'reply' => $result['reply'],
             'message' => $result['message'],
+            'retryable' => (bool) ($result['retryable'] ?? false),
             'model' => $result['model'],
             'usage' => $result['usage'],
         ]);

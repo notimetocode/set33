@@ -1,9 +1,7 @@
 .app-chart {
   margin: 1rem 0 1.15rem;
   padding: 0.85rem 1rem 1rem;
-  border: 1px solid var(--border, #{$border-color});
-  border-radius: $border-radius;
-  background: var(--surface, #{$surface});
+  @include soft-panel;
 }
 
 .app-chart__title {

@@ -15,6 +15,7 @@ class GenerateAiServiceContent
      *     ok: bool,
      *     reply: string|null,
      *     message: string|null,
+     *     retryable: bool,
      *     model: string|null,
      *     usage: array{
      *         prompt_tokens: int|null,
@@ -53,20 +54,29 @@ class GenerateAiServiceContent
                 ->retry(2, 200, fn ($exception): bool => $exception instanceof ConnectionException, false)
                 ->post($endpoint, $payload);
         } catch (RequestException $exception) {
+            $json = $exception->response?->json();
+            $message = $this->extractApiError($json)
+                ?? 'Gemini API вернул ошибку. Попробуйте позже.';
+
             return $this->failure(
-                $this->extractApiError($exception->response?->json())
-                    ?? 'Gemini API вернул ошибку. Попробуйте позже.',
+                $message,
+                $this->isHighDemandError($json, $exception->response?->status()),
             );
         } catch (ConnectionException) {
             return $this->failure(
                 'Не удалось связаться с Gemini API. Проверьте соединение и попробуйте снова.',
+                true,
             );
         }
 
         if (! $response->successful()) {
+            $json = $response->json();
+            $message = $this->extractApiError($json)
+                ?? 'Gemini API вернул ошибку. Попробуйте позже.';
+
             return $this->failure(
-                $this->extractApiError($response->json())
-                    ?? 'Gemini API вернул ошибку. Попробуйте позже.',
+                $message,
+                $this->isHighDemandError($json, $response->status()),
             );
         }
 
@@ -81,6 +91,7 @@ class GenerateAiServiceContent
             'ok' => true,
             'reply' => $reply,
             'message' => null,
+            'retryable' => false,
             'model' => $model,
             'usage' => $this->extractUsage($json),
         ];
@@ -176,19 +187,40 @@ class GenerateAiServiceContent
      *     ok: false,
      *     reply: null,
      *     message: string,
+     *     retryable: bool,
      *     model: null,
      *     usage: null
      * }
      */
-    private function failure(string $message): array
+    private function failure(string $message, bool $retryable = false): array
     {
         return [
             'ok' => false,
             'reply' => null,
             'message' => $message,
+            'retryable' => $retryable,
             'model' => null,
             'usage' => null,
         ];
+    }
+
+    private function isHighDemandError(mixed $payload, ?int $status = null): bool
+    {
+        if (in_array($status, [429, 503], true)) {
+            return true;
+        }
+
+        $apiStatus = strtoupper((string) data_get(is_array($payload) ? $payload : [], 'error.status', ''));
+
+        if (in_array($apiStatus, ['RESOURCE_EXHAUSTED', 'UNAVAILABLE'], true)) {
+            return true;
+        }
+
+        $message = strtolower((string) ($this->extractApiError($payload) ?? ''));
+
+        return str_contains($message, 'high demand')
+            || str_contains($message, 'resource exhausted')
+            || str_contains($message, 'resource_exhausted');
     }
 
     private function extractApiError(mixed $payload): ?string

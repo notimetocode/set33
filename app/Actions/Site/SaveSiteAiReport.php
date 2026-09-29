@@ -39,7 +39,8 @@ class SaveSiteAiReport
      *         pagespeed_lab?: int,
      *         pagespeed_crux?: int,
      *         github_commits: int,
-     *         events: int
+     *         events: int,
+     *         documents?: int
      *     }
      * }  $result
      */

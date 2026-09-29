@@ -12,11 +12,12 @@ class CreateAiService
     /**
      * @param  array{type: string, api_key: string, settings: array<string, mixed>}  $data
      */
-    public function handle(User $user, array $data): AiService
+    public function handle(User $user, array $data, bool $isGlobal = false): AiService
     {
         $type = AiServiceType::from($data['type']);
 
         return $user->aiServices()->create([
+            'is_global' => $isGlobal,
             'name' => $type->serviceName($data['settings']['model'] ?? null),
             'type' => $type,
             'api_key' => $data['api_key'],

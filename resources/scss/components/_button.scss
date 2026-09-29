@@ -8,12 +8,11 @@
   line-height: $btn-line-height;
   letter-spacing: -0.01em;
   vertical-align: middle;
+  box-shadow: none;
   transition:
-    transform 0.15s ease,
     background-color 0.15s ease,
     border-color 0.15s ease,
-    color 0.15s ease,
-    box-shadow 0.15s ease;
+    color 0.15s ease;
 
   &.btn-sm {
     font-size: $btn-font-size-sm;
@@ -27,23 +26,19 @@
 }
 
 .btn-primary {
-  --bs-btn-color: #{$body-color};
+  --bs-btn-color: #fff;
   --bs-btn-bg: #{$cta-mint};
   --bs-btn-border-color: #{$cta-mint};
-  --bs-btn-hover-color: #{$body-color};
+  --bs-btn-hover-color: #fff;
   --bs-btn-hover-bg: #{$cta-mint-hover};
   --bs-btn-hover-border-color: #{$cta-mint-hover};
-  --bs-btn-active-color: #{$body-color};
+  --bs-btn-active-color: #fff;
   --bs-btn-active-bg: #{$cta-mint-active};
   --bs-btn-active-border-color: #{$cta-mint-active};
-  --bs-btn-disabled-color: #{$body-color};
+  --bs-btn-disabled-color: #fff;
   --bs-btn-disabled-bg: #{$cta-mint};
   --bs-btn-disabled-border-color: #{$cta-mint};
-  --bs-btn-focus-shadow-rgb: 61, 220, 151;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-1px);
-  }
+  --bs-btn-focus-shadow-rgb: 11, 122, 75;
 }
 
 .btn-secondary {
@@ -52,10 +47,10 @@
   --bs-btn-border-color: #{$btn-soft-border};
   --bs-btn-hover-color: #{$body-color};
   --bs-btn-hover-bg: #{$btn-soft-hover-bg};
-  --bs-btn-hover-border-color: rgba(18, 21, 26, 0.12);
+  --bs-btn-hover-border-color: #cbd5e1;
   --bs-btn-active-color: #{$body-color};
   --bs-btn-active-bg: #{$btn-soft-hover-bg};
-  --bs-btn-active-border-color: rgba(18, 21, 26, 0.14);
+  --bs-btn-active-border-color: #cbd5e1;
   --bs-btn-disabled-color: #{$body-color};
   --bs-btn-disabled-bg: #{$btn-soft-bg};
   --bs-btn-disabled-border-color: #{$btn-soft-border};
@@ -63,14 +58,16 @@
 
 .btn-outline-primary {
   --bs-btn-color: #{$primary};
-  --bs-btn-border-color: #{$primary};
+  --bs-btn-border-color: rgba(11, 122, 75, 0.28);
+  --bs-btn-bg: #fff;
   --bs-btn-hover-bg: #{$primary};
   --bs-btn-hover-border-color: #{$primary};
   --bs-btn-hover-color: #fff;
   --bs-btn-active-bg: #096640;
   --bs-btn-active-border-color: #096640;
   --bs-btn-disabled-color: #{$primary};
-  --bs-btn-disabled-border-color: #{$primary};
+  --bs-btn-disabled-border-color: rgba(11, 122, 75, 0.28);
+  --bs-btn-disabled-bg: #fff;
 
   &:focus-visible {
     box-shadow: 0 0 0 0.2rem var(--ring);
@@ -79,12 +76,12 @@
 
 .btn-outline-secondary {
   --bs-btn-color: #{$body-color};
-  --bs-btn-bg: #{$btn-soft-bg};
-  --bs-btn-border-color: #{$btn-soft-border};
-  --bs-btn-hover-bg: #{$btn-soft-hover-bg};
-  --bs-btn-hover-border-color: rgba(18, 21, 26, 0.12);
+  --bs-btn-bg: #fff;
+  --bs-btn-border-color: #e2e8f0;
+  --bs-btn-hover-bg: #f8fafc;
+  --bs-btn-hover-border-color: #cbd5e1;
   --bs-btn-hover-color: #{$body-color};
-  --bs-btn-active-bg: #{$btn-soft-hover-bg};
-  --bs-btn-active-border-color: rgba(18, 21, 26, 0.14);
+  --bs-btn-active-bg: #f8fafc;
+  --bs-btn-active-border-color: #cbd5e1;
   --bs-btn-active-color: #{$body-color};
 }

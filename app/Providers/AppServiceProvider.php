@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Policies\Admin\AiServicePolicy as AdminAiServicePolicy;
 use App\Policies\Admin\DashboardPolicy as AdminDashboardPolicy;
 use App\Policies\Admin\UserPolicy as AdminUserPolicy;
 use App\Policies\App\AiServicePolicy as AppAiServicePolicy;
@@ -117,5 +118,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin.users.create', [AdminUserPolicy::class, 'create']);
         Gate::define('admin.users.update', [AdminUserPolicy::class, 'update']);
         Gate::define('admin.users.delete', [AdminUserPolicy::class, 'delete']);
+
+        Gate::define('admin.ai-services.viewAny', [AdminAiServicePolicy::class, 'viewAny']);
+        Gate::define('admin.ai-services.view', [AdminAiServicePolicy::class, 'view']);
+        Gate::define('admin.ai-services.create', [AdminAiServicePolicy::class, 'create']);
+        Gate::define('admin.ai-services.update', [AdminAiServicePolicy::class, 'update']);
+        Gate::define('admin.ai-services.delete', [AdminAiServicePolicy::class, 'delete']);
+        Gate::define('admin.ai-services.check', [AdminAiServicePolicy::class, 'check']);
     }
 }

@@ -22,7 +22,10 @@ class GenerateSiteAiReportRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('ai_services', 'id')->where(
-                    fn ($query) => $query->where('user_id', $this->user()->id),
+                    fn ($query) => $query->where(function ($scoped): void {
+                        $scoped->where('user_id', $this->user()->id)
+                            ->orWhere('is_global', true);
+                    }),
                 ),
             ],
             'from' => ['required', 'date'],

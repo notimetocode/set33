@@ -66,6 +66,7 @@ class AiServiceTest extends TestCase
         $create->assertCreated()
             ->assertJsonPath('data.name', 'Google Gemini · gemini-3.6-flash')
             ->assertJsonPath('data.type', 'gemini')
+            ->assertJsonPath('data.is_global', false)
             ->assertJsonPath('data.settings.model', 'gemini-3.6-flash')
             ->assertJsonPath('data.api_key_set', true)
             ->assertJsonMissingPath('data.api_key');
@@ -74,6 +75,7 @@ class AiServiceTest extends TestCase
 
         $service = AiService::query()->first();
         $this->assertSame($user->id, $service->user_id);
+        $this->assertFalse($service->is_global);
         $this->assertSame('secret-gemini-key-123', $service->api_key);
 
         $this->getJson('/api/app/ai-services')
@@ -172,5 +174,58 @@ class AiServiceTest extends TestCase
                 'value' => 'gemini',
                 'label' => 'Google Gemini',
             ]);
+    }
+
+    public function test_user_sees_global_services_in_index(): void
+    {
+        $user = $this->actingAsAppUser();
+        $global = AiService::factory()->global()->create([
+            'name' => 'Общий Gemini',
+        ]);
+        $own = AiService::factory()->for($user)->create([
+            'name' => 'Личный Gemini',
+        ]);
+        AiService::factory()->create([
+            'name' => 'Чужой Gemini',
+        ]);
+
+        $this->getJson('/api/app/ai-services')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['id' => $global->id, 'is_global' => true])
+            ->assertJsonFragment(['id' => $own->id, 'is_global' => false])
+            ->assertJsonMissing(['name' => 'Чужой Gemini']);
+    }
+
+    public function test_user_can_view_and_generate_with_global_service(): void
+    {
+        $this->actingAsAppUser();
+        $global = AiService::factory()->global()->create();
+
+        $this->getJson("/api/app/ai-services/{$global->id}")
+            ->assertOk()
+            ->assertJsonPath('data.is_global', true);
+    }
+
+    public function test_user_cannot_update_delete_or_check_global_service(): void
+    {
+        $this->actingAsAppUser();
+        $global = AiService::factory()->global()->create([
+            'api_key' => 'global-key',
+        ]);
+
+        $this->putJson("/api/app/ai-services/{$global->id}", $this->geminiPayload())
+            ->assertForbidden();
+
+        $this->deleteJson("/api/app/ai-services/{$global->id}")
+            ->assertForbidden();
+
+        $this->postJson("/api/app/ai-services/{$global->id}/check")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('ai_services', [
+            'id' => $global->id,
+            'is_global' => true,
+        ]);
     }
 }

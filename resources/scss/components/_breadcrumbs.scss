@@ -1,32 +1,33 @@
 .app-breadcrumbs {
-  margin-bottom: 1rem;
+  margin-bottom: 1.15rem;
 
   .breadcrumb {
-    --bs-breadcrumb-divider: '／';
-    --bs-breadcrumb-font-size: 0.8125rem;
-    --bs-breadcrumb-item-padding-x: 0.5rem;
+    --bs-breadcrumb-divider: '/';
+    --bs-breadcrumb-font-size: 0.8rem;
+    --bs-breadcrumb-item-padding-x: 0.45rem;
     background: transparent;
     padding: 0;
+    margin-bottom: 0;
   }
 
   .breadcrumb-item {
     a {
-      color: var(--muted);
+      color: #94a3b8;
       text-decoration: none;
       font-weight: 500;
 
       &:hover {
-        color: var(--brand);
+        color: #111827;
       }
     }
 
     &.active {
-      color: $body-color;
-      font-weight: 600;
+      color: #64748b;
+      font-weight: 550;
     }
 
     & + .breadcrumb-item::before {
-      color: rgba(18, 21, 26, 0.28);
+      color: #cbd5e1;
     }
   }
 }

@@ -103,11 +103,14 @@ class AiServiceGenerateTest extends TestCase
             ->assertJsonPath('usage.total_tokens', 16);
 
         Http::assertSent(function (Request $request): bool {
+            $temperature = $request['generationConfig']['temperature'] ?? null;
+
             return $request->hasHeader('x-goog-api-key', 'valid-gemini-key')
                 && str_contains($request->url(), '/v1beta/models/gemini-3.6-flash:generateContent')
                 && ($request['contents'][0]['parts'][0]['text'] ?? null) === 'Скажи привет'
                 && ($request['systemInstruction']['parts'][0]['text'] ?? null) === 'Отвечай кратко'
-                && ($request['generationConfig']['temperature'] ?? null) === 1.0;
+                && $temperature !== null
+                && (float) $temperature === 1.0;
         });
     }
 
@@ -135,6 +138,35 @@ class AiServiceGenerateTest extends TestCase
             ->assertOk()
             ->assertJsonPath('ok', false)
             ->assertJsonPath('message', $apiMessage)
+            ->assertJsonPath('retryable', false)
+            ->assertJsonPath('reply', null);
+    }
+
+    public function test_generate_marks_high_demand_error_as_retryable(): void
+    {
+        $apiMessage = 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.';
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response([
+                'error' => [
+                    'code' => 503,
+                    'message' => $apiMessage,
+                    'status' => 'UNAVAILABLE',
+                ],
+            ], 503),
+        ]);
+
+        $user = $this->actingAsAppUser();
+        $service = AiService::factory()->for($user)->create();
+
+        $this->postJson("/api/app/ai-services/{$service->id}/generate", [
+            'prompt' => 'Тест',
+        ])
+            ->assertOk()
+            ->assertJsonPath('ok', false)
+            ->assertJsonPath('message', $apiMessage)
+            ->assertJsonPath('retryable', true)
             ->assertJsonPath('reply', null);
     }
 
@@ -159,5 +191,46 @@ class AiServiceGenerateTest extends TestCase
         $this->postJson("/api/app/ai-services/{$service->id}/generate", [
             'prompt' => 'Привет',
         ])->assertForbidden();
+    }
+
+    public function test_user_can_generate_with_global_service(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response(
+                $this->generateContentResponse('Глобальный ответ'),
+            ),
+        ]);
+
+        $this->actingAsAppUser();
+        $service = AiService::factory()->global()->create([
+            'api_key' => 'global-gemini-key',
+            'settings' => [
+                'model' => 'gemini-3.6-flash',
+                'system_instruction' => null,
+                'generation_config' => [
+                    'temperature' => 1.0,
+                    'top_p' => 0.95,
+                    'top_k' => 40,
+                    'max_output_tokens' => 8192,
+                    'candidate_count' => 1,
+                    'stop_sequences' => [],
+                    'seed' => null,
+                    'presence_penalty' => null,
+                    'frequency_penalty' => null,
+                    'response_mime_type' => 'text/plain',
+                    'thinking_config' => [
+                        'thinking_budget' => 0,
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->postJson("/api/app/ai-services/{$service->id}/generate", [
+            'prompt' => 'Скажи привет',
+        ])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('reply', 'Глобальный ответ');
     }
 }

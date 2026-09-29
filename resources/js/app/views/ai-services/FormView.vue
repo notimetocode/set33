@@ -607,6 +607,13 @@ onMounted(async () => {
 
         if (isEdit.value) {
             const service = await getAiService(route.params.id);
+
+            if (service.is_global) {
+                await router.replace({ name: 'ai-services.index' });
+
+                return;
+            }
+
             applyService(service);
             await openEditParameters();
         }

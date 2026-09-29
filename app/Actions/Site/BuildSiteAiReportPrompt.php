@@ -11,6 +11,10 @@ class BuildSiteAiReportPrompt
 
     private const MAX_EVENTS_IN_PROMPT = 50;
 
+    private const MAX_DOCUMENTS_IN_PROMPT = 10;
+
+    private const MAX_DOCUMENT_CONTENT_CHARS = 15000;
+
     /**
      * @param  list<array<string, mixed>>  $analytics
      * @param  list<array<string, mixed>>  $searchConsole
@@ -29,6 +33,7 @@ class BuildSiteAiReportPrompt
      *     lab?: list<array<string, mixed>>,
      *     crux?: list<array<string, mixed>>
      * }  $pageSpeed
+     * @param  list<array<string, mixed>>  $documents
      */
     public function handle(
         Site $site,
@@ -40,6 +45,7 @@ class BuildSiteAiReportPrompt
         array $commits,
         array $events = [],
         array $pageSpeed = [],
+        array $documents = [],
     ): string {
         $sections = [
             $this->instructions(),
@@ -49,6 +55,7 @@ class BuildSiteAiReportPrompt
             $this->pageSpeedSection($pageSpeed),
             $this->commitsSection($commits),
             $this->eventsSection($events),
+            $this->documentsSection($documents),
         ];
 
         return implode("\n\n", $sections);
@@ -67,8 +74,9 @@ class BuildSiteAiReportPrompt
 5. Оцени скорость и Core Web Vitals (PageSpeed lab и CrUX field data): LCP, INP, CLS, TTFB и связанные метрики; свяжи с SEO и UX, если данные есть.
 6. Сопоставь изменения метрик с активностью разработки (коммиты GitHub), если такие данные есть: возможные корреляции деплоев/изменений с ростом или падением показателей.
 7. Учти ручные события периода (упоминания в СМИ, публикации, акции, инциденты и т.п.): оцени их возможное влияние на трафик и видимость.
-8. Выдели сильные стороны, риски и конкретные гипотезы для улучшения SEO.
-9. Если какого-то источника данных нет или он пуст — явно укажи это и не выдумывай цифры.
+8. Учти приложенные Markdown-документы сайта (брендбук, ТЗ, семантика, контент-гайд и т.п.): используй их как контекст о продукте, аудитории и ограничениях; не выдумывай факты вне документов и метрик.
+9. Выдели сильные стороны, риски и конкретные гипотезы для улучшения SEO.
+10. Если какого-то источника данных нет или он пуст — явно укажи это и не выдумывай цифры.
 
 Структура отчёта (используй Markdown):
 ## Краткое резюме
@@ -79,6 +87,7 @@ class BuildSiteAiReportPrompt
 ## Скорость и Core Web Vitals
 ## Связь с разработкой
 ## События и внешние факторы
+## Контекст из документов
 ## Рекомендации
 ## Что проверить дополнительно
 
@@ -237,7 +246,8 @@ PROMPT;
 
         if ($lab !== []) {
             $parts[] = "### Lab (Lighthouse)\n"
-                .'Поля: url, strategy, fetched_at, performance_score, lcp_ms, inp_ms, cls, '
+                .'Поля: url, strategy, fetched_at, performance_score, accessibility_score, '
+                .'best_practices_score, seo_score, lcp_ms, inp_ms, cls, '
                 ."fcp_ms, ttfb_ms, tbt_ms, speed_index_ms.\n"
                 ."```json\n"
                 .$this->encodeJson($lab)
@@ -248,7 +258,7 @@ PROMPT;
 
         if ($crux !== []) {
             $parts[] = "### CrUX (field data)\n"
-                .'Поля: scope (origin|url), url, form_factor, collection_period_start, '
+                .'Поля: scope (origin|url), url, form_factor, overall_category, collection_period_start, '
                 ."collection_period_end, lcp_p75_ms, inp_p75_ms, cls_p75, fcp_p75_ms, ttfb_p75_ms, fetched_at.\n"
                 ."```json\n"
                 .$this->encodeJson($crux)
@@ -338,6 +348,48 @@ PROMPT;
             ."```json\n"
             .$this->encodeJson($simplified)
             ."\n```";
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $documents
+     */
+    private function documentsSection(array $documents): string
+    {
+        if ($documents === []) {
+            return "## Документы сайта\nДокументы не загружены.";
+        }
+
+        $total = count($documents);
+        $included = array_slice($documents, 0, self::MAX_DOCUMENTS_IN_PROMPT);
+        $note = $total > self::MAX_DOCUMENTS_IN_PROMPT
+            ? "Показаны {$this->formatCount(count($included))} из {$this->formatCount($total)} документов.\n"
+            : '';
+
+        $blocks = [];
+        foreach ($included as $index => $row) {
+            $number = $index + 1;
+            $title = (string) ($row['title'] ?? 'Без названия');
+            $description = trim((string) ($row['description'] ?? ''));
+            $filename = trim((string) ($row['original_filename'] ?? ''));
+            $content = $this->truncate((string) ($row['content'] ?? ''), self::MAX_DOCUMENT_CONTENT_CHARS);
+
+            $header = "### Документ {$number}: {$title}";
+            if ($filename !== '') {
+                $header .= " ({$filename})";
+            }
+
+            $parts = [$header];
+            if ($description !== '') {
+                $parts[] = 'Описание: '.$this->truncate($description, 500);
+            }
+            $parts[] = "```markdown\n{$content}\n```";
+            $blocks[] = implode("\n", $parts);
+        }
+
+        return "## Документы сайта\n"
+            .$note
+            ."Ниже — Markdown-документы, загруженные владельцем сайта. Используй их как контекст.\n\n"
+            .implode("\n\n", $blocks);
     }
 
     /**

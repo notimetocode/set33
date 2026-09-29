@@ -21,6 +21,7 @@ class SiteCruxSnapshotFactory extends Factory
             'scope' => 'origin',
             'url' => 'https://example.com',
             'form_factor' => 'PHONE',
+            'overall_category' => 'AVERAGE',
             'collection_period_start' => now()->subDays(28)->toDateString(),
             'collection_period_end' => now()->subDay()->toDateString(),
             'lcp_p75_ms' => fake()->numberBetween(1500, 4000),
@@ -28,6 +29,7 @@ class SiteCruxSnapshotFactory extends Factory
             'cls_p75' => fake()->randomFloat(3, 0, 0.25),
             'fcp_p75_ms' => fake()->numberBetween(800, 2500),
             'ttfb_p75_ms' => fake()->numberBetween(200, 1000),
+            'metrics' => null,
             'fetched_at' => now(),
         ];
     }

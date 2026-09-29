@@ -1,0 +1,78 @@
+// =============================================================================
+// Color palette — change product colors here
+// Path: resources/scss/abstracts/_colors.scss
+// =============================================================================
+
+// Brand / accents
+$primary: #0b7a4b;
+$app-accent: $primary;
+$admin-accent: #065f3c;
+$brand: $primary;
+$success: #0b7a4b;
+
+// Neutrals
+$body-bg: #fafafa;
+$body-color: #111827;
+$border-color: #ecf0f5;
+$secondary: #64748b;
+$muted: #64748b;
+$light: #fafafa;
+$dark: #111827;
+$surface: #ffffff;
+$surface-muted: #fafafa;
+
+// Links & focus
+$link-color: $primary;
+$focus-ring-color: rgba(11, 122, 75, 0.28);
+$ring: rgba(11, 122, 75, 0.28);
+
+// CTA (primary buttons)
+$cta-mint: #0b7a4b;
+$cta-mint-hover: #096640;
+$cta-mint-active: #085536;
+
+// Soft / secondary buttons
+$btn-soft-bg: #ffffff;
+$btn-soft-border: #e2e8f0;
+$btn-soft-hover-bg: #fafafa;
+
+// Elevation (color channels live here; “none” = flat panels)
+$shadow-soft: none;
+$shadow-elevated: 0 10px 30px rgba(15, 23, 42, 0.08);
+$shadow-dropdown: 0 8px 24px rgba(15, 23, 42, 0.1);
+$shadow-button: none;
+
+// Form controls — colors
+$input-bg: #ffffff;
+$input-disabled-bg: #fafafa;
+$input-disabled-color: rgba(17, 24, 39, 0.45);
+$input-color: $body-color;
+$input-border-color: #e2e8f0;
+$input-focus-bg: #ffffff;
+$input-focus-border-color: #94a3b8;
+$input-focus-box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+$input-placeholder-color: rgba(17, 24, 39, 0.38);
+
+$form-label-color: #374151;
+$form-text-color: $muted;
+$form-select-indicator-color: #64748b;
+
+$form-check-input-bg: #ffffff;
+$form-check-input-border: 1.5px solid #cbd5e1;
+$form-check-input-checked-bg-color: #111827;
+$form-check-input-checked-border-color: #111827;
+$form-check-input-focus-border: #94a3b8;
+$form-check-input-focus-box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+
+$form-file-button-color: $body-color;
+$form-file-button-bg: #f1f5f9;
+$form-file-button-hover-bg: #e2e8f0;
+
+// UI chrome (nav, text hierarchy)
+$color-ink: #111827;
+$color-ink-soft: #475569;
+$color-slate: #64748b;
+$color-slate-light: #94a3b8;
+$color-line: #e2e8f0;
+$color-line-soft: #eef2f6;
+$color-wash: #fafafa;

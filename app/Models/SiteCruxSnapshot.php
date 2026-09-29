@@ -22,6 +22,7 @@ class SiteCruxSnapshot extends Model
         'scope',
         'url',
         'form_factor',
+        'overall_category',
         'collection_period_start',
         'collection_period_end',
         'lcp_p75_ms',
@@ -29,6 +30,7 @@ class SiteCruxSnapshot extends Model
         'cls_p75',
         'fcp_p75_ms',
         'ttfb_p75_ms',
+        'metrics',
         'fetched_at',
     ];
 
@@ -45,6 +47,7 @@ class SiteCruxSnapshot extends Model
             'cls_p75' => 'float',
             'fcp_p75_ms' => 'integer',
             'ttfb_p75_ms' => 'integer',
+            'metrics' => 'array',
             'fetched_at' => 'datetime',
         ];
     }

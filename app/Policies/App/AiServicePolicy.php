@@ -14,7 +14,7 @@ class AiServicePolicy
 
     public function view(User $actor, AiService $aiService): bool
     {
-        return $actor->is($aiService->user);
+        return $aiService->is_global || $aiService->isOwnedBy($actor);
     }
 
     public function create(User $actor): bool
@@ -24,21 +24,21 @@ class AiServicePolicy
 
     public function update(User $actor, AiService $aiService): bool
     {
-        return $actor->is($aiService->user);
+        return ! $aiService->is_global && $aiService->isOwnedBy($actor);
     }
 
     public function delete(User $actor, AiService $aiService): bool
     {
-        return $actor->is($aiService->user);
+        return ! $aiService->is_global && $aiService->isOwnedBy($actor);
     }
 
     public function check(User $actor, AiService $aiService): bool
     {
-        return $actor->is($aiService->user);
+        return ! $aiService->is_global && $aiService->isOwnedBy($actor);
     }
 
     public function generate(User $actor, AiService $aiService): bool
     {
-        return $actor->is($aiService->user);
+        return $aiService->is_global || $aiService->isOwnedBy($actor);
     }
 }

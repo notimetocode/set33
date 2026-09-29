@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\App;
 
+use App\Actions\Site\GetSiteMetricsCoverage;
 use App\Enums\SearchConsoleDimension;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\App\Site\SiteMetricsRequest;
@@ -11,6 +12,15 @@ use Illuminate\Support\Facades\Gate;
 
 class SiteMetricsController extends Controller
 {
+    public function coverage(Site $site, GetSiteMetricsCoverage $getCoverage): JsonResponse
+    {
+        Gate::authorize('app.sites.view', $site);
+
+        return response()->json([
+            'data' => $getCoverage->handle($site),
+        ]);
+    }
+
     public function analytics(SiteMetricsRequest $request, Site $site): JsonResponse
     {
         Gate::authorize('app.sites.view', $site);
@@ -191,6 +201,9 @@ class SiteMetricsController extends Controller
                 'strategy' => $row->strategy,
                 'fetched_at' => $row->fetched_at?->toIso8601String(),
                 'performance_score' => $row->performance_score,
+                'accessibility_score' => $row->accessibility_score,
+                'best_practices_score' => $row->best_practices_score,
+                'seo_score' => $row->seo_score,
                 'lcp_ms' => $row->lcp_ms,
                 'inp_ms' => $row->inp_ms,
                 'cls' => $row->cls,
@@ -210,6 +223,7 @@ class SiteMetricsController extends Controller
                 'scope' => $row->scope,
                 'url' => $row->url,
                 'form_factor' => $row->form_factor,
+                'overall_category' => $row->overall_category,
                 'collection_period_start' => $row->collection_period_start?->toDateString(),
                 'collection_period_end' => $row->collection_period_end?->toDateString(),
                 'lcp_p75_ms' => $row->lcp_p75_ms,

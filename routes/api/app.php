@@ -12,6 +12,7 @@ use App\Http\Controllers\App\ProfileController;
 use App\Http\Controllers\App\SiteAiReportController;
 use App\Http\Controllers\App\SiteAiReportSharingController;
 use App\Http\Controllers\App\SiteController;
+use App\Http\Controllers\App\SiteDocumentController;
 use App\Http\Controllers\App\SiteEventController;
 use App\Http\Controllers\App\SiteGithubIntegrationController;
 use App\Http\Controllers\App\SiteGoogleIntegrationController;
@@ -109,6 +110,8 @@ Route::middleware(['auth:sanctum', 'ability:app'])->group(function (): void {
         ->middleware('throttle:pagespeed-sync')
         ->name('app.sites.pagespeed-integration.sync');
 
+    Route::get('/sites/{site}/metrics/coverage', [SiteMetricsController::class, 'coverage'])
+        ->name('app.sites.metrics.coverage');
     Route::get('/sites/{site}/metrics/analytics', [SiteMetricsController::class, 'analytics'])
         ->name('app.sites.metrics.analytics');
     Route::get('/sites/{site}/metrics/search-console', [SiteMetricsController::class, 'searchConsole'])
@@ -126,6 +129,16 @@ Route::middleware(['auth:sanctum', 'ability:app'])->group(function (): void {
         ->name('app.sites.events.update');
     Route::delete('/sites/{site}/events/{event}', [SiteEventController::class, 'destroy'])
         ->name('app.sites.events.destroy');
+
+    Route::get('/sites/{site}/documents', [SiteDocumentController::class, 'index'])
+        ->name('app.sites.documents.index');
+    Route::post('/sites/{site}/documents', [SiteDocumentController::class, 'store'])
+        ->name('app.sites.documents.store');
+    // POST: multipart file replace — PHP does not populate uploaded files on PUT.
+    Route::post('/sites/{site}/documents/{document}', [SiteDocumentController::class, 'update'])
+        ->name('app.sites.documents.update');
+    Route::delete('/sites/{site}/documents/{document}', [SiteDocumentController::class, 'destroy'])
+        ->name('app.sites.documents.destroy');
 
     Route::get('/sites/{site}/ai-reports', [SiteAiReportController::class, 'index'])
         ->name('app.sites.ai-reports.index');

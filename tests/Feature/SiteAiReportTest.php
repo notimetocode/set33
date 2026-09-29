@@ -8,6 +8,7 @@ use App\Models\Site;
 use App\Models\SiteAiReport;
 use App\Models\SiteAnalyticsDaily;
 use App\Models\SiteCruxSnapshot;
+use App\Models\SiteDocument;
 use App\Models\SiteEvent;
 use App\Models\SiteGithubCommit;
 use App\Models\SitePageSpeedLabSnapshot;
@@ -135,6 +136,41 @@ class SiteAiReportTest extends TestCase
             ->assertJsonValidationErrors(['ai_service_id']);
     }
 
+    public function test_user_can_use_global_ai_service_for_report(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response(
+                $this->generateContentResponse('## Краткое резюме\nГлобальный сервис.'),
+            ),
+        ]);
+
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create();
+        $service = AiService::factory()->global()->create([
+            'api_key' => 'valid-key',
+            'settings' => $this->geminiSettings(),
+        ]);
+
+        SiteAnalyticsDaily::factory()->for($site)->create([
+            'date' => '2026-09-01',
+        ]);
+
+        $this->postJson("/api/app/sites/{$site->id}/ai-reports", [
+            'ai_service_id' => $service->id,
+            'from' => '2026-09-01',
+            'to' => '2026-09-07',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('data.tool.ai_service_id', $service->id);
+
+        $this->assertDatabaseHas('site_ai_reports', [
+            'site_id' => $site->id,
+            'ai_service_id' => $service->id,
+        ]);
+    }
+
     public function test_generation_fails_when_no_service_data(): void
     {
         Http::preventStrayRequests();
@@ -163,10 +199,52 @@ class SiteAiReportTest extends TestCase
                 'search_console_countries' => 0,
                 'github_commits' => 0,
                 'events' => 0,
+                'documents' => 0,
             ]);
 
         $this->assertDatabaseCount('site_ai_reports', 0);
         Http::assertNothingSent();
+    }
+
+    public function test_generation_marks_high_demand_error_as_retryable(): void
+    {
+        $apiMessage = 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.';
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response([
+                'error' => [
+                    'code' => 503,
+                    'message' => $apiMessage,
+                    'status' => 'UNAVAILABLE',
+                ],
+            ], 503),
+        ]);
+
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create();
+        $service = AiService::factory()->for($user)->create([
+            'api_key' => 'valid-key',
+            'settings' => $this->geminiSettings(),
+        ]);
+
+        SiteAnalyticsDaily::factory()->for($site)->create([
+            'date' => '2026-09-01',
+        ]);
+
+        $this->postJson("/api/app/sites/{$site->id}/ai-reports", [
+            'ai_service_id' => $service->id,
+            'from' => '2026-09-01',
+            'to' => '2026-09-07',
+        ])
+            ->assertOk()
+            ->assertJsonPath('ok', false)
+            ->assertJsonPath('message', $apiMessage)
+            ->assertJsonPath('retryable', true)
+            ->assertJsonPath('data', null);
+
+        $this->assertDatabaseCount('site_ai_reports', 0);
+        Http::assertSentCount(1);
     }
 
     public function test_user_can_generate_and_persist_ai_report(): void
@@ -293,6 +371,12 @@ class SiteAiReportTest extends TestCase
             'description' => 'Упоминание в обзоре',
             'url' => 'https://onliner.by/article',
         ]);
+        SiteDocument::factory()->for($site)->create([
+            'title' => 'Брендбук',
+            'description' => 'Тон общения',
+            'content' => "# Brand\n\nПишите просто и по делу.",
+            'original_filename' => 'brand.md',
+        ]);
 
         $this->postJson("/api/app/sites/{$site->id}/ai-reports", [
             'ai_service_id' => $service->id,
@@ -321,7 +405,8 @@ class SiteAiReportTest extends TestCase
             ->assertJsonPath('data_counts.pagespeed_lab', 1)
             ->assertJsonPath('data_counts.pagespeed_crux', 1)
             ->assertJsonPath('data_counts.github_commits', 1)
-            ->assertJsonPath('data_counts.events', 1);
+            ->assertJsonPath('data_counts.events', 1)
+            ->assertJsonPath('data_counts.documents', 1);
 
         $this->assertDatabaseHas('site_ai_reports', [
             'site_id' => $site->id,
@@ -372,7 +457,10 @@ class SiteAiReportTest extends TestCase
                 && str_contains($prompt, 'Improve SEO meta')
                 && str_contains($prompt, '"organic_sessions":40')
                 && str_contains($prompt, 'На портале Onliner вышла статья про наш сайт')
-                && str_contains($prompt, '## События');
+                && str_contains($prompt, '## События')
+                && str_contains($prompt, '## Документы сайта')
+                && str_contains($prompt, 'Брендбук')
+                && str_contains($prompt, 'Пишите просто и по делу.');
         });
     }
 

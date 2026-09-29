@@ -62,6 +62,14 @@
                 >
                     Пользователи
                 </RouterLink>
+                <RouterLink
+                    class="layout-admin__nav-link"
+                    :class="{ 'is-active': isAiServices }"
+                    :to="{ name: 'ai-services.index' }"
+                    @click="closeNav"
+                >
+                    AI-сервисы
+                </RouterLink>
             </nav>
 
             <div class="layout-admin__sidebar-footer">
@@ -94,6 +102,7 @@ const isMobileNav = ref(false);
 
 const breadcrumbItems = computed(() => resolveBreadcrumbs(route));
 const isUsers = computed(() => String(route.name || '').startsWith('users'));
+const isAiServices = computed(() => String(route.name || '').startsWith('ai-services'));
 const sidebarAriaHidden = computed(() => (isMobileNav.value && !navOpen.value ? 'true' : 'false'));
 
 let mobileMediaQuery = null;
