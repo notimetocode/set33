@@ -9,7 +9,7 @@ return [
         'home' => 'Home',
         'login' => 'Log in',
         'register' => 'Sign up',
-        'cabinet' => 'Dashboard',
+        'cabinet' => 'Personal account',
         'open_menu' => 'Open menu',
         'close_menu' => 'Close menu',
         'sections' => 'Sections',

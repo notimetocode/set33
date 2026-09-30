@@ -24,6 +24,8 @@
                         class="btn btn-primary btn-lg"
                         data-public-auth-cta="register"
                         data-public-auth-keep
+                        data-label-register="{{ __('public.home.cta_try') }}"
+                        data-label-authed="{{ __('public.nav.cabinet') }}"
                     >{{ __('public.home.cta_try') }}</a>
                 </div>
             </div>

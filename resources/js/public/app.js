@@ -7,13 +7,16 @@ import { initLangSelect } from './lang-select';
 function syncPublicAuthCtas() {
     const authed = Boolean(getToken('/api/app'));
     const root = document.body;
-    const labelCabinet = root?.dataset.i18nCabinet || 'Dashboard';
-    const labelLogin = root?.dataset.i18nLogin || 'Log in';
-    const labelRegister = root?.dataset.i18nRegister || 'Sign up';
+    const fallbackCabinet = root?.dataset.i18nCabinet || 'Personal account';
+    const fallbackLogin = root?.dataset.i18nLogin || 'Log in';
+    const fallbackRegister = root?.dataset.i18nRegister || 'Sign up';
 
     document.querySelectorAll('[data-public-auth-cta]').forEach((el) => {
         const mode = el.getAttribute('data-public-auth-cta') || 'login';
         const keepWhenAuthed = el.hasAttribute('data-public-auth-keep');
+        const labelCabinet = el.dataset.labelAuthed || fallbackCabinet;
+        const labelLogin = el.dataset.labelLogin || fallbackLogin;
+        const labelRegister = el.dataset.labelRegister || fallbackRegister;
 
         if (authed) {
             if (mode === 'register' && !keepWhenAuthed) {

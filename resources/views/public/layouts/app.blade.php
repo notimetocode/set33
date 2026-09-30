@@ -109,11 +109,15 @@
                     href="{{ url('/app/login') }}"
                     class="btn btn-secondary btn-sm layout-public__cabinet"
                     data-public-auth-cta="login"
+                    data-label-login="{{ __('public.nav.login') }}"
+                    data-label-authed="{{ __('public.nav.cabinet') }}"
                 >{{ __('public.nav.login') }}</a>
                 <a
                     href="{{ url('/app/register') }}"
                     class="btn btn-primary btn-sm layout-public__cabinet"
                     data-public-auth-cta="register"
+                    data-label-register="{{ __('public.nav.register') }}"
+                    data-label-authed="{{ __('public.nav.cabinet') }}"
                 >{{ __('public.nav.register') }}</a>
 
                 <button
@@ -183,12 +187,16 @@
                         class="btn btn-secondary w-100"
                         data-public-nav-link
                         data-public-auth-cta="login"
+                        data-label-login="{{ __('public.nav.login') }}"
+                        data-label-authed="{{ __('public.nav.cabinet') }}"
                     >{{ __('public.nav.login') }}</a>
                     <a
                         href="{{ url('/app/register') }}"
                         class="btn btn-primary w-100"
                         data-public-nav-link
                         data-public-auth-cta="register"
+                        data-label-register="{{ __('public.nav.register') }}"
+                        data-label-authed="{{ __('public.nav.cabinet') }}"
                     >{{ __('public.nav.register') }}</a>
                 </div>
             </div>
@@ -233,6 +241,8 @@
                                 href="{{ url('/app/login') }}"
                                 class="layout-public__footer-link"
                                 data-public-auth-cta="login"
+                                data-label-login="{{ __('public.nav.login') }}"
+                                data-label-authed="{{ __('public.nav.cabinet') }}"
                             >{{ __('public.nav.login') }}</a>
                         </li>
                     </ul>
