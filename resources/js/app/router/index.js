@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { isAuthenticated } from '../api/auth';
 import { dynamicBreadcrumbLabel } from '../../shared/dynamicBreadcrumbLabel';
-import { t } from '../shared/i18n';
+import { t } from '../../shared/i18n';
 import AppLayout from '../layouts/AppLayout.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
