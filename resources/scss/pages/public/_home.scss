@@ -1,13 +1,45 @@
 .page-home {
   --home-line: #{$color-line};
   --home-line-soft: #{$color-line-soft};
+  --home-line-drawn: #{$color-slate-light};
   --home-dot: rgba(18, 21, 26, 0.28);
   --home-rail-height: 4.5rem;
+  --draw: 0;
+  --draw-rail: 0;
   background: $surface;
   overflow: clip;
 
   @media (min-width: 768px) {
     --home-rail-height: 6rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    --draw: 1;
+    --draw-rail: 1;
+  }
+
+  // Darker stroke revealed top→bottom via --draw (0..1).
+  @mixin home-frame-draw {
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      z-index: 4;
+      border: 1px solid var(--home-line-drawn);
+      clip-path: inset(0 0 calc((1 - var(--draw, 0)) * 100%) 0);
+      pointer-events: none;
+    }
+  }
+
+  // Center spine rail: light base, ink fills with --draw-rail.
+  @mixin home-rail-draw {
+    background: linear-gradient(
+      to bottom,
+      var(--home-line-drawn) 0%,
+      var(--home-line-drawn) calc(var(--draw-rail, 0) * 100%),
+      var(--home-line) calc(var(--draw-rail, 0) * 100%),
+      var(--home-line) 100%
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -129,6 +161,8 @@
     border-left: 1px solid var(--home-line);
     border-right: 1px solid var(--home-line);
     border-bottom: 1px solid var(--home-line);
+    --home-rail-draw-h: calc(var(--home-rail-height) * 2);
+    @include home-frame-draw;
 
     @media (min-width: 768px) {
       display: grid;
@@ -146,7 +180,7 @@
       z-index: 1;
       width: 1px;
       height: calc(var(--home-rail-height) * 2);
-      background: var(--home-line);
+      @include home-rail-draw;
       transform: translateX(-1px);
       pointer-events: none;
     }
@@ -168,7 +202,6 @@
     text-align: center;
     cursor: pointer;
     color: inherit;
-    transition: background-color 0.15s ease;
 
     // Frame bottom edge lives on &__tabs — avoid a double line under the last tab.
     &:last-child {
@@ -188,27 +221,10 @@
       }
     }
 
-    &:hover {
-      background: #fafafa;
-    }
-
     &:focus-visible {
       outline: 2px solid $primary;
       outline-offset: -2px;
       z-index: 1;
-    }
-
-    &.is-active::after {
-      content: '';
-      position: absolute;
-      left: 50%;
-      bottom: 0;
-      z-index: 1;
-      width: 2.85rem;
-      height: 3px;
-      border-radius: 999px;
-      background: $primary;
-      transform: translateX(-50%);
     }
   }
 
@@ -240,6 +256,7 @@
     position: relative;
     z-index: 1;
     padding-top: calc(var(--home-rail-height) * 2);
+    --home-rail-draw-h: calc(var(--home-rail-height) * 2);
 
     // Vertical border from bento center down to the outcome block.
     &::after {
@@ -250,16 +267,17 @@
       z-index: 1;
       width: 1px;
       height: calc(var(--home-rail-height) * 2);
-      background: var(--home-line);
+      @include home-rail-draw;
       transform: translateX(-1px);
       pointer-events: none;
     }
   }
 
   &__bento-panel {
+    position: relative;
     border: 1px solid var(--home-line);
     background: $surface;
-    overflow: hidden;
+    @include home-frame-draw;
   }
 
   &__bento-intro {
@@ -492,6 +510,7 @@
     z-index: 1;
     max-width: 36rem;
     margin-inline: auto;
+    --home-rail-draw-h: var(--home-rail-height);
 
     // Vertical border from outcome down to pricing.
     &::after {
@@ -502,19 +521,21 @@
       z-index: 1;
       width: 1px;
       height: var(--home-rail-height);
-      background: var(--home-line);
+      @include home-rail-draw;
       transform: translateX(-1px);
       pointer-events: none;
     }
   }
 
   &__outcome-panel {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 1.75rem;
     border: 1px solid var(--home-line);
     background: $surface;
     padding: 1.75rem 1.35rem 1.85rem;
+    @include home-frame-draw;
 
     @media (min-width: 768px) {
       gap: 2rem;
@@ -877,9 +898,10 @@
   }
 
   &__pricing-panel {
+    position: relative;
     border: 1px solid var(--home-line);
     background: $surface;
-    overflow: hidden;
+    @include home-frame-draw;
   }
 
   &__pricing-intro {

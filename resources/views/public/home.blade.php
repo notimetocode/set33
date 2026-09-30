@@ -42,6 +42,8 @@
                     class="page-home__tabs"
                     role="tablist"
                     aria-label="Возможности продукта"
+                    data-home-draw="frame"
+                    data-home-draw-rail
                 >
                     <button
                         type="button"
@@ -94,8 +96,8 @@
                 </div>
             </div>
 
-            <div class="container page-home__bento">
-                <div class="page-home__bento-panel">
+            <div class="container page-home__bento" data-home-draw-rail>
+                <div class="page-home__bento-panel" data-home-draw="frame">
                     <header class="page-home__bento-intro">
                         <h2 id="how-heading" class="page-home__bento-title">
                             Готовая система, а не шаблон
@@ -236,8 +238,8 @@
         >
             <div class="page-home__dots page-home__dots--flat" aria-hidden="true"></div>
 
-            <div class="container page-home__outcome-inner">
-                <div class="page-home__outcome-panel">
+            <div class="container page-home__outcome-inner" data-home-draw-rail>
+                <div class="page-home__outcome-panel" data-home-draw="frame">
                     <div class="page-home__outcome-copy">
                         <h2 id="outcome-heading" class="page-home__outcome-title">
                             Что получаете на выходе
@@ -359,7 +361,7 @@
             <div class="page-home__dots page-home__dots--flat" aria-hidden="true"></div>
 
             <div class="container page-home__pricing-inner">
-                <div class="page-home__pricing-panel">
+                <div class="page-home__pricing-panel" data-home-draw="frame">
                     <header class="page-home__pricing-intro">
                         <h2 id="pricing-heading" class="page-home__pricing-title">Цены</h2>
                         <p class="page-home__pricing-lead">

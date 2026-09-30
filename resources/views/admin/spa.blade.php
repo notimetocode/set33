@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>Панель администратора — {{ config('app.name') }}</title>
+    <x-site-icons />
     @vite(['resources/scss/admin.scss', 'resources/js/admin/app.js'])
 </head>
 <body>

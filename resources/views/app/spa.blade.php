@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>Личный кабинет — {{ config('app.name') }}</title>
+    <x-site-icons />
     @vite(['resources/scss/app.scss', 'resources/js/app/app.js'])
 </head>
 <body>

@@ -1,7 +1,8 @@
 import * as bootstrap from 'bootstrap';
 import { getToken } from '../shared/api/http';
-import { initCookieConsent } from './cookie-consent';
+import { initHomeLineDraw } from './home-line-draw';
 import { initHomeTabs } from './home-tabs';
+import { initLangSelect } from './lang-select';
 
 function syncPublicAuthCtas() {
     const authed = Boolean(getToken('/api/app'));
@@ -123,8 +124,9 @@ function initPublicUi() {
     syncPublicAuthCtas();
     initPublicHeaderScroll();
     initPublicNav();
-    initCookieConsent();
+    initLangSelect();
     initHomeTabs();
+    initHomeLineDraw();
 }
 
 if (document.readyState === 'loading') {

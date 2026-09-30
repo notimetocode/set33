@@ -6,6 +6,19 @@
     <meta name="robots" content="noindex, nofollow">
     <title>@yield('title', config('app.name'))</title>
     <meta name="description" content="@yield('meta_description', config('app.name'))">
+    <x-site-icons />
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ config('app.name') }}">
+    <meta property="og:title" content="@hasSection('og_title')@yield('og_title')@else@yield('title', config('app.name'))@endif">
+    <meta property="og:description" content="@hasSection('og_description')@yield('og_description')@else@yield('meta_description', config('app.name'))@endif">
+    <meta property="og:image" content="@yield('og_image', asset('images/og-image.png'))">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="{{ str_replace('_', '-', app()->getLocale()) }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@hasSection('og_title')@yield('og_title')@else@yield('title', config('app.name'))@endif">
+    <meta name="twitter:description" content="@hasSection('og_description')@yield('og_description')@else@yield('meta_description', config('app.name'))@endif">
+    <meta name="twitter:image" content="@yield('og_image', asset('images/og-image.png'))">
     @stack('meta')
     @vite(['resources/scss/public.scss', 'resources/js/public/app.js'])
 </head>
@@ -30,6 +43,58 @@
             </a>
 
             <div class="layout-public__actions">
+                <div class="lang-select" data-lang-select>
+                    <button
+                        type="button"
+                        class="lang-select__trigger"
+                        aria-expanded="false"
+                        aria-haspopup="listbox"
+                        aria-controls="public-lang-menu"
+                        aria-label="Язык"
+                        data-lang-select-trigger
+                    >
+                        <span class="lang-select__value" data-lang-select-value>RU</span>
+                        <span class="lang-select__chevron" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+                                <path d="M4 6.2 8 10l4-3.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                    </button>
+                    <ul
+                        id="public-lang-menu"
+                        class="lang-select__menu"
+                        role="listbox"
+                        aria-label="Выбор языка"
+                    >
+                        <li role="presentation">
+                            <button
+                                type="button"
+                                class="lang-select__option"
+                                role="option"
+                                aria-selected="true"
+                                data-lang="ru"
+                                data-lang-select-option
+                            >
+                                <span>Русский</span>
+                                <span class="lang-select__option-code">RU</span>
+                            </button>
+                        </li>
+                        <li role="presentation">
+                            <button
+                                type="button"
+                                class="lang-select__option"
+                                role="option"
+                                aria-selected="false"
+                                data-lang="en"
+                                data-lang-select-option
+                            >
+                                <span>English</span>
+                                <span class="lang-select__option-code">EN</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
                 <a
                     href="{{ url('/app/login') }}"
                     class="btn btn-secondary btn-sm layout-public__cabinet"
@@ -155,7 +220,6 @@
         </div>
     </footer>
 
-    <x-cookie-consent />
     @stack('scripts')
 </body>
 </html>

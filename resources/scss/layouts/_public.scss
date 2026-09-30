@@ -15,9 +15,11 @@ html {
     position: sticky;
     top: 0;
     z-index: 1060;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.72);
     border-bottom: 1px solid $color-line;
     box-shadow: none;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
   &__header-inner {
@@ -85,7 +87,7 @@ html {
     color: var(--muted);
     text-decoration: none;
     font-size: 0.9375rem;
-    font-weight: 500;
+    font-weight: 400;
     letter-spacing: -0.015em;
     white-space: nowrap;
     line-height: 1.2;
@@ -382,7 +384,7 @@ html {
       justify-content: flex-start;
       padding: 0.85rem 0;
       font-size: 1.125rem;
-      font-weight: 600;
+      font-weight: 400;
       letter-spacing: -0.03em;
       line-height: 1.25;
       white-space: normal;
@@ -429,7 +431,7 @@ html {
 
     &.is-nav-open {
       .layout-public__header {
-        background: #fff;
+        background: rgba(255, 255, 255, 0.92);
       }
 
       .layout-public__backdrop {
