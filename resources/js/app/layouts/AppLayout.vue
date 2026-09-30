@@ -5,10 +5,10 @@
                 <span class="logo">
                     <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="39">
                 </span>
-                <span class="layout-app__brand-label">Личный кабинет</span>
+                <span class="layout-app__brand-label">{{ t('layout.brandLabel') }}</span>
             </RouterLink>
 
-            <nav class="layout-app__nav" aria-label="Навигация личного кабинета">
+            <nav class="layout-app__nav" :aria-label="t('layout.navAria')">
                 <RouterLink
                     v-for="item in navItems"
                     :key="item.name"
@@ -16,7 +16,7 @@
                     :class="{ 'is-active': item.isActive(route) }"
                     :to="{ name: item.name }"
                 >
-                    {{ item.label }}
+                    {{ t(item.labelKey) }}
                 </RouterLink>
             </nav>
 
@@ -41,7 +41,7 @@
             </div>
         </main>
 
-        <nav class="layout-app__tabbar" aria-label="Основная навигация">
+        <nav class="layout-app__tabbar" :aria-label="t('layout.tabbarAria')">
             <RouterLink
                 v-for="item in navItems"
                 :key="item.name"
@@ -49,7 +49,7 @@
                 :class="{ 'is-active': item.isActive(route) }"
                 :to="{ name: item.name }"
             >
-                {{ item.label }}
+                {{ t(item.labelKey) }}
             </RouterLink>
         </nav>
 
@@ -66,9 +66,11 @@ import Breadcrumbs from '../../shared/components/Breadcrumbs.vue';
 import NavUserCard from '../../shared/components/NavUserCard.vue';
 import { resolveBreadcrumbs } from '../../shared/breadcrumbs';
 import { formatUserFio } from '../../shared/userDisplay';
+import { useI18n } from '../../shared/i18n';
 
 const route = useRoute();
 const router = useRouter();
+const { t, setLocale } = useI18n();
 
 const user = ref(null);
 const userLoading = ref(true);
@@ -76,17 +78,17 @@ const userLoading = ref(true);
 const navItems = [
     {
         name: 'sites.index',
-        label: 'Сайты',
+        labelKey: 'layout.nav.sites',
         isActive: (r) => String(r.name || '').startsWith('sites'),
     },
     {
         name: 'profile',
-        label: 'Профиль',
+        labelKey: 'layout.nav.profile',
         isActive: (r) => r.name === 'profile',
     },
     {
         name: 'ai-services.index',
-        label: 'AI-сервисы',
+        labelKey: 'layout.nav.aiServices',
         isActive: (r) => String(r.name || '').startsWith('ai-services'),
     },
 ];
@@ -98,13 +100,17 @@ const breadcrumbItems = computed(() => {
         return [];
     }
 
-    return [{ label: 'Личный кабинет', name: 'sites.index' }, ...items];
+    return [{ label: t('layout.brandLabel'), name: 'sites.index' }, ...items];
 });
 const fullName = computed(() => formatUserFio(user.value));
 const avatarUrl = computed(() => user.value?.avatar?.sm || user.value?.avatar?.md || '');
 
 async function refreshUser() {
     user.value = await me();
+
+    if (user.value?.locale) {
+        setLocale(user.value.locale);
+    }
 }
 
 provide('refreshAppUser', refreshUser);

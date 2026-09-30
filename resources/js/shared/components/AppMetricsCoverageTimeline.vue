@@ -1,12 +1,12 @@
 <template>
     <div
         class="metrics-coverage-timeline"
-        aria-label="Данные за выбранный период"
+        :aria-label="t('shared.coverage.aria')"
     >
         <AppLoader
             v-if="loading"
             block
-            label="Загрузка периодов…"
+            :label="t('shared.coverage.loading')"
         />
         <p
             v-else-if="emptyMessage"
@@ -47,7 +47,10 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from '../i18n';
 import AppLoader from './AppLoader.vue';
+
+const { t, intlLocale } = useI18n();
 
 const props = defineProps({
     items: {
@@ -103,7 +106,7 @@ function formatDate(value) {
     }
 
     try {
-        return new Date(`${value}T00:00:00`).toLocaleDateString('ru-RU');
+        return new Date(`${value}T00:00:00`).toLocaleDateString(intlLocale());
     } catch {
         return value;
     }
@@ -121,22 +124,9 @@ function periodDays(from, to) {
 }
 
 function pluralDays(count) {
-    const abs = Math.abs(count) % 100;
-    const last = abs % 10;
+    const category = new Intl.PluralRules(intlLocale()).select(Math.abs(count));
 
-    if (abs > 10 && abs < 20) {
-        return 'дней';
-    }
-
-    if (last === 1) {
-        return 'день';
-    }
-
-    if (last >= 2 && last <= 4) {
-        return 'дня';
-    }
-
-    return 'дней';
+    return t(`common.days.${category}`);
 }
 
 function formatPeriod(from, to) {
@@ -149,7 +139,7 @@ function formatPeriod(from, to) {
     }
 
     if (from === to) {
-        return `${fromLabel} (1 день)`;
+        return `${fromLabel} (1 ${pluralDays(1)})`;
     }
 
     return `${fromLabel} — ${toLabel} (${days} ${pluralDays(days)})`;
@@ -240,15 +230,15 @@ const overlappingItems = computed(() => {
 
 const emptyMessage = computed(() => {
     if (props.empty || !props.items.length) {
-        return 'Выгруженных данных пока нет.';
+        return t('shared.coverage.noData');
     }
 
     if (!selectedBounds.value) {
-        return 'Укажите период отчёта.';
+        return t('shared.coverage.setPeriod');
     }
 
     if (!overlappingItems.value.length) {
-        return 'Нет данных за выбранный период.';
+        return t('shared.coverage.noPeriodData');
     }
 
     return '';

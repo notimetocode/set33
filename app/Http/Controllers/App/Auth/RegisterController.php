@@ -20,6 +20,7 @@ class RegisterController extends Controller
             'name' => $request->string('name')->toString(),
             'email' => $request->string('email')->toString(),
             'password' => $request->string('password')->toString(),
+            'locale' => app()->getLocale(),
         ]);
 
         $token = $issueApiToken->handle($user, 'app', ['app']);

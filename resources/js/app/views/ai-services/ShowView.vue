@@ -2,12 +2,12 @@
     <div class="page-app-ai-services page-app-ai-services--show">
         <div class="page-app-ai-services__header">
             <div>
-                <p class="page-app-ai-services__eyebrow">AI-сервисы</p>
+                <p class="page-app-ai-services__eyebrow">{{ t('aiServices.title') }}</p>
                 <h1 class="page-app-ai-services__title">
-                    {{ service?.name || 'Тест модели' }}
+                    {{ service?.name || t('aiServices.show.modelTest') }}
                 </h1>
                 <p class="page-app-ai-services__lede">
-                    Отправьте промпт и получите ответ модели для проверки настроек
+                    {{ t('aiServices.show.lede') }}
                 </p>
             </div>
             <div class="page-app-ai-services__header-actions">
@@ -16,13 +16,13 @@
                     class="btn btn-secondary"
                     :to="{ name: 'ai-services.edit', params: { id: service.id } }"
                 >
-                    Изменить
+                    {{ t('common.edit') }}
                 </RouterLink>
                 <RouterLink
                     class="btn btn-secondary"
                     :to="{ name: 'ai-services.index' }"
                 >
-                    К списку
+                    {{ t('common.backToList') }}
                 </RouterLink>
             </div>
         </div>
@@ -30,7 +30,7 @@
         <AppLoader
             v-if="loading"
             block
-            label="Загрузка…"
+            :label="t('common.loading')"
         />
         <div v-else-if="loadError" class="alert alert-danger py-2">{{ loadError }}</div>
 
@@ -39,7 +39,7 @@
                 <div class="page-app-ai-services__summary-main">
                     <span class="page-app-ai-services__summary-name">{{ service.type_label }}</span>
                     <span class="page-app-ai-services__summary-meta">
-                        {{ service.settings?.model || 'модель не указана' }}
+                        {{ service.settings?.model || t('aiServices.show.modelNotSet') }}
                     </span>
                 </div>
                 <div class="page-app-ai-services__summary-tags">
@@ -47,7 +47,7 @@
                         class="status-tag"
                         :class="service.api_key_set ? 'status-tag--ok' : 'status-tag--muted'"
                     >
-                        {{ service.api_key_set ? 'Ключ задан' : 'Ключ не задан' }}
+                        {{ service.api_key_set ? t('aiServices.show.keySet') : t('aiServices.show.keyNotSet') }}
                     </span>
                     <span
                         class="status-tag"
@@ -64,7 +64,7 @@
             >
                 <div class="page-app-ai-services__panel-body">
                     <div class="page-app-ai-services__field">
-                        <label class="form-label" for="ai-service-prompt">Промпт</label>
+                        <label class="form-label" for="ai-service-prompt">{{ t('aiServices.show.prompt') }}</label>
                         <textarea
                             id="ai-service-prompt"
                             v-model="prompt"
@@ -72,12 +72,12 @@
                             :class="{ 'is-invalid': fieldError }"
                             rows="6"
                             maxlength="10000"
-                            placeholder="Например: Объясни кратко, что такое REST API"
+                            :placeholder="t('aiServices.show.promptPlaceholder')"
                             :disabled="sending"
                         />
                         <div v-if="fieldError" class="invalid-feedback">{{ fieldError }}</div>
                         <div v-else class="form-text">
-                            Используются сохранённые system instruction и параметры генерации.
+                            {{ t('aiServices.show.promptHint') }}
                         </div>
                     </div>
 
@@ -91,7 +91,7 @@
                                 v-if="sending"
                                 size="sm"
                             />
-                            <span>{{ sending ? 'Отправка…' : 'Отправить' }}</span>
+                            <span>{{ sending ? t('aiServices.show.sending') : t('aiServices.show.send') }}</span>
                         </button>
                         <button
                             v-if="reply || error"
@@ -100,7 +100,7 @@
                             :disabled="sending"
                             @click="clearResult"
                         >
-                            Очистить ответ
+                            {{ t('aiServices.show.clearReply') }}
                         </button>
                     </div>
 
@@ -116,7 +116,7 @@
                         class="page-app-ai-services__reply"
                     >
                         <div class="page-app-ai-services__reply-head">
-                            <h2 class="page-app-ai-services__reply-title">Ответ модели</h2>
+                            <h2 class="page-app-ai-services__reply-title">{{ t('aiServices.show.reply') }}</h2>
                             <span
                                 v-if="replyModel"
                                 class="page-app-ai-services__reply-meta"
@@ -141,8 +141,10 @@ import { useRoute } from 'vue-router';
 import AppLoader from '../../../shared/components/AppLoader.vue';
 import AppMarkdown from '../../../shared/components/AppMarkdown.vue';
 import { generateAiServiceContent, getAiService } from '../../api/aiServices';
+import { useI18n } from '../../../shared/i18n';
 
 const route = useRoute();
+const { t } = useI18n();
 
 const service = ref(null);
 const loading = ref(true);
@@ -183,7 +185,7 @@ async function loadService() {
     try {
         service.value = await getAiService(route.params.id);
     } catch (e) {
-        loadError.value = e.response?.data?.message || 'Не удалось загрузить AI-сервис';
+        loadError.value = e.response?.data?.message || t('aiServices.loadFailed');
     } finally {
         loading.value = false;
     }
@@ -198,7 +200,7 @@ async function onSubmit() {
     const text = prompt.value.trim();
 
     if (!text) {
-        fieldError.value = 'Введите промпт.';
+        fieldError.value = t('aiServices.show.enterPrompt');
 
         return;
     }
@@ -212,7 +214,7 @@ async function onSubmit() {
             reply.value = result.reply || '';
             replyModel.value = result.model || service.value?.settings?.model || '';
         } else {
-            error.value = result.message || 'Не удалось получить ответ модели';
+            error.value = result.message || t('aiServices.show.replyFailed');
         }
     } catch (e) {
         const validation = e.response?.data?.errors?.prompt?.[0];
@@ -221,7 +223,7 @@ async function onSubmit() {
         if (validation) {
             fieldError.value = validation;
         } else {
-            error.value = apiMessage || 'Не удалось отправить промпт';
+            error.value = apiMessage || t('aiServices.show.sendFailed');
         }
     } finally {
         sending.value = false;

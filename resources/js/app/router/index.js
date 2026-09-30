@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { isAuthenticated } from '../api/auth';
 import { dynamicBreadcrumbLabel } from '../../shared/dynamicBreadcrumbLabel';
+import { t } from '../shared/i18n';
 import AppLayout from '../layouts/AppLayout.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
@@ -31,7 +32,7 @@ const router = createRouter({
                     name: 'profile',
                     component: ProfileView,
                     meta: {
-                        breadcrumbs: [{ label: 'Личные данные' }],
+                        breadcrumbs: () => [{ label: t('breadcrumbs.profile') }],
                     },
                 },
                 {
@@ -39,7 +40,7 @@ const router = createRouter({
                     name: 'sites.index',
                     component: SitesIndexView,
                     meta: {
-                        breadcrumbs: [{ label: 'Сайты' }],
+                        breadcrumbs: () => [{ label: t('breadcrumbs.sites') }],
                     },
                 },
                 {
@@ -47,9 +48,9 @@ const router = createRouter({
                     name: 'sites.create',
                     component: SitesFormView,
                     meta: {
-                        breadcrumbs: [
-                            { label: 'Сайты', name: 'sites.index' },
-                            { label: 'Новый' },
+                        breadcrumbs: () => [
+                            { label: t('breadcrumbs.sites'), name: 'sites.index' },
+                            { label: t('breadcrumbs.new') },
                         ],
                     },
                 },
@@ -59,8 +60,8 @@ const router = createRouter({
                     component: SitesShowView,
                     meta: {
                         breadcrumbs: () => [
-                            { label: 'Сайты', name: 'sites.index' },
-                            { label: dynamicBreadcrumbLabel.value || 'Сайт' },
+                            { label: t('breadcrumbs.sites'), name: 'sites.index' },
+                            { label: dynamicBreadcrumbLabel.value || t('breadcrumbs.site') },
                         ],
                     },
                 },
@@ -69,9 +70,9 @@ const router = createRouter({
                     name: 'sites.edit',
                     component: SitesFormView,
                     meta: {
-                        breadcrumbs: [
-                            { label: 'Сайты', name: 'sites.index' },
-                            { label: 'Изменить' },
+                        breadcrumbs: () => [
+                            { label: t('breadcrumbs.sites'), name: 'sites.index' },
+                            { label: t('breadcrumbs.edit') },
                         ],
                     },
                 },
@@ -80,7 +81,7 @@ const router = createRouter({
                     name: 'ai-services.index',
                     component: AiServicesIndexView,
                     meta: {
-                        breadcrumbs: [{ label: 'AI-сервисы' }],
+                        breadcrumbs: () => [{ label: t('breadcrumbs.aiServices') }],
                     },
                 },
                 {
@@ -88,9 +89,9 @@ const router = createRouter({
                     name: 'ai-services.create',
                     component: AiServicesFormView,
                     meta: {
-                        breadcrumbs: [
-                            { label: 'AI-сервисы', name: 'ai-services.index' },
-                            { label: 'Новый' },
+                        breadcrumbs: () => [
+                            { label: t('breadcrumbs.aiServices'), name: 'ai-services.index' },
+                            { label: t('breadcrumbs.new') },
                         ],
                     },
                 },
@@ -99,9 +100,9 @@ const router = createRouter({
                     name: 'ai-services.show',
                     component: AiServicesShowView,
                     meta: {
-                        breadcrumbs: [
-                            { label: 'AI-сервисы', name: 'ai-services.index' },
-                            { label: 'Тест' },
+                        breadcrumbs: () => [
+                            { label: t('breadcrumbs.aiServices'), name: 'ai-services.index' },
+                            { label: t('breadcrumbs.test') },
                         ],
                     },
                 },
@@ -110,9 +111,9 @@ const router = createRouter({
                     name: 'ai-services.edit',
                     component: AiServicesFormView,
                     meta: {
-                        breadcrumbs: [
-                            { label: 'AI-сервисы', name: 'ai-services.index' },
-                            { label: 'Изменить' },
+                        breadcrumbs: () => [
+                            { label: t('breadcrumbs.aiServices'), name: 'ai-services.index' },
+                            { label: t('breadcrumbs.edit') },
                         ],
                     },
                 },

@@ -5,14 +5,14 @@
                 <span class="logo">
                     <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="39">
                 </span>
-                Личный кабинет
+                {{ t('layout.brandLabel') }}
             </div>
-            <p class="text-muted mb-4">Создайте аккаунт, чтобы продолжить</p>
+            <p class="text-muted mb-4">{{ t('auth.register.subtitle') }}</p>
 
             <div v-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
             <div class="mb-3">
-                <label class="form-label" for="name">Имя</label>
+                <label class="form-label" for="name">{{ t('common.name') }}</label>
                 <input
                     id="name"
                     v-model="name"
@@ -24,7 +24,7 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label" for="email">E-mail</label>
+                <label class="form-label" for="email">{{ t('common.email') }}</label>
                 <input
                     id="email"
                     v-model="email"
@@ -36,7 +36,7 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label" for="password">Пароль</label>
+                <label class="form-label" for="password">{{ t('common.password') }}</label>
                 <input
                     id="password"
                     v-model="password"
@@ -48,7 +48,7 @@
             </div>
 
             <div class="mb-4">
-                <label class="form-label" for="password_confirmation">Повторите пароль</label>
+                <label class="form-label" for="password_confirmation">{{ t('auth.register.passwordConfirmation') }}</label>
                 <input
                     id="password_confirmation"
                     v-model="passwordConfirmation"
@@ -60,19 +60,19 @@
             </div>
 
             <p class="page-app-register__legal text-muted">
-                Регистрируясь, вы принимаете
-                <a href="/terms" target="_blank" rel="noopener noreferrer">Условия использования</a>
-                и
-                <a href="/privacy" target="_blank" rel="noopener noreferrer">Политику конфиденциальности</a>.
+                {{ t('auth.register.legalPrefix') }}
+                <a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('auth.register.terms') }}</a>
+                {{ t('auth.register.and') }}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('auth.register.privacy') }}</a>.
             </p>
 
             <button class="btn btn-primary w-100" type="submit" :disabled="loading">
-                {{ loading ? 'Регистрация…' : 'Зарегистрироваться' }}
+                {{ loading ? t('auth.register.submitting') : t('auth.register.submit') }}
             </button>
 
             <p class="page-app-register__switch text-muted mb-0">
-                Уже есть аккаунт?
-                <router-link :to="{ name: 'login' }">Войти</router-link>
+                {{ t('auth.register.haveAccount') }}
+                <router-link :to="{ name: 'login' }">{{ t('auth.register.loginLink') }}</router-link>
             </p>
         </form>
     </div>
@@ -82,8 +82,10 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { register } from '../api/auth';
+import { useI18n } from '../../shared/i18n';
 
 const router = useRouter();
+const { t, setLocale } = useI18n();
 const name = ref('');
 const email = ref('');
 const password = ref('');
@@ -96,14 +98,19 @@ async function submit() {
     error.value = '';
 
     try {
-        await register(name.value, email.value, password.value, passwordConfirmation.value);
+        const { user } = await register(name.value, email.value, password.value, passwordConfirmation.value);
+
+        if (user?.locale) {
+            setLocale(user.locale);
+        }
+
         await router.push({ name: 'sites.index' });
     } catch (e) {
         error.value = e.response?.data?.message
             || e.response?.data?.errors?.email?.[0]
             || e.response?.data?.errors?.password?.[0]
             || e.response?.data?.errors?.name?.[0]
-            || 'Не удалось зарегистрироваться';
+            || t('auth.register.failed');
     } finally {
         loading.value = false;
     }

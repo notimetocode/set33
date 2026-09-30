@@ -1,11 +1,11 @@
 <template>
     <div class="page-app-profile">
-        <h1 class="page-app-profile__title">Личные данные</h1>
+        <h1 class="page-app-profile__title">{{ t('profile.title') }}</h1>
 
         <AppLoader
             v-if="loading"
             block
-            label="Загрузка…"
+            :label="t('common.loading')"
         />
         <div v-else-if="loadError" class="alert alert-danger py-2">{{ loadError }}</div>
 
@@ -17,11 +17,11 @@
             <div v-if="formError" class="alert alert-danger py-2 mb-3">{{ formError }}</div>
 
             <section class="page-app-profile__section">
-                <h2 class="h6">Основное</h2>
+                <h2 class="h6">{{ t('profile.sectionMain') }}</h2>
 
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label" for="profile-last-name">Фамилия</label>
+                        <label class="form-label" for="profile-last-name">{{ t('profile.lastName') }}</label>
                         <input
                             id="profile-last-name"
                             v-model="form.last_name"
@@ -37,7 +37,7 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label" for="profile-first-name">Имя</label>
+                        <label class="form-label" for="profile-first-name">{{ t('profile.firstName') }}</label>
                         <input
                             id="profile-first-name"
                             v-model="form.first_name"
@@ -53,7 +53,7 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label" for="profile-middle-name">Отчество</label>
+                        <label class="form-label" for="profile-middle-name">{{ t('profile.middleName') }}</label>
                         <input
                             id="profile-middle-name"
                             v-model="form.middle_name"
@@ -67,15 +67,37 @@
                             {{ fieldError('middle_name') }}
                         </div>
                     </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label" for="profile-locale">{{ t('profile.language') }}</label>
+                        <select
+                            id="profile-locale"
+                            v-model="form.locale"
+                            class="form-select"
+                            :class="{ 'is-invalid': fieldError('locale') }"
+                            required
+                        >
+                            <option
+                                v-for="option in localeOptions"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </option>
+                        </select>
+                        <div v-if="fieldError('locale')" class="invalid-feedback">
+                            {{ fieldError('locale') }}
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <section class="page-app-profile__section">
-                <h2 class="h6">Контакты</h2>
+                <h2 class="h6">{{ t('profile.sectionContacts') }}</h2>
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label" for="profile-email">E-mail</label>
+                        <label class="form-label" for="profile-email">{{ t('common.email') }}</label>
                         <input
                             id="profile-email"
                             v-model="form.email"
@@ -92,7 +114,7 @@
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label" for="profile-phone">Телефон</label>
+                        <label class="form-label" for="profile-phone">{{ t('profile.phone') }}</label>
                         <input
                             id="profile-phone"
                             v-model="form.phone"
@@ -147,7 +169,7 @@
                     :disabled="saving"
                 >
                     <AppLoader v-if="saving" size="sm" />
-                    <span>{{ saving ? 'Сохранение…' : 'Сохранить' }}</span>
+                    <span>{{ saving ? t('common.saving') : t('common.save') }}</span>
                 </button>
             </div>
         </form>
@@ -156,9 +178,9 @@
             class="page-app-profile__section page-app-profile__section--session"
             aria-labelledby="profile-session-heading"
         >
-            <h2 id="profile-session-heading" class="h6">Выход из аккаунта</h2>
+            <h2 id="profile-session-heading" class="h6">{{ t('profile.sessionTitle') }}</h2>
             <p class="page-app-profile__session-lead">
-                Завершить работу в личном кабинете на этом устройстве.
+                {{ t('profile.sessionLead') }}
             </p>
             <button
                 type="button"
@@ -166,7 +188,7 @@
                 :disabled="loggingOut"
                 @click="onLogout"
             >
-                {{ loggingOut ? 'Выход…' : 'Выйти' }}
+                {{ loggingOut ? t('profile.signingOut') : t('common.signOut') }}
             </button>
         </section>
     </div>
@@ -179,8 +201,15 @@ import AppLoader from '../../shared/components/AppLoader.vue';
 import { toast } from '../../shared/toast';
 import { logout } from '../api/auth';
 import { getProfile, updateProfile } from '../api/profile';
+import { useI18n } from '../../shared/i18n';
 
 const router = useRouter();
+const { t, locale, setLocale } = useI18n();
+
+const localeOptions = [
+    { value: 'en', label: 'English' },
+    { value: 'ru', label: 'Русский' },
+];
 
 const refreshAppUser = inject('refreshAppUser', null);
 
@@ -199,6 +228,7 @@ const form = reactive({
     phone: '',
     telegram: '',
     viber: '',
+    locale: locale.value,
 });
 
 function fieldError(key) {
@@ -215,6 +245,7 @@ function applyProfile(profile) {
     form.phone = profile.phone || '';
     form.telegram = profile.telegram || '';
     form.viber = profile.viber || '';
+    form.locale = profile.locale || locale.value;
 }
 
 function buildPayload() {
@@ -226,6 +257,7 @@ function buildPayload() {
         phone: form.phone || null,
         telegram: form.telegram || null,
         viber: form.viber || null,
+        locale: form.locale,
     };
 }
 
@@ -248,15 +280,16 @@ async function onSubmit() {
     try {
         const { profile } = await updateProfile(buildPayload());
         applyProfile(profile);
+        setLocale(form.locale);
 
         if (typeof refreshAppUser === 'function') {
             await refreshAppUser();
         }
 
-        toast.show({ message: 'Профиль сохранён' });
+        toast.show({ message: t('profile.saved') });
     } catch (e) {
         fieldErrors.value = e.response?.data?.errors ?? {};
-        formError.value = e.response?.data?.message || 'Не удалось сохранить профиль';
+        formError.value = e.response?.data?.message || t('profile.saveFailed');
     } finally {
         saving.value = false;
     }
@@ -270,7 +303,7 @@ onMounted(async () => {
         const { profile } = await getProfile();
         applyProfile(profile);
     } catch (e) {
-        loadError.value = e.response?.data?.message || 'Не удалось загрузить профиль';
+        loadError.value = e.response?.data?.message || t('profile.loadFailed');
     } finally {
         loading.value = false;
     }

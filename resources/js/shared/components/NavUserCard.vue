@@ -13,14 +13,17 @@
             </span>
         </div>
         <div class="nav-user-card__body">
-            <p class="nav-user-card__name">{{ fullName || 'Пользователь' }}</p>
-            <p class="nav-user-card__level">{{ subtitle || 'Личный кабинет' }}</p>
+            <p class="nav-user-card__name">{{ fullName || t('common.user') }}</p>
+            <p class="nav-user-card__level">{{ subtitle || t('layout.brandLabel') }}</p>
         </div>
     </div>
 </template>
 
 <script setup>
+import { useI18n } from '../i18n';
 import { FontAwesomeIcon } from '../icons';
+
+const { t } = useI18n();
 
 defineProps({
     loading: {

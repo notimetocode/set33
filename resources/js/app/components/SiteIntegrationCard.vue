@@ -7,8 +7,8 @@
             class="site-integration-card__status"
             :class="connected ? 'site-integration-card__status--on' : 'site-integration-card__status--off'"
             role="status"
-            :aria-label="connected ? 'Подключено' : 'Не подключено'"
-            :title="connected ? 'Подключено' : 'Не подключено'"
+            :aria-label="connected ? t('common.connected') : t('common.notConnected')"
+            :title="connected ? t('common.connected') : t('common.notConnected')"
         />
 
         <div class="site-integration-card__heading">
@@ -26,7 +26,7 @@
                 <h3 class="site-integration-card__title">{{ title }}</h3>
                 <p class="site-integration-card__detail">
                     <template v-if="connected && detail">{{ detail }}</template>
-                    <template v-else>{{ emptyDetail }}</template>
+                    <template v-else>{{ emptyDetail || t('components.integrationCard.emptyDetail') }}</template>
                 </p>
             </div>
         </div>
@@ -38,13 +38,17 @@
                 :disabled="disabled"
                 @click="$emit('configure')"
             >
-                {{ connected ? 'Настроить' : 'Подключить' }}
+                {{ connected ? t('components.integrationCard.configure') : t('components.integrationCard.connect') }}
             </button>
         </div>
     </article>
 </template>
 
 <script setup>
+import { useI18n } from '../../shared/i18n';
+
+const { t } = useI18n();
+
 defineProps({
     title: {
         type: String,
@@ -64,7 +68,7 @@ defineProps({
     },
     emptyDetail: {
         type: String,
-        default: 'Сервис не привязан к сайту',
+        default: '',
     },
     disabled: {
         type: Boolean,

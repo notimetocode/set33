@@ -34,6 +34,7 @@ class AuthenticatedUserResource extends JsonResource
             'phone' => $this->phone,
             'telegram' => $this->telegram,
             'viber' => $this->viber,
+            'locale' => $this->locale ?? config('localization.default', 'en'),
             'avatar' => [
                 'sm' => $avatarUrl,
                 'md' => $avatarUrl,

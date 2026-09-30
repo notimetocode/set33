@@ -2,24 +2,24 @@
     <div class="page-app-ai-services page-app-ai-services--form">
         <div class="page-app-ai-services__header">
             <div>
-                <p class="page-app-ai-services__eyebrow">AI-сервисы</p>
+                <p class="page-app-ai-services__eyebrow">{{ t('aiServices.title') }}</p>
                 <h1 class="page-app-ai-services__title">
-                    {{ isEdit ? 'Изменить сервис' : 'Новый сервис' }}
+                    {{ isEdit ? t('aiServices.form.editTitle') : t('aiServices.form.newTitle') }}
                 </h1>
                 <p v-if="!isEdit && step === 2" class="page-app-ai-services__lede">
-                    Настройте модель и параметры генерации
+                    {{ t('aiServices.form.lede') }}
                 </p>
             </div>
             <RouterLink
                 class="btn btn-secondary"
                 :to="{ name: 'ai-services.index' }"
             >
-                К списку
+                {{ t('common.backToList') }}
             </RouterLink>
         </div>
 
         <div v-if="loading" class="page-app-ai-services__state">
-            <AppLoader block label="Загрузка…" />
+            <AppLoader block :label="t('common.loading')" />
         </div>
         <div v-else-if="loadError" class="alert alert-danger py-2">{{ loadError }}</div>
 
@@ -27,7 +27,7 @@
             <nav
                 v-if="!isEdit"
                 class="page-app-ai-services__stepper"
-                aria-label="Шаги формы"
+                :aria-label="t('aiServices.form.stepsAria')"
             >
                 <div
                     class="page-app-ai-services__step"
@@ -41,8 +41,8 @@
                         <template v-else>1</template>
                     </span>
                     <span class="page-app-ai-services__step-copy">
-                        <span class="page-app-ai-services__step-label">Подключение</span>
-                        <span class="page-app-ai-services__step-hint">Тип и ключ</span>
+                        <span class="page-app-ai-services__step-label">{{ t('aiServices.form.stepConnection') }}</span>
+                        <span class="page-app-ai-services__step-hint">{{ t('aiServices.form.stepConnectionHint') }}</span>
                     </span>
                 </div>
 
@@ -54,8 +54,8 @@
                 >
                     <span class="page-app-ai-services__step-index" aria-hidden="true">2</span>
                     <span class="page-app-ai-services__step-copy">
-                        <span class="page-app-ai-services__step-label">Параметры</span>
-                        <span class="page-app-ai-services__step-hint">Модель и генерация</span>
+                        <span class="page-app-ai-services__step-label">{{ t('aiServices.form.stepParams') }}</span>
+                        <span class="page-app-ai-services__step-hint">{{ t('aiServices.form.stepParamsHint') }}</span>
                     </span>
                 </div>
             </nav>
@@ -66,7 +66,7 @@
                 <Transition name="ai-step" mode="out-in">
                     <div v-if="step === 1" key="step-1" class="page-app-ai-services__panel-body">
                         <div class="page-app-ai-services__field">
-                            <span class="form-label" id="ai-service-type-label">Тип сервиса</span>
+                            <span class="form-label" id="ai-service-type-label">{{ t('aiServices.form.serviceType') }}</span>
                             <div
                                 class="page-app-ai-services__type-grid"
                                 role="radiogroup"
@@ -94,7 +94,7 @@
                                     <span class="page-app-ai-services__type-text">
                                         <span class="page-app-ai-services__type-name">{{ type.label }}</span>
                                         <span class="page-app-ai-services__type-desc">
-                                            Генеративные модели Google
+                                            {{ t('aiServices.form.typeHintGoogle') }}
                                         </span>
                                     </span>
                                 </label>
@@ -107,7 +107,7 @@
                         <div class="page-app-ai-services__field">
                             <label class="form-label" for="ai-service-api-key">
                                 <FontAwesomeIcon class="page-app-ai-services__label-icon" :icon="['fas', 'key']" />
-                                API-ключ
+                                {{ t('aiServices.apiKey') }}
                             </label>
                             <input
                                 id="ai-service-api-key"
@@ -117,11 +117,11 @@
                                 :class="{ 'is-invalid': fieldError('api_key') }"
                                 :required="!isEdit || !apiKeySet"
                                 autocomplete="off"
-                                :placeholder="isEdit && apiKeySet ? 'Оставьте пустым, чтобы не менять' : 'Вставьте ключ из Google AI Studio'"
+                                :placeholder="isEdit && apiKeySet ? t('aiServices.form.apiKeyPlaceholderKeep') : t('aiServices.form.apiKeyPlaceholderNew')"
                             >
                             <div v-if="fieldError('api_key')" class="invalid-feedback">{{ fieldError('api_key') }}</div>
                             <div v-else-if="isEdit && apiKeySet" class="form-text">
-                                Ключ уже сохранён. Введите новый, только если нужно заменить.
+                                {{ t('aiServices.form.apiKeySavedHint') }}
                             </div>
                         </div>
 
@@ -136,7 +136,7 @@
                                     v-if="loadingModels"
                                     size="sm"
                                 />
-                                <span>{{ loadingModels ? 'Загрузка моделей…' : 'Далее' }}</span>
+                                <span>{{ loadingModels ? t('aiServices.form.loadingModels') : t('common.next') }}</span>
                                 <FontAwesomeIcon
                                     v-if="!loadingModels"
                                     :icon="['fas', 'arrow-right']"
@@ -146,7 +146,7 @@
                                 class="btn btn-link page-app-ai-services__cancel"
                                 :to="{ name: 'ai-services.index' }"
                             >
-                                Отмена
+                                {{ t('common.cancel') }}
                             </RouterLink>
                         </div>
                     </div>
@@ -156,7 +156,7 @@
                             <div class="page-app-ai-services__summary-main">
                                 <span class="page-app-ai-services__summary-name">{{ typeLabel }}</span>
                                 <span class="page-app-ai-services__summary-meta">
-                                    {{ form.api_key || apiKeySet ? 'ключ задан' : 'ключ не задан' }}
+                                    {{ form.api_key || apiKeySet ? t('aiServices.form.keySet') : t('aiServices.form.keyNotSet') }}
                                 </span>
                             </div>
                             <button
@@ -165,7 +165,7 @@
                                 :disabled="saving"
                                 @click="goToStep1"
                             >
-                                Изменить
+                                {{ t('common.edit') }}
                             </button>
                         </div>
 
@@ -173,7 +173,7 @@
 
                         <template v-if="form.type === 'gemini'">
                             <div class="page-app-ai-services__field">
-                                <label class="form-label" for="ai-service-model">Модель</label>
+                                <label class="form-label" for="ai-service-model">{{ t('aiServices.form.model') }}</label>
                                 <select
                                     id="ai-service-model"
                                     v-model="form.settings.model"
@@ -181,7 +181,7 @@
                                     :class="{ 'is-invalid': fieldError('settings.model') }"
                                     required
                                 >
-                                    <option disabled value="">Выберите модель</option>
+                                    <option disabled value="">{{ t('aiServices.form.selectModel') }}</option>
                                     <option
                                         v-for="model in modelOptions"
                                         :key="model.id"
@@ -195,23 +195,23 @@
                                 </div>
                                 <div v-else-if="!models.length" class="form-text text-danger">
                                     {{ isEdit
-                                        ? 'Список моделей недоступен. Можно оставить текущую модель.'
-                                        : 'Список моделей пуст. Вернитесь назад и проверьте API-ключ.' }}
+                                        ? t('aiServices.form.modelsUnavailable')
+                                        : t('aiServices.form.modelsEmpty') }}
                                 </div>
                                 <div v-else class="form-text">
-                                    Загружено моделей: {{ models.length }}
+                                    {{ t('aiServices.form.modelsLoaded', { count: models.length }) }}
                                 </div>
                             </div>
 
                             <div class="page-app-ai-services__field">
-                                <label class="form-label" for="ai-service-system">Системная инструкция</label>
+                                <label class="form-label" for="ai-service-system">{{ t('aiServices.form.systemInstruction') }}</label>
                                 <textarea
                                     id="ai-service-system"
                                     v-model="form.settings.system_instruction"
                                     class="form-control"
                                     rows="4"
                                     :class="{ 'is-invalid': fieldError('settings.system_instruction') }"
-                                    placeholder="Необязательно. Например: отвечай кратко и по делу"
+                                    :placeholder="t('aiServices.form.systemInstructionPlaceholder')"
                                 />
                                 <div v-if="fieldError('settings.system_instruction')" class="invalid-feedback">
                                     {{ fieldError('settings.system_instruction') }}
@@ -219,10 +219,10 @@
                             </div>
 
                             <div class="page-app-ai-services__params">
-                                <h2 class="page-app-ai-services__params-title">Параметры генерации</h2>
+                                <h2 class="page-app-ai-services__params-title">{{ t('aiServices.form.generationParams') }}</h2>
                                 <div class="page-app-ai-services__params-grid">
                                     <div class="page-app-ai-services__param">
-                                        <label class="form-label" for="ai-service-temperature">Температура</label>
+                                        <label class="form-label" for="ai-service-temperature">{{ t('aiServices.form.temperature') }}</label>
                                         <input
                                             id="ai-service-temperature"
                                             v-model.number="form.settings.generation_config.temperature"
@@ -259,7 +259,7 @@
                                         >
                                     </div>
                                     <div class="page-app-ai-services__param">
-                                        <label class="form-label" for="ai-service-max-tokens">Макс. токенов</label>
+                                        <label class="form-label" for="ai-service-max-tokens">{{ t('aiServices.form.maxTokens') }}</label>
                                         <input
                                             id="ai-service-max-tokens"
                                             v-model.number="form.settings.generation_config.max_output_tokens"
@@ -279,7 +279,7 @@
                                             min="-1"
                                             step="1"
                                         >
-                                        <div class="form-text">−1 — динамический, 0 — без thinking</div>
+                                        <div class="form-text">{{ t('aiServices.form.thinkingHint') }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -294,7 +294,7 @@
                                 @click="goToStep1"
                             >
                                 <FontAwesomeIcon :icon="['fas', 'arrow-left']" />
-                                <span>Назад</span>
+                                <span>{{ t('common.back') }}</span>
                             </button>
                             <button
                                 class="btn btn-primary"
@@ -305,13 +305,13 @@
                                     v-if="saving"
                                     size="sm"
                                 />
-                                <span>{{ saving ? 'Сохранение…' : 'Сохранить' }}</span>
+                                <span>{{ saving ? t('common.saving') : t('common.save') }}</span>
                             </button>
                             <RouterLink
                                 class="btn btn-link page-app-ai-services__cancel"
                                 :to="{ name: 'ai-services.index' }"
                             >
-                                Отмена
+                                {{ t('common.cancel') }}
                             </RouterLink>
                         </div>
                     </div>
@@ -333,6 +333,7 @@ import {
     listAiServiceModels,
     updateAiService,
 } from '../../api/aiServices';
+import { useI18n } from '../../../shared/i18n';
 
 function defaultGeminiSettings() {
     return {
@@ -358,6 +359,7 @@ function defaultGeminiSettings() {
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const isEdit = computed(() => Boolean(route.params.id));
 const types = ref([{ value: 'gemini', label: 'Google Gemini' }]);
@@ -475,15 +477,15 @@ function validateStep1() {
     const errors = {};
 
     if (!form.type) {
-        errors.type = ['Выберите тип'];
+        errors.type = [t('aiServices.form.selectType')];
     }
 
     if (!form.api_key && (!isEdit.value || !apiKeySet.value)) {
-        errors.api_key = ['Укажите API-ключ'];
+        errors.api_key = [t('aiServices.form.enterApiKey')];
     }
 
     fieldErrors.value = errors;
-    formError.value = Object.keys(errors).length ? 'Заполните обязательные поля' : '';
+    formError.value = Object.keys(errors).length ? t('aiServices.form.fillRequired') : '';
 
     return Object.keys(errors).length === 0;
 }
@@ -522,7 +524,7 @@ async function goToStep2() {
         step.value = 2;
     } catch (e) {
         fieldErrors.value = e.response?.data?.errors ?? {};
-        formError.value = e.response?.data?.message || 'Не удалось загрузить список моделей';
+        formError.value = e.response?.data?.message || t('aiServices.form.loadModelsFailed');
     } finally {
         loadingModels.value = false;
     }
@@ -538,7 +540,7 @@ async function openEditParameters() {
         models.value = [];
         modelsError.value = e.response?.data?.message
             || e.response?.data?.errors?.api_key?.[0]
-            || 'Не удалось загрузить список моделей. Можно оставить текущую.';
+            || t('aiServices.form.loadModelsKeepCurrent');
     }
 }
 
@@ -576,7 +578,7 @@ async function onSubmit() {
         await router.push({ name: 'ai-services.index' });
     } catch (e) {
         fieldErrors.value = e.response?.data?.errors ?? {};
-        formError.value = e.response?.data?.message || 'Не удалось сохранить AI-сервис';
+        formError.value = e.response?.data?.message || t('aiServices.saveFailed');
 
         if (fieldErrors.value.type || fieldErrors.value.api_key) {
             if (!isEdit.value) {
@@ -618,7 +620,7 @@ onMounted(async () => {
             await openEditParameters();
         }
     } catch (e) {
-        loadError.value = e.response?.data?.message || 'Не удалось загрузить AI-сервис';
+        loadError.value = e.response?.data?.message || t('aiServices.loadFailed');
     } finally {
         loading.value = false;
     }

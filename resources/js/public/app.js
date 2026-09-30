@@ -6,6 +6,10 @@ import { initLangSelect } from './lang-select';
 
 function syncPublicAuthCtas() {
     const authed = Boolean(getToken('/api/app'));
+    const root = document.body;
+    const labelCabinet = root?.dataset.i18nCabinet || 'Dashboard';
+    const labelLogin = root?.dataset.i18nLogin || 'Log in';
+    const labelRegister = root?.dataset.i18nRegister || 'Sign up';
 
     document.querySelectorAll('[data-public-auth-cta]').forEach((el) => {
         const mode = el.getAttribute('data-public-auth-cta') || 'login';
@@ -19,7 +23,7 @@ function syncPublicAuthCtas() {
 
             el.hidden = false;
             el.setAttribute('href', '/app');
-            el.textContent = 'Личный кабинет';
+            el.textContent = labelCabinet;
 
             return;
         }
@@ -28,13 +32,13 @@ function syncPublicAuthCtas() {
 
         if (mode === 'register') {
             el.setAttribute('href', '/app/register');
-            el.textContent = 'Зарегистрироваться';
+            el.textContent = labelRegister;
 
             return;
         }
 
         el.setAttribute('href', '/app/login');
-        el.textContent = 'Войти';
+        el.textContent = labelLogin;
     });
 }
 
@@ -65,8 +69,8 @@ function initPublicNav() {
         return;
     }
 
-    const openLabel = 'Открыть меню';
-    const closeLabel = 'Закрыть меню';
+    const openLabel = document.body?.dataset.i18nOpenMenu || 'Open menu';
+    const closeLabel = document.body?.dataset.i18nCloseMenu || 'Close menu';
     const mobileQuery = window.matchMedia('(max-width: 767.98px)');
 
     function setOpen(open) {

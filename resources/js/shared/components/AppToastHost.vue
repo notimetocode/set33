@@ -16,7 +16,7 @@
                 <button
                     type="button"
                     class="btn-close app-toast__close"
-                    aria-label="Закрыть"
+                    :aria-label="t('common.close')"
                     @click="dismiss(item.id)"
                 />
             </div>
@@ -25,5 +25,8 @@
 </template>
 
 <script setup>
+import { useI18n } from '../i18n';
 import { dismiss, toasts } from '../toast';
+
+const { t } = useI18n();
 </script>

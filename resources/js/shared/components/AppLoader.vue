@@ -7,7 +7,7 @@
         ]"
         role="status"
         :aria-busy="true"
-        :aria-label="label || 'Загрузка'"
+        :aria-label="label || t('shared.loader.aria')"
     >
         <span class="app-loader__spinner" aria-hidden="true" />
         <span
@@ -20,12 +20,16 @@
             v-else
             class="visually-hidden"
         >
-            Загрузка…
+            {{ t('common.loading') }}
         </span>
     </div>
 </template>
 
 <script setup>
+import { useI18n } from '../i18n';
+
+const { t } = useI18n();
+
 defineProps({
     size: {
         type: String,

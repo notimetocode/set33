@@ -1,5 +1,5 @@
 <template>
-    <nav v-if="items.length" class="app-breadcrumbs" aria-label="Навигация по разделам">
+    <nav v-if="items.length" class="app-breadcrumbs" :aria-label="t('shared.breadcrumbsAria')">
         <ol class="breadcrumb mb-0">
             <li
                 v-for="(item, index) in items"
@@ -21,6 +21,10 @@
 </template>
 
 <script setup>
+import { useI18n } from '../i18n';
+
+const { t } = useI18n();
+
 defineProps({
     items: {
         type: Array,

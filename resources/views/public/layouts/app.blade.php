@@ -15,6 +15,15 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:locale" content="{{ str_replace('_', '-', app()->getLocale()) }}">
+    @foreach (\App\Support\Localization::alternateUrls() as $hreflang => $href)
+        @if ($hreflang !== app()->getLocale())
+            <meta property="og:locale:alternate" content="{{ str_replace('_', '-', $hreflang) }}">
+        @endif
+        <link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $href }}">
+    @endforeach
+    @if ($defaultAlternate = \App\Support\Localization::alternateUrls()[\App\Support\Localization::defaultLocale()] ?? null)
+        <link rel="alternate" hreflang="x-default" href="{{ $defaultAlternate }}">
+    @endif
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@hasSection('og_title')@yield('og_title')@else@yield('title', config('app.name'))@endif">
     <meta name="twitter:description" content="@hasSection('og_description')@yield('og_description')@else@yield('meta_description', config('app.name'))@endif">
@@ -22,21 +31,32 @@
     @stack('meta')
     @vite(['resources/scss/public.scss', 'resources/js/public/app.js'])
 </head>
-<body class="layout-public">
+<body
+    class="layout-public"
+    data-i18n-cabinet="{{ __('public.nav.cabinet') }}"
+    data-i18n-login="{{ __('public.nav.login') }}"
+    data-i18n-register="{{ __('public.nav.register') }}"
+    data-i18n-open-menu="{{ __('public.nav.open_menu') }}"
+    data-i18n-close-menu="{{ __('public.nav.close_menu') }}"
+>
+    @php
+        $currentLocale = app()->getLocale();
+        $alternateUrls = \App\Support\Localization::alternateUrls();
+    @endphp
     <header class="layout-public__header" data-public-header>
         <div class="container layout-public__header-inner">
-            <nav class="layout-public__nav layout-public__nav--desktop" aria-label="Основная навигация">
+            <nav class="layout-public__nav layout-public__nav--desktop" aria-label="{{ __('public.nav.main') }}">
                 <ul class="layout-public__nav-list">
                     <li>
-                        <a href="{{ route('public.home') }}#how-it-works" class="layout-public__nav-link">Как это работает</a>
+                        <a href="{{ localized_route('public.home') }}#how-it-works" class="layout-public__nav-link">{{ __('public.nav.how_it_works') }}</a>
                     </li>
                     <li>
-                        <a href="{{ route('public.home') }}#pricing" class="layout-public__nav-link">Цены</a>
+                        <a href="{{ localized_route('public.home') }}#pricing" class="layout-public__nav-link">{{ __('public.nav.pricing') }}</a>
                     </li>
                 </ul>
             </nav>
 
-            <a href="{{ route('public.home') }}" class="layout-public__brand">
+            <a href="{{ localized_route('public.home') }}" class="layout-public__brand">
                 <span class="logo">
                     <img class="logo__mark" src="{{ asset('images/logo.svg') }}" alt="{{ config('app.name') }}" width="120" height="49">
                 </span>
@@ -50,10 +70,10 @@
                         aria-expanded="false"
                         aria-haspopup="listbox"
                         aria-controls="public-lang-menu"
-                        aria-label="Язык"
+                        aria-label="{{ __('public.lang.label') }}"
                         data-lang-select-trigger
                     >
-                        <span class="lang-select__value" data-lang-select-value>RU</span>
+                        <span class="lang-select__value" data-lang-select-value>{{ strtoupper($currentLocale) }}</span>
                         <span class="lang-select__chevron" aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
                                 <path d="M4 6.2 8 10l4-3.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -64,34 +84,24 @@
                         id="public-lang-menu"
                         class="lang-select__menu"
                         role="listbox"
-                        aria-label="Выбор языка"
+                        aria-label="{{ __('public.lang.choose') }}"
                     >
-                        <li role="presentation">
-                            <button
-                                type="button"
-                                class="lang-select__option"
-                                role="option"
-                                aria-selected="true"
-                                data-lang="ru"
-                                data-lang-select-option
-                            >
-                                <span>Русский</span>
-                                <span class="lang-select__option-code">RU</span>
-                            </button>
-                        </li>
-                        <li role="presentation">
-                            <button
-                                type="button"
-                                class="lang-select__option"
-                                role="option"
-                                aria-selected="false"
-                                data-lang="en"
-                                data-lang-select-option
-                            >
-                                <span>English</span>
-                                <span class="lang-select__option-code">EN</span>
-                            </button>
-                        </li>
+                        @foreach (\App\Support\Localization::availableLocales() as $locale)
+                            <li role="presentation">
+                                <a
+                                    href="{{ $alternateUrls[$locale] ?? localized_route(Route::currentRouteName() ?? 'public.home', [], $locale) }}"
+                                    class="lang-select__option"
+                                    role="option"
+                                    aria-selected="{{ $locale === $currentLocale ? 'true' : 'false' }}"
+                                    hreflang="{{ $locale }}"
+                                    data-lang="{{ $locale }}"
+                                    data-lang-select-option
+                                >
+                                    <span>{{ \App\Support\Localization::label($locale) }}</span>
+                                    <span class="lang-select__option-code">{{ strtoupper($locale) }}</span>
+                                </a>
+                            </li>
+                        @endforeach
                     </ul>
                 </div>
 
@@ -99,19 +109,19 @@
                     href="{{ url('/app/login') }}"
                     class="btn btn-secondary btn-sm layout-public__cabinet"
                     data-public-auth-cta="login"
-                >Войти</a>
+                >{{ __('public.nav.login') }}</a>
                 <a
                     href="{{ url('/app/register') }}"
                     class="btn btn-primary btn-sm layout-public__cabinet"
                     data-public-auth-cta="register"
-                >Зарегистрироваться</a>
+                >{{ __('public.nav.register') }}</a>
 
                 <button
                     class="layout-public__burger"
                     type="button"
                     aria-expanded="false"
                     aria-controls="public-nav"
-                    aria-label="Открыть меню"
+                    aria-label="{{ __('public.nav.open_menu') }}"
                     data-public-nav-toggle
                 >
                     <span class="layout-public__burger-lines" aria-hidden="true">
@@ -130,19 +140,42 @@
             data-public-nav-panel
         >
             <div class="container layout-public__panel-inner">
-                <nav class="layout-public__nav layout-public__nav--mobile" aria-label="Мобильная навигация">
+                <nav class="layout-public__nav layout-public__nav--mobile" aria-label="{{ __('public.nav.mobile') }}">
                     <ul class="layout-public__nav-list">
                         <li>
-                            <a href="{{ route('public.home') }}" class="layout-public__nav-link" data-public-nav-link>Главная</a>
+                            <a href="{{ localized_route('public.home') }}" class="layout-public__nav-link" data-public-nav-link>{{ __('public.nav.home') }}</a>
                         </li>
                         <li>
-                            <a href="{{ route('public.home') }}#how-it-works" class="layout-public__nav-link" data-public-nav-link>Как это работает</a>
+                            <a href="{{ localized_route('public.home') }}#how-it-works" class="layout-public__nav-link" data-public-nav-link>{{ __('public.nav.how_it_works') }}</a>
                         </li>
                         <li>
-                            <a href="{{ route('public.home') }}#pricing" class="layout-public__nav-link" data-public-nav-link>Цены</a>
+                            <a href="{{ localized_route('public.home') }}#pricing" class="layout-public__nav-link" data-public-nav-link>{{ __('public.nav.pricing') }}</a>
                         </li>
                     </ul>
                 </nav>
+
+                <div class="layout-public__panel-langs" data-lang-select>
+                    <p class="layout-public__panel-lang-label">{{ __('public.lang.label') }}</p>
+                    <ul class="layout-public__panel-lang-list" role="listbox" aria-label="{{ __('public.lang.choose') }}">
+                        @foreach (\App\Support\Localization::availableLocales() as $locale)
+                            <li role="presentation">
+                                <a
+                                    href="{{ $alternateUrls[$locale] ?? localized_route(Route::currentRouteName() ?? 'public.home', [], $locale) }}"
+                                    class="layout-public__panel-lang-option {{ $locale === $currentLocale ? 'is-active' : '' }}"
+                                    role="option"
+                                    aria-selected="{{ $locale === $currentLocale ? 'true' : 'false' }}"
+                                    hreflang="{{ $locale }}"
+                                    data-lang="{{ $locale }}"
+                                    data-lang-select-option
+                                    data-public-nav-link
+                                >
+                                    <span>{{ \App\Support\Localization::label($locale) }}</span>
+                                    <span>{{ strtoupper($locale) }}</span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
 
                 <div class="layout-public__panel-footer">
                     <a
@@ -150,13 +183,13 @@
                         class="btn btn-secondary w-100"
                         data-public-nav-link
                         data-public-auth-cta="login"
-                    >Войти</a>
+                    >{{ __('public.nav.login') }}</a>
                     <a
                         href="{{ url('/app/register') }}"
                         class="btn btn-primary w-100"
                         data-public-nav-link
                         data-public-auth-cta="register"
-                    >Зарегистрироваться</a>
+                    >{{ __('public.nav.register') }}</a>
                 </div>
             </div>
         </div>
@@ -171,7 +204,7 @@
     <footer class="layout-public__footer">
         <div class="container layout-public__footer-inner">
             <div class="layout-public__footer-brand">
-                <a href="{{ route('public.home') }}" class="layout-public__footer-logo">
+                <a href="{{ localized_route('public.home') }}" class="layout-public__footer-logo">
                     <img
                         src="{{ asset('images/logo.svg') }}"
                         alt="{{ config('app.name') }}"
@@ -186,33 +219,33 @@
             </div>
 
             <div class="layout-public__footer-menus">
-                <nav class="layout-public__footer-col" aria-label="Разделы">
-                    <p class="layout-public__footer-label">Разделы</p>
+                <nav class="layout-public__footer-col" aria-label="{{ __('public.nav.sections') }}">
+                    <p class="layout-public__footer-label">{{ __('public.nav.sections') }}</p>
                     <ul class="layout-public__footer-list">
                         <li>
-                            <a href="{{ route('public.home') }}#how-it-works" class="layout-public__footer-link">Как это работает</a>
+                            <a href="{{ localized_route('public.home') }}#how-it-works" class="layout-public__footer-link">{{ __('public.nav.how_it_works') }}</a>
                         </li>
                         <li>
-                            <a href="{{ route('public.home') }}#pricing" class="layout-public__footer-link">Цены</a>
+                            <a href="{{ localized_route('public.home') }}#pricing" class="layout-public__footer-link">{{ __('public.nav.pricing') }}</a>
                         </li>
                         <li>
                             <a
                                 href="{{ url('/app/login') }}"
                                 class="layout-public__footer-link"
                                 data-public-auth-cta="login"
-                            >Войти</a>
+                            >{{ __('public.nav.login') }}</a>
                         </li>
                     </ul>
                 </nav>
 
-                <nav class="layout-public__footer-col" aria-label="Документы">
-                    <p class="layout-public__footer-label">Документы</p>
+                <nav class="layout-public__footer-col" aria-label="{{ __('public.nav.documents') }}">
+                    <p class="layout-public__footer-label">{{ __('public.nav.documents') }}</p>
                     <ul class="layout-public__footer-list">
                         <li>
-                            <a href="{{ route('public.privacy') }}" class="layout-public__footer-link">Конфиденциальность</a>
+                            <a href="{{ localized_route('public.privacy') }}" class="layout-public__footer-link">{{ __('public.nav.privacy') }}</a>
                         </li>
                         <li>
-                            <a href="{{ route('public.terms') }}" class="layout-public__footer-link">Условия использования</a>
+                            <a href="{{ localized_route('public.terms') }}" class="layout-public__footer-link">{{ __('public.nav.terms') }}</a>
                         </li>
                     </ul>
                 </nav>

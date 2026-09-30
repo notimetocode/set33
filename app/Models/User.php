@@ -37,6 +37,7 @@ class User extends Authenticatable
         'avatar_path',
         'city_id',
         'profile_visibility',
+        'locale',
     ];
 
     /**
@@ -52,6 +53,7 @@ class User extends Authenticatable
      */
     protected $attributes = [
         'profile_visibility' => '{"last_name":true,"birth_date":true,"phone":false,"telegram":false,"viber":false}',
+        'locale' => 'ru',
     ];
 
     /**

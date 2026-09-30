@@ -1,7 +1,7 @@
 @extends('public.layouts.app')
 
-@section('title', 'Доступ к AI-отчёту — '.config('app.name'))
-@section('meta_description', 'Введите пароль, чтобы открыть общий AI-отчёт')
+@section('title', __('public.shared_report.password_title', ['app' => config('app.name')]))
+@section('meta_description', __('public.shared_report.password_meta'))
 
 @push('meta')
     <meta name="robots" content="noindex, nofollow">
@@ -11,16 +11,16 @@
     <article class="page-shared-ai-report page-shared-ai-report--password">
         <div class="container page-shared-ai-report__inner page-shared-ai-report__inner--narrow">
             <header class="page-shared-ai-report__header">
-                <p class="page-shared-ai-report__eyebrow">AI-отчёт</p>
-                <h1 class="page-shared-ai-report__title">Отчёт защищён паролем</h1>
+                <p class="page-shared-ai-report__eyebrow">{{ __('public.shared_report.eyebrow') }}</p>
+                <h1 class="page-shared-ai-report__title">{{ __('public.shared_report.password_heading') }}</h1>
                 <p class="page-shared-ai-report__meta">
-                    Введите пароль, который вам передал автор отчёта.
+                    {{ __('public.shared_report.password_lead') }}
                 </p>
             </header>
 
             <form
                 method="post"
-                action="{{ route('public.ai-reports.unlock', ['token' => $token]) }}"
+                action="{{ localized_route('public.ai-reports.unlock', ['token' => $token]) }}"
                 class="page-shared-ai-report__form"
             >
                 @csrf
@@ -29,7 +29,7 @@
                     <label
                         class="form-label"
                         for="shared-ai-report-password"
-                    >Пароль</label>
+                    >{{ __('public.shared_report.password_label') }}</label>
                     <input
                         id="shared-ai-report-password"
                         type="password"
@@ -48,7 +48,7 @@
                     type="submit"
                     class="btn btn-primary"
                 >
-                    Открыть отчёт
+                    {{ __('public.shared_report.password_submit') }}
                 </button>
             </form>
         </div>

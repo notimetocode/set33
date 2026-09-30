@@ -33,6 +33,11 @@ class UpdateProfileRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:32'],
             'telegram' => ['nullable', 'string', 'max:64'],
             'viber' => ['nullable', 'string', 'max:64'],
+            'locale' => [
+                'required',
+                'string',
+                Rule::in(config('localization.available', ['en', 'ru'])),
+            ],
         ];
     }
 
@@ -42,9 +47,11 @@ class UpdateProfileRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => 'Укажите e-mail.',
-            'email.email' => 'Укажите корректный e-mail.',
-            'email.unique' => 'Этот e-mail уже занят.',
+            'email.required' => __('validation.required', ['attribute' => 'e-mail']),
+            'email.email' => __('validation.email', ['attribute' => 'e-mail']),
+            'email.unique' => __('validation.unique', ['attribute' => 'e-mail']),
+            'locale.required' => __('validation.required', ['attribute' => 'locale']),
+            'locale.in' => __('validation.in', ['attribute' => 'locale']),
         ];
     }
 }

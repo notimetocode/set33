@@ -29,7 +29,7 @@
                                 <button
                                     type="button"
                                     class="btn-close app-modal__close"
-                                    aria-label="Закрыть"
+                                    :aria-label="t('common.close')"
                                     @click="close"
                                 />
 
@@ -75,7 +75,7 @@
                                             class="btn btn-primary"
                                             @click="close"
                                         >
-                                            {{ confirmLabel }}
+                                            {{ confirmLabel || t('common.gotIt') }}
                                         </button>
                                     </slot>
                                 </div>
@@ -90,7 +90,10 @@
 
 <script setup>
 import { computed, onBeforeUnmount, useSlots, watch } from 'vue';
+import { useI18n } from '../i18n';
 import { FontAwesomeIcon } from '../icons';
+
+const { t } = useI18n();
 
 const props = defineProps({
     open: {
@@ -122,7 +125,7 @@ const props = defineProps({
     },
     confirmLabel: {
         type: String,
-        default: 'Понятно',
+        default: '',
     },
     showConfirm: {
         type: Boolean,

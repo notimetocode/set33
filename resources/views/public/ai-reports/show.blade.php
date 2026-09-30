@@ -1,7 +1,7 @@
 @extends('public.layouts.app')
 
-@section('title', 'AI-отчёт — '.config('app.name'))
-@section('meta_description', 'Общий AI-отчёт '.config('app.name'))
+@section('title', __('public.shared_report.show_title', ['app' => config('app.name')]))
+@section('meta_description', __('public.shared_report.show_meta', ['app' => config('app.name')]))
 
 @push('meta')
     <meta name="robots" content="noindex, nofollow">
@@ -11,17 +11,19 @@
     <article class="page-shared-ai-report">
         <div class="container page-shared-ai-report__inner">
             <header class="page-shared-ai-report__header">
-                <p class="page-shared-ai-report__eyebrow">AI-отчёт</p>
+                <p class="page-shared-ai-report__eyebrow">{{ __('public.shared_report.eyebrow') }}</p>
                 <h1 class="page-shared-ai-report__title">
-                    {{ $report->site?->name ?: 'Отчёт' }}
+                    {{ $report->site?->name ?: __('public.shared_report.fallback_name') }}
                 </h1>
                 <p class="page-shared-ai-report__meta">
-                    Период:
-                    {{ $report->period_from?->format('d.m.Y') }}
+                    {{ __('public.shared_report.period') }}
+                    {{ $report->period_from?->translatedFormat('d.m.Y') }}
                     —
-                    {{ $report->period_to?->format('d.m.Y') }}
+                    {{ $report->period_to?->translatedFormat('d.m.Y') }}
                     @if ($report->created_at)
-                        · сформирован {{ $report->created_at->timezone(config('app.timezone'))->format('d.m.Y H:i') }}
+                        · {{ __('public.shared_report.generated', [
+                            'datetime' => $report->created_at->timezone(config('app.timezone'))->translatedFormat('d.m.Y H:i'),
+                        ]) }}
                     @endif
                 </p>
             </header>

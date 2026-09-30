@@ -20,15 +20,17 @@ use App\Http\Controllers\App\SiteMetricsController;
 use App\Http\Controllers\App\SitePageSpeedIntegrationController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/auth/login', LoginController::class)
-    ->middleware('throttle:login')
-    ->name('app.auth.login');
+Route::middleware('app.locale')->group(function (): void {
+    Route::post('/auth/login', LoginController::class)
+        ->middleware('throttle:login')
+        ->name('app.auth.login');
 
-Route::post('/auth/register', RegisterController::class)
-    ->middleware('throttle:register')
-    ->name('app.auth.register');
+    Route::post('/auth/register', RegisterController::class)
+        ->middleware('throttle:register')
+        ->name('app.auth.register');
+});
 
-Route::middleware(['auth:sanctum', 'ability:app'])->group(function (): void {
+Route::middleware(['auth:sanctum', 'ability:app', 'app.locale'])->group(function (): void {
     Route::post('/auth/logout', LogoutController::class)->name('app.auth.logout');
     Route::get('/auth/me', MeController::class)->name('app.auth.me');
 

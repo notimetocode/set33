@@ -2,18 +2,18 @@
     <div class="page-app-sites page-app-sites--form">
         <div class="page-app-sites__header">
             <div>
-                <p class="page-app-sites__eyebrow">Сайты</p>
+                <p class="page-app-sites__eyebrow">{{ t('sites.title') }}</p>
                 <h1 class="page-app-sites__title">
-                    {{ isEdit ? 'Изменить сайт' : 'Новый сайт' }}
+                    {{ isEdit ? t('sites.form.editTitle') : t('sites.form.newTitle') }}
                 </h1>
             </div>
             <RouterLink class="btn btn-secondary" :to="{ name: 'sites.index' }">
-                К списку
+                {{ t('common.backToList') }}
             </RouterLink>
         </div>
 
         <div v-if="loading" class="page-app-sites__state">
-            <AppLoader block label="Загрузка…" />
+            <AppLoader block :label="t('common.loading')" />
         </div>
         <div v-else-if="loadError" class="alert alert-danger py-2">{{ loadError }}</div>
 
@@ -25,7 +25,7 @@
             <div v-if="formError" class="alert alert-danger py-2 mb-3">{{ formError }}</div>
 
             <div class="mb-3">
-                <label class="form-label" for="site-name">Название</label>
+                <label class="form-label" for="site-name">{{ t('sites.form.name') }}</label>
                 <input
                     id="site-name"
                     v-model="form.name"
@@ -60,7 +60,7 @@
                     class="btn btn-primary"
                     :disabled="saving"
                 >
-                    {{ saving ? 'Сохранение…' : (isEdit ? 'Сохранить' : 'Создать') }}
+                    {{ saving ? t('common.saving') : (isEdit ? t('common.save') : t('common.create')) }}
                 </button>
             </div>
         </form>
@@ -72,9 +72,11 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppLoader from '../../../shared/components/AppLoader.vue';
 import { createSite, getSite, updateSite } from '../../api/sites';
+import { useI18n } from '../../../shared/i18n';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const isEdit = computed(() => route.name === 'sites.edit');
 const loading = ref(false);
@@ -111,7 +113,7 @@ async function load() {
         form.name = site.name || '';
         form.url = site.url || '';
     } catch (e) {
-        loadError.value = e.response?.data?.message || 'Не удалось загрузить сайт';
+        loadError.value = e.response?.data?.message || t('sites.form.loadFailed');
     } finally {
         loading.value = false;
     }
@@ -138,9 +140,9 @@ async function onSubmit() {
     } catch (e) {
         if (e.response?.status === 422) {
             fieldErrors.value = e.response.data.errors || {};
-            formError.value = e.response.data.message || 'Проверьте поля формы';
+            formError.value = e.response.data.message || t('sites.form.checkFields');
         } else {
-            formError.value = e.response?.data?.message || 'Не удалось сохранить сайт';
+            formError.value = e.response?.data?.message || t('sites.form.saveFailed');
         }
     } finally {
         saving.value = false;

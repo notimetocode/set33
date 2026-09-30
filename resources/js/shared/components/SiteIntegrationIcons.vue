@@ -3,7 +3,7 @@
         v-if="items.length"
         class="site-integration-icons"
         role="list"
-        aria-label="Подключённые сервисы"
+        :aria-label="t('sites.integrationsAria')"
     >
         <span
             v-for="item in items"
@@ -31,7 +31,10 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from '../i18n';
 import { connectedIntegrationsForSite, integrationIconTitle } from '../siteIntegrations';
+
+const { t } = useI18n();
 
 const props = defineProps({
     site: {

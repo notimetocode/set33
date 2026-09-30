@@ -2,18 +2,18 @@
     <div class="page-app-sites">
         <div class="page-app-sites__header">
             <div>
-                <h1 class="page-app-sites__title">Сайты</h1>
-                <p class="page-app-sites__lede">Сайты и подключённые интеграции</p>
+                <h1 class="page-app-sites__title">{{ t('sites.title') }}</h1>
+                <p class="page-app-sites__lede">{{ t('sites.lede') }}</p>
             </div>
             <RouterLink class="btn btn-primary" :to="{ name: 'sites.create' }">
-                Добавить
+                {{ t('common.add') }}
             </RouterLink>
         </div>
 
         <AppLoader
             v-if="loading"
             block
-            label="Загрузка…"
+            :label="t('common.loading')"
         />
         <div v-else-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
@@ -21,7 +21,7 @@
             v-else-if="!sites.length"
             class="page-app-sites__empty text-muted"
         >
-            Пока нет сайтов
+            {{ t('sites.empty') }}
         </div>
 
         <div
@@ -56,7 +56,7 @@
                                     :to="{ name: 'sites.edit', params: { id: site.id } }"
                                     @click="close"
                                 >
-                                    Изменить
+                                    {{ t('common.edit') }}
                                 </RouterLink>
                                 <button
                                     type="button"
@@ -65,7 +65,7 @@
                                     :disabled="busyId === site.id"
                                     @click="onDeleteClick(site, close)"
                                 >
-                                    Удалить
+                                    {{ t('common.delete') }}
                                 </button>
                             </template>
                         </RowActionsMenu>
@@ -78,7 +78,7 @@
                         :show-status="false"
                     />
                     <p class="page-app-sites__card-sync text-muted">
-                        <span class="page-app-sites__card-sync-label">Синхронизация</span>
+                        <span class="page-app-sites__card-sync-label">{{ t('sites.sync') }}</span>
                         {{ syncLabel(site) }}
                     </p>
                 </div>
@@ -99,9 +99,11 @@ import {
 } from '../../../shared/siteIntegrations';
 import { toast } from '../../../shared/toast';
 import { deleteSite, listSites } from '../../api/sites';
+import { useI18n } from '../../../shared/i18n';
 
 const route = useRoute();
 const router = useRouter();
+const { t, intlLocale } = useI18n();
 
 const sites = ref([]);
 const loading = ref(true);
@@ -117,7 +119,7 @@ function openSite(site) {
 }
 
 function syncLabel(site) {
-    return formatSiteSyncedAt(latestSiteSyncedAt(site));
+    return formatSiteSyncedAt(latestSiteSyncedAt(site), intlLocale(), t('sites.neverSynced'));
 }
 
 async function reload() {
@@ -128,7 +130,7 @@ async function reload() {
         const response = await listSites();
         sites.value = response.data ?? [];
     } catch (e) {
-        error.value = e.response?.data?.message || 'Не удалось загрузить сайты';
+        error.value = e.response?.data?.message || t('sites.loadFailed');
     } finally {
         loading.value = false;
     }
@@ -137,7 +139,7 @@ async function reload() {
 async function onDeleteClick(site, close) {
     close();
 
-    if (!window.confirm(`Удалить «${site.name}»?`)) {
+    if (!window.confirm(t('sites.confirmDelete', { name: site.name }))) {
         return;
     }
 
@@ -148,7 +150,7 @@ async function onDeleteClick(site, close) {
         await deleteSite(site.id);
         sites.value = sites.value.filter((item) => item.id !== site.id);
     } catch (e) {
-        error.value = e.response?.data?.message || 'Не удалось удалить сайт';
+        error.value = e.response?.data?.message || t('sites.deleteFailed');
     } finally {
         busyId.value = null;
     }
@@ -156,18 +158,18 @@ async function onDeleteClick(site, close) {
 
 onMounted(async () => {
     if (route.query.google === 'connected') {
-        toast.show({ ok: true, message: 'Аккаунт Google подключён.' });
+        toast.show({ ok: true, message: t('sites.googleConnected') });
     } else if (route.query.google === 'error') {
         toast.show({
             ok: false,
-            message: route.query.message || 'Не удалось подключить Google.',
+            message: route.query.message || t('sites.googleConnectFailed'),
         });
     } else if (route.query.github === 'connected') {
-        toast.show({ ok: true, message: 'Аккаунт GitHub подключён.' });
+        toast.show({ ok: true, message: t('sites.githubConnected') });
     } else if (route.query.github === 'error') {
         toast.show({
             ok: false,
-            message: route.query.message || 'Не удалось подключить GitHub.',
+            message: route.query.message || t('sites.githubConnectFailed'),
         });
     }
 

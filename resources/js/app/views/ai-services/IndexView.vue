@@ -2,17 +2,17 @@
     <div class="page-app-ai-services">
         <div class="page-app-ai-services__header">
             <div>
-                <h1 class="page-app-ai-services__title">AI-сервисы</h1>
+                <h1 class="page-app-ai-services__title">{{ t('aiServices.title') }}</h1>
             </div>
             <RouterLink class="btn btn-primary" :to="{ name: 'ai-services.create' }">
-                Добавить
+                {{ t('common.add') }}
             </RouterLink>
         </div>
 
         <AppLoader
             v-if="loading"
             block
-            label="Загрузка…"
+            :label="t('common.loading')"
         />
         <div v-else-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
@@ -24,10 +24,10 @@
                 <div class="page-app-ai-services__section-head page-app-ai-services__section-head--row">
                     <div>
                         <h2 id="ai-services-own-title" class="page-app-ai-services__section-title">
-                            Мои сервисы
+                            {{ t('aiServices.mine') }}
                         </h2>
                         <p class="page-app-ai-services__section-lede">
-                            Ваши личные подключения к моделям ИИ
+                            {{ t('aiServices.mineLede') }}
                         </p>
                     </div>
                 </div>
@@ -39,11 +39,11 @@
                     <table class="table table-sm table-hover align-middle data-table__grid">
                         <thead>
                             <tr>
-                                <th>Сервис</th>
-                                <th class="page-app-ai-services__col-key">API-ключ</th>
-                                <th class="page-app-ai-services__col-status">Статус</th>
+                                <th>{{ t('aiServices.service') }}</th>
+                                <th class="page-app-ai-services__col-key">{{ t('aiServices.apiKey') }}</th>
+                                <th class="page-app-ai-services__col-status">{{ t('aiServices.status') }}</th>
                                 <th class="page-app-ai-services__col-actions">
-                                    <span class="visually-hidden">Действия</span>
+                                    <span class="visually-hidden">{{ t('common.actions') }}</span>
                                 </th>
                             </tr>
                         </thead>
@@ -67,14 +67,14 @@
                                         class="status-tag"
                                         :class="service.api_key_set ? 'status-tag--ok' : 'status-tag--muted'"
                                     >
-                                        {{ service.api_key_set ? 'Задан' : 'Нет' }}
+                                        {{ service.api_key_set ? t('aiServices.keySetShort') : t('aiServices.keyNotSetShort') }}
                                     </span>
                                 </td>
                                 <td class="page-app-ai-services__col-status">
                                     <AppLoader
                                         v-if="busyId === service.id && busyAction === 'check'"
                                         size="sm"
-                                        label="Проверка…"
+                                        :label="t('common.checking')"
                                     />
                                     <span
                                         v-else
@@ -98,7 +98,7 @@
                                                 :disabled="busyId === service.id"
                                                 @click="onCheckClick(service, close)"
                                             >
-                                                Проверить
+                                                {{ t('common.check') }}
                                             </button>
                                             <RouterLink
                                                 class="row-actions-menu__item"
@@ -106,7 +106,7 @@
                                                 :to="{ name: 'ai-services.edit', params: { id: service.id } }"
                                                 @click="close"
                                             >
-                                                Изменить
+                                                {{ t('common.edit') }}
                                             </RouterLink>
                                             <button
                                                 type="button"
@@ -115,14 +115,14 @@
                                                 :disabled="busyId === service.id"
                                                 @click="onDeleteClick(service, close)"
                                             >
-                                                Удалить
+                                                {{ t('common.delete') }}
                                             </button>
                                         </template>
                                     </RowActionsMenu>
                                 </td>
                             </tr>
                             <tr v-if="!ownServices.length">
-                                <td colspan="4" class="text-muted">Пока нет личных AI-сервисов</td>
+                                <td colspan="4" class="text-muted">{{ t('aiServices.emptyOwn') }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -136,7 +136,7 @@
             >
                 <div class="page-app-ai-services__section-head">
                     <h2 id="ai-services-global-title" class="page-app-ai-services__section-title">
-                        Базовые сервисы
+                        {{ t('aiServices.base') }}
                     </h2>
                 </div>
 
@@ -144,8 +144,8 @@
                     <table class="table table-sm table-hover align-middle data-table__grid">
                         <thead>
                             <tr>
-                                <th>Сервис</th>
-                                <th class="page-app-ai-services__col-status">Статус</th>
+                                <th>{{ t('aiServices.service') }}</th>
+                                <th class="page-app-ai-services__col-status">{{ t('aiServices.status') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -184,7 +184,7 @@
                 v-if="checkModal.reply"
                 class="page-app-ai-services__check-reply"
             >
-                Ответ модели: «{{ checkModal.reply }}»
+                {{ t('aiServices.modelReply', { reply: checkModal.reply }) }}
             </p>
         </AppModal>
     </div>
@@ -197,8 +197,10 @@ import AppLoader from '../../../shared/components/AppLoader.vue';
 import AppModal from '../../../shared/components/AppModal.vue';
 import RowActionsMenu from '../../../shared/components/RowActionsMenu.vue';
 import { checkAiService, deleteAiService, listAiServices } from '../../api/aiServices';
+import { useI18n } from '../../../shared/i18n';
 
 const router = useRouter();
+const { t } = useI18n();
 const services = ref([]);
 const loading = ref(true);
 const error = ref('');
@@ -254,7 +256,7 @@ async function reload() {
         const response = await listAiServices();
         services.value = response.data ?? [];
     } catch (e) {
-        error.value = e.response?.data?.message || 'Не удалось загрузить AI-сервисы';
+        error.value = e.response?.data?.message || t('aiServices.loadListFailed');
     } finally {
         loading.value = false;
     }
@@ -273,14 +275,14 @@ async function onCheckClick(service, close) {
             applyService(result.data);
         }
 
-        checkModal.title = result.title || (result.ok ? 'Проверка успешна' : 'Проверка не пройдена');
+        checkModal.title = result.title || (result.ok ? t('aiServices.checkSuccess') : t('aiServices.checkFailed'));
         checkModal.message = result.message || '';
         checkModal.reply = result.reply || '';
         checkModal.variant = result.ok ? 'success' : 'danger';
         checkModal.open = true;
     } catch (e) {
-        checkModal.title = 'Проверка не пройдена';
-        checkModal.message = e.response?.data?.message || 'Не удалось выполнить проверку';
+        checkModal.title = t('aiServices.checkFailed');
+        checkModal.message = e.response?.data?.message || t('aiServices.checkError');
         checkModal.reply = '';
         checkModal.variant = 'danger';
         checkModal.open = true;
@@ -296,7 +298,7 @@ async function onDeleteClick(service, close) {
 }
 
 async function onDelete(service) {
-    if (!window.confirm(`Удалить «${service.name}»?`)) {
+    if (!window.confirm(t('aiServices.confirmDelete', { name: service.name }))) {
         return;
     }
 
@@ -308,7 +310,7 @@ async function onDelete(service) {
         await deleteAiService(service.id);
         services.value = services.value.filter((item) => item.id !== service.id);
     } catch (e) {
-        error.value = e.response?.data?.message || 'Не удалось удалить AI-сервис';
+        error.value = e.response?.data?.message || t('aiServices.deleteFailed');
     } finally {
         busyId.value = null;
         busyAction.value = null;

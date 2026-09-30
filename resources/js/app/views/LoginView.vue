@@ -5,14 +5,14 @@
                 <span class="logo">
                     <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="39">
                 </span>
-                Личный кабинет
+                {{ t('layout.brandLabel') }}
             </div>
-            <p class="text-muted mb-4">Войдите, чтобы продолжить</p>
+            <p class="text-muted mb-4">{{ t('auth.login.subtitle') }}</p>
 
             <div v-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
             <div class="mb-3">
-                <label class="form-label" for="email">E-mail</label>
+                <label class="form-label" for="email">{{ t('common.email') }}</label>
                 <input
                     id="email"
                     v-model="email"
@@ -24,7 +24,7 @@
             </div>
 
             <div class="mb-4">
-                <label class="form-label" for="password">Пароль</label>
+                <label class="form-label" for="password">{{ t('common.password') }}</label>
                 <input
                     id="password"
                     v-model="password"
@@ -36,12 +36,12 @@
             </div>
 
             <button class="btn btn-primary w-100" type="submit" :disabled="loading">
-                {{ loading ? 'Вход…' : 'Войти' }}
+                {{ loading ? t('auth.login.submitting') : t('auth.login.submit') }}
             </button>
 
             <p class="page-app-login__switch text-muted mb-0">
-                Нет аккаунта?
-                <router-link :to="{ name: 'register' }">Зарегистрироваться</router-link>
+                {{ t('auth.login.noAccount') }}
+                <router-link :to="{ name: 'register' }">{{ t('auth.login.registerLink') }}</router-link>
             </p>
         </form>
     </div>
@@ -51,8 +51,10 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { login } from '../api/auth';
+import { useI18n } from '../../shared/i18n';
 
 const router = useRouter();
+const { t, setLocale } = useI18n();
 const email = ref('user@example.com');
 const password = ref('password');
 const error = ref('');
@@ -63,12 +65,17 @@ async function submit() {
     error.value = '';
 
     try {
-        await login(email.value, password.value);
+        const { user } = await login(email.value, password.value);
+
+        if (user?.locale) {
+            setLocale(user.locale);
+        }
+
         await router.push({ name: 'sites.index' });
     } catch (e) {
         error.value = e.response?.data?.message
             || e.response?.data?.errors?.email?.[0]
-            || 'Не удалось войти';
+            || t('auth.login.failed');
     } finally {
         loading.value = false;
     }

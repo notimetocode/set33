@@ -1,5 +1,6 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import { t } from './i18n';
 
 /**
  * @param {string} value
@@ -156,7 +157,7 @@ export async function downloadAiReportPdf(options) {
     const element = options.element;
 
     if (!(element instanceof HTMLElement)) {
-        throw new Error('Не найден блок отчёта для экспорта');
+        throw new Error(t('shared.pdfBlockNotFound'));
     }
 
     const filename = String(options.filename || 'ai-otchet.pdf').replace(/[\\/:*?"<>|]+/g, '-');

@@ -15,7 +15,8 @@ class UpdateProfile
      *     email: string,
      *     phone?: string|null,
      *     telegram?: string|null,
-     *     viber?: string|null
+     *     viber?: string|null,
+     *     locale: string
      * }  $data
      */
     public function handle(User $user, array $data): User
@@ -33,6 +34,7 @@ class UpdateProfile
             'phone' => $this->nullableString($data['phone'] ?? null),
             'telegram' => $this->nullableString($data['telegram'] ?? null),
             'viber' => $this->nullableString($data['viber'] ?? null),
+            'locale' => $data['locale'],
         ])->save();
 
         return $user->refresh();

@@ -103,15 +103,17 @@ export function latestSiteSyncedAt(site) {
 
 /**
  * @param {string|null|undefined} value
+ * @param {string} [intlLocale]
+ * @param {string} [emptyLabel]
  * @returns {string}
  */
-export function formatSiteSyncedAt(value) {
+export function formatSiteSyncedAt(value, intlLocale = 'en-US', emptyLabel = '') {
     if (!value) {
-        return 'Ещё не синхронизировалось';
+        return emptyLabel;
     }
 
     try {
-        return new Date(value).toLocaleString('ru-RU');
+        return new Date(value).toLocaleString(intlLocale);
     } catch {
         return value;
     }

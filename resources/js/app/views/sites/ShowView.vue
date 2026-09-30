@@ -2,7 +2,7 @@
     <div class="page-app-sites page-app-sites--show">
         <div class="page-app-sites__header">
             <div>
-                <h1 class="page-app-sites__title">{{ site?.name || 'Сайт' }}</h1>
+                <h1 class="page-app-sites__title">{{ site?.name || t('sites.show.fallbackTitle') }}</h1>
                 <p v-if="site" class="page-app-sites__lede">
                     <a :href="site.url" target="_blank" rel="noopener noreferrer">{{ site.url }}</a>
                 </p>
@@ -14,11 +14,11 @@
                     :to="{ name: 'sites.edit', params: { id: site.id } }"
                 >
                     <FontAwesomeIcon :icon="['fas', 'pen']" aria-hidden="true" />
-                    <span>Изменить</span>
+                    <span>{{ t('common.edit') }}</span>
                 </RouterLink>
                 <RouterLink class="btn btn-secondary" :to="{ name: 'sites.index' }">
                     <FontAwesomeIcon :icon="['fas', 'arrow-left']" aria-hidden="true" />
-                    <span>К списку</span>
+                    <span>{{ t('common.backToList') }}</span>
                 </RouterLink>
             </div>
         </div>
@@ -26,18 +26,18 @@
         <AppLoader
             v-if="loading"
             block
-            label="Загрузка…"
+            :label="t('common.loading')"
         />
         <div v-else-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
         <template v-else-if="site">
-            <section class="page-app-sites__integrations" aria-label="Подключения сервисов">
+            <section class="page-app-sites__integrations" :aria-label="t('sites.show.integrationsAria')">
                 <SiteIntegrationCard
                     title="Google Analytics"
                     logo="/images/integrations/google-analytics.svg"
                     :connected="gaConnected"
                     :detail="gaDetail"
-                    empty-detail="Property Google Analytics не выбран"
+                    :empty-detail="t('sites.show.integrations.gaEmpty')"
                     :disabled="busy"
                     @configure="openGaModal"
                 />
@@ -46,7 +46,7 @@
                     logo="/images/integrations/google-search-console.svg"
                     :connected="gscConnected"
                     :detail="gscDetail"
-                    empty-detail="Сайт Search Console не выбран"
+                    :empty-detail="t('sites.show.integrations.gscEmpty')"
                     :disabled="busy"
                     @configure="openGscModal"
                 />
@@ -55,7 +55,7 @@
                     logo="/images/integrations/github.svg"
                     :connected="githubConnected"
                     :detail="githubDetail"
-                    empty-detail="Репозиторий не выбран"
+                    :empty-detail="t('sites.show.integrations.githubEmpty')"
                     :disabled="busy"
                     @configure="openGithubModal"
                 />
@@ -64,7 +64,7 @@
                     logo="/images/integrations/pagespeed.svg"
                     :connected="pagespeedConnected"
                     :detail="pagespeedDetail"
-                    empty-detail="Chrome UX Report не подключён"
+                    :empty-detail="t('sites.show.integrations.pagespeedEmpty')"
                     :disabled="busy"
                     @configure="openPagespeedModal"
                 />
@@ -73,7 +73,7 @@
             <div
                 class="page-app-sites__view-switch"
                 role="tablist"
-                aria-label="Разделы сайта"
+                :aria-label="t('sites.show.sectionsAria')"
             >
                 <button
                     v-for="tab in siteViewTabs"
@@ -87,7 +87,7 @@
                     :aria-controls="`site-view-pane-${tab.id}`"
                     @click="activeSiteView = tab.id"
                 >
-                    {{ tab.label }}
+                    {{ defLabel(tab) }}
                 </button>
             </div>
 
@@ -102,15 +102,14 @@
                     class="page-app-sites__panel page-app-sites__period mb-4"
                 >
                     <div class="page-app-sites__panel-head">
-                        <h2 class="h5 mb-0">Настройки выгрузки</h2>
+                        <h2 class="h5 mb-0">{{ t('sites.show.sync.title') }}</h2>
                     </div>
                     <p class="text-muted small mb-3">
-                        Выберите период и данные для загрузки из подключённых сервисов.
-                        При загрузке предыдущие данные выбранных типов будут удалены.
+                        {{ t('sites.show.sync.description') }}
                     </p>
                     <div class="page-app-sites__period-row">
                         <div class="page-app-sites__period-field">
-                            <label class="form-label" for="metrics-from">С</label>
+                            <label class="form-label" for="metrics-from">{{ t('sites.show.sync.from') }}</label>
                             <input
                                 id="metrics-from"
                                 v-model="period.from"
@@ -122,7 +121,7 @@
                             >
                         </div>
                         <div class="page-app-sites__period-field">
-                            <label class="form-label" for="metrics-to">По</label>
+                            <label class="form-label" for="metrics-to">{{ t('sites.show.sync.to') }}</label>
                             <input
                                 id="metrics-to"
                                 v-model="period.to"
@@ -159,9 +158,9 @@
                                         :icon="['fas', 'chevron-down']"
                                         aria-hidden="true"
                                     />
-                                    <span class="page-app-sites__sync-metrics-group-title">{{ group.label }}</span>
+                                    <span class="page-app-sites__sync-metrics-group-title">{{ defLabel(group) }}</span>
                                     <span class="page-app-sites__sync-metrics-group-count">
-                                        {{ syncMetricGroupSelectedCount(group) }} из {{ group.metrics.length }}
+                                        {{ t('sites.show.sync.selectedCount', { selected: syncMetricGroupSelectedCount(group), total: group.metrics.length }) }}
                                     </span>
                                 </button>
                                 <button
@@ -171,7 +170,7 @@
                                     :disabled="busy"
                                     @click="toggleSyncMetricGroup(group)"
                                 >
-                                    {{ isSyncMetricGroupFullySelected(group) ? 'Снять все' : 'Выбрать все' }}
+                                    {{ isSyncMetricGroupFullySelected(group) ? t('sites.show.sync.deselectAll') : t('sites.show.sync.selectAll') }}
                                 </button>
                             </div>
                             <div
@@ -196,11 +195,11 @@
                                             class="form-check-label"
                                             :for="`sync-metric-${metric.key}`"
                                         >
-                                            {{ metric.label }}
+                                            {{ defLabel(metric) }}
                                             <span
                                                 v-if="metric.optional"
                                                 class="page-app-sites__sync-metric-optional"
-                                            >доп.</span>
+                                            >{{ t('sites.show.sync.optional') }}</span>
                                         </label>
                                     </div>
                                     <div
@@ -210,7 +209,7 @@
                                         <label
                                             class="form-label mb-0"
                                             :for="`sync-limit-${metric.limitKey}`"
-                                        >Кол-во</label>
+                                        >{{ t('sites.show.sync.limit') }}</label>
                                         <input
                                             :id="`sync-limit-${metric.limitKey}`"
                                             v-model.number="syncMetricLimits[metric.limitKey]"
@@ -233,7 +232,7 @@
                             :disabled="busy || !canSyncPeriod"
                             @click="onSyncPeriod"
                         >
-                            Загрузить данные
+                            {{ t('sites.show.sync.submit') }}
                         </button>
                     </div>
                 </section>
@@ -241,14 +240,14 @@
                 <section
                     v-if="gaConnected || gscConnected || githubConnected || pagespeedConnected"
                     class="page-app-sites__panel page-app-sites__sync-status mb-4"
-                    aria-label="Состояние выгрузки"
+                    :aria-label="t('sites.show.sync.statusTitle')"
                 >
                     <div class="page-app-sites__panel-head">
-                        <h2 class="h5 mb-0">Состояние выгрузки</h2>
+                        <h2 class="h5 mb-0">{{ t('sites.show.sync.statusTitle') }}</h2>
                     </div>
 
                     <div class="page-app-sites__sync-status-section">
-                        <h3 class="page-app-sites__sync-status-title">Последняя загрузка</h3>
+                        <h3 class="page-app-sites__sync-status-title">{{ t('sites.show.sync.lastImport') }}</h3>
                         <ul class="page-app-sites__sync-status-list">
                             <li
                                 v-for="item in syncStatusItems"
@@ -262,7 +261,7 @@
                                         class="page-app-sites__sync-status-value"
                                         :class="{ 'is-empty': !item.at }"
                                     >
-                                        {{ item.at ? formatDateTime(item.at) : 'Ещё не загружалось' }}
+                                        {{ item.at ? formatDateTime(item.at) : t('sites.show.sync.neverImported') }}
                                     </span>
                                 </div>
                                 <p
@@ -276,7 +275,7 @@
                     </div>
 
                     <div class="page-app-sites__sync-status-section">
-                        <h3 class="page-app-sites__sync-status-title">Выгруженные данные</h3>
+                        <h3 class="page-app-sites__sync-status-title">{{ t('sites.show.sync.importedData') }}</h3>
                         <div
                             v-if="metricsCoverageItems.length"
                             class="table-responsive"
@@ -284,8 +283,8 @@
                             <table class="table table-sm align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Источник</th>
-                                        <th>Период</th>
+                                        <th>{{ t('sites.show.sync.source') }}</th>
+                                        <th>{{ t('sites.show.col.period') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -304,20 +303,20 @@
                             class="page-app-sites__sync-status-empty"
                         >
                             {{ metricsCoverageLoaded
-                                ? 'Выгруженных данных пока нет.'
-                                : 'Загрузка сведений…' }}
+                                ? t('sites.show.sync.noImported')
+                                : t('sites.show.sync.loadingDetails') }}
                         </p>
                     </div>
                 </section>
 
                 <section
                     class="page-app-sites__panel page-app-sites__metrics"
-                    aria-label="Данные сервисов"
+                    :aria-label="t('sites.show.tabs.data')"
                 >
                     <div
                         class="page-app-sites__view-switch page-app-sites__metrics-tabs"
                         role="tablist"
-                        aria-label="Данные сервисов"
+                        :aria-label="t('sites.show.tabs.data')"
                     >
                         <button
                             v-for="tab in metricsTabs"
@@ -331,7 +330,7 @@
                             :aria-controls="`metrics-pane-${tab.id}`"
                             @click="activeMetricsTab = tab.id"
                         >
-                            {{ tab.label }}
+                            {{ defLabel(tab) }}
                         </button>
                     </div>
 
@@ -343,27 +342,27 @@
                             role="tabpanel"
                             aria-labelledby="metrics-tab-ga4"
                         >
-                            <AppLoader v-if="metricsLoading" block label="Загрузка метрик…" />
-                            <div v-else-if="!gaConnected" class="text-muted">Google Analytics property не привязан</div>
-                            <div v-else-if="!analyticsRows.length" class="text-muted">Нет данных за период</div>
+                            <AppLoader v-if="metricsLoading" block :label="t('sites.show.data.loadingMetrics')" />
+                            <div v-else-if="!gaConnected" class="text-muted">{{ t('sites.show.data.gaNotLinked') }}</div>
+                            <div v-else-if="!analyticsRows.length" class="text-muted">{{ t('sites.show.data.noData') }}</div>
                             <div v-else class="table-responsive">
                                 <table class="table table-sm align-middle mb-0">
                                     <thead>
                                         <tr>
-                                            <th>Дата</th>
-                                            <th>Сессии</th>
-                                            <th>Пользователи</th>
-                                            <th>Новые</th>
-                                            <th>Просмотры</th>
-                                            <th>Орг. сессии</th>
-                                            <th>Орг. польз.</th>
-                                            <th>Орг. новые</th>
-                                            <th v-if="hasAnalyticsEngagement">Вовлеч. сессии</th>
-                                            <th v-if="hasAnalyticsEngagement">Вовлечённость</th>
-                                            <th v-if="hasAnalyticsEngagement">Отказы</th>
-                                            <th v-if="hasAnalyticsEngagement">Ср. длит.</th>
-                                            <th v-if="hasAnalyticsEngagement">События</th>
-                                            <th v-if="hasAnalyticsEngagement">Орг. вовлеч.</th>
+                                            <th>{{ t('sites.show.col.date') }}</th>
+                                            <th>{{ t('sites.show.col.sessions') }}</th>
+                                            <th>{{ t('sites.show.col.users') }}</th>
+                                            <th>{{ t('sites.show.col.newUsers') }}</th>
+                                            <th>{{ t('sites.show.col.views') }}</th>
+                                            <th>{{ t('sites.show.col.orgSessions') }}</th>
+                                            <th>{{ t('sites.show.col.orgUsers') }}</th>
+                                            <th>{{ t('sites.show.col.orgNew') }}</th>
+                                            <th v-if="hasAnalyticsEngagement">{{ t('sites.show.col.engagedSessions') }}</th>
+                                            <th v-if="hasAnalyticsEngagement">{{ t('sites.show.col.engagement') }}</th>
+                                            <th v-if="hasAnalyticsEngagement">{{ t('sites.show.col.bounces') }}</th>
+                                            <th v-if="hasAnalyticsEngagement">{{ t('sites.show.col.avgDuration') }}</th>
+                                            <th v-if="hasAnalyticsEngagement">{{ t('sites.show.tabs.events') }}</th>
+                                            <th v-if="hasAnalyticsEngagement">{{ t('sites.show.col.orgEngaged') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -395,21 +394,21 @@
                             role="tabpanel"
                             aria-labelledby="metrics-tab-gsc"
                         >
-                            <AppLoader v-if="metricsLoading" block label="Загрузка метрик…" />
-                            <div v-else-if="!gscConnected" class="text-muted">Сайт Search Console не привязан</div>
-                            <div v-else-if="!hasGscMetrics" class="text-muted">Нет данных за период</div>
+                            <AppLoader v-if="metricsLoading" block :label="t('sites.show.data.loadingMetrics')" />
+                            <div v-else-if="!gscConnected" class="text-muted">{{ t('sites.show.data.gscNotLinked') }}</div>
+                            <div v-else-if="!hasGscMetrics" class="text-muted">{{ t('sites.show.data.noData') }}</div>
                             <div v-else class="d-flex flex-column gap-4">
                                 <div v-if="gscRows.length">
-                                    <h3 class="h6 mb-2">По дням</h3>
+                                    <h3 class="h6 mb-2">{{ t('sites.show.gsc.byDay') }}</h3>
                                     <div class="table-responsive">
                                         <table class="table table-sm align-middle mb-0">
                                             <thead>
                                                 <tr>
-                                                    <th>Дата</th>
-                                                    <th>Клики</th>
-                                                    <th>Показы</th>
+                                                    <th>{{ t('sites.show.col.date') }}</th>
+                                                    <th>{{ t('sites.show.col.clicks') }}</th>
+                                                    <th>{{ t('sites.show.col.impressions') }}</th>
                                                     <th>CTR</th>
-                                                    <th>Позиция</th>
+                                                    <th>{{ t('sites.show.col.position') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -426,17 +425,17 @@
                                 </div>
 
                                 <div v-if="gscQueries.length">
-                                    <h3 class="h6 mb-2">Топ-запросы</h3>
+                                    <h3 class="h6 mb-2">{{ t('sites.show.gsc.topQueries') }}</h3>
                                     <div class="table-responsive">
                                         <table class="table table-sm align-middle mb-0">
                                             <thead>
                                                 <tr>
                                                     <th>#</th>
-                                                    <th>Запрос</th>
-                                                    <th>Клики</th>
-                                                    <th>Показы</th>
+                                                    <th>{{ t('sites.show.col.query') }}</th>
+                                                    <th>{{ t('sites.show.col.clicks') }}</th>
+                                                    <th>{{ t('sites.show.col.impressions') }}</th>
                                                     <th>CTR</th>
-                                                    <th>Позиция</th>
+                                                    <th>{{ t('sites.show.col.position') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -454,17 +453,17 @@
                                 </div>
 
                                 <div v-if="gscPages.length">
-                                    <h3 class="h6 mb-2">Топ-страницы</h3>
+                                    <h3 class="h6 mb-2">{{ t('sites.show.gsc.topPages') }}</h3>
                                     <div class="table-responsive">
                                         <table class="table table-sm align-middle mb-0">
                                             <thead>
                                                 <tr>
                                                     <th>#</th>
-                                                    <th>Страница</th>
-                                                    <th>Клики</th>
-                                                    <th>Показы</th>
+                                                    <th>{{ t('sites.show.col.page') }}</th>
+                                                    <th>{{ t('sites.show.col.clicks') }}</th>
+                                                    <th>{{ t('sites.show.col.impressions') }}</th>
                                                     <th>CTR</th>
-                                                    <th>Позиция</th>
+                                                    <th>{{ t('sites.show.col.position') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -482,16 +481,16 @@
                                 </div>
 
                                 <div v-if="gscDevices.length">
-                                    <h3 class="h6 mb-2">Устройства</h3>
+                                    <h3 class="h6 mb-2">{{ t('sites.show.gsc.devices') }}</h3>
                                     <div class="table-responsive">
                                         <table class="table table-sm align-middle mb-0">
                                             <thead>
                                                 <tr>
-                                                    <th>Устройство</th>
-                                                    <th>Клики</th>
-                                                    <th>Показы</th>
+                                                    <th>{{ t('sites.show.col.device') }}</th>
+                                                    <th>{{ t('sites.show.col.clicks') }}</th>
+                                                    <th>{{ t('sites.show.col.impressions') }}</th>
                                                     <th>CTR</th>
-                                                    <th>Позиция</th>
+                                                    <th>{{ t('sites.show.col.position') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -508,17 +507,17 @@
                                 </div>
 
                                 <div v-if="gscCountries.length">
-                                    <h3 class="h6 mb-2">Страны</h3>
+                                    <h3 class="h6 mb-2">{{ t('sites.show.gsc.countries') }}</h3>
                                     <div class="table-responsive">
                                         <table class="table table-sm align-middle mb-0">
                                             <thead>
                                                 <tr>
                                                     <th>#</th>
-                                                    <th>Страна</th>
-                                                    <th>Клики</th>
-                                                    <th>Показы</th>
+                                                    <th>{{ t('sites.show.col.country') }}</th>
+                                                    <th>{{ t('sites.show.col.clicks') }}</th>
+                                                    <th>{{ t('sites.show.col.impressions') }}</th>
                                                     <th>CTR</th>
-                                                    <th>Позиция</th>
+                                                    <th>{{ t('sites.show.col.position') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -536,17 +535,17 @@
                                 </div>
 
                                 <div v-if="gscSearchAppearances.length">
-                                    <h3 class="h6 mb-2">Типы отображения в поиске</h3>
+                                    <h3 class="h6 mb-2">{{ t('sites.show.gsc.searchAppearances') }}</h3>
                                     <div class="table-responsive">
                                         <table class="table table-sm align-middle mb-0">
                                             <thead>
                                                 <tr>
                                                     <th>#</th>
-                                                    <th>Тип</th>
-                                                    <th>Клики</th>
-                                                    <th>Показы</th>
+                                                    <th>{{ t('sites.show.col.type') }}</th>
+                                                    <th>{{ t('sites.show.col.clicks') }}</th>
+                                                    <th>{{ t('sites.show.col.impressions') }}</th>
                                                     <th>CTR</th>
-                                                    <th>Позиция</th>
+                                                    <th>{{ t('sites.show.col.position') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -573,11 +572,11 @@
                                             <thead>
                                                 <tr>
                                                     <th>URL</th>
-                                                    <th>Тип</th>
-                                                    <th>Ошибки</th>
-                                                    <th>Предупр.</th>
-                                                    <th>Статус</th>
-                                                    <th>Загружен</th>
+                                                    <th>{{ t('sites.show.col.type') }}</th>
+                                                    <th>{{ t('sites.show.col.errors') }}</th>
+                                                    <th>{{ t('sites.show.col.warnings') }}</th>
+                                                    <th>{{ t('sites.show.col.status') }}</th>
+                                                    <th>{{ t('sites.show.col.downloaded') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -590,9 +589,9 @@
                                                     <td>{{ row.errors }}</td>
                                                     <td>{{ row.warnings }}</td>
                                                     <td>
-                                                        <span v-if="row.is_pending">В обработке</span>
-                                                        <span v-else-if="row.is_sitemaps_index">Индекс</span>
-                                                        <span v-else>Готов</span>
+                                                        <span v-if="row.is_pending">{{ t('sites.show.gsc.sitemapPending') }}</span>
+                                                        <span v-else-if="row.is_sitemaps_index">{{ t('sites.show.gsc.sitemapIndex') }}</span>
+                                                        <span v-else>{{ t('sites.show.gsc.sitemapReady') }}</span>
                                                     </td>
                                                     <td>{{ formatDateTime(row.last_downloaded_at) || '—' }}</td>
                                                 </tr>
@@ -608,11 +607,11 @@
                                             <thead>
                                                 <tr>
                                                     <th>URL</th>
-                                                    <th>Вердикт</th>
-                                                    <th>Загрузка</th>
-                                                    <th>Индексация</th>
-                                                    <th>Покрытие</th>
-                                                    <th>Последний обход</th>
+                                                    <th>{{ t('sites.show.col.verdict') }}</th>
+                                                    <th>{{ t('sites.show.col.fetch') }}</th>
+                                                    <th>{{ t('sites.show.col.indexing') }}</th>
+                                                    <th>{{ t('sites.show.col.coverage') }}</th>
+                                                    <th>{{ t('sites.show.col.lastCrawl') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -650,19 +649,19 @@
                             aria-labelledby="metrics-tab-github"
                         >
                             <p v-if="githubIntegration?.repository_full_name" class="text-muted small mb-3">
-                                Репозиторий: {{ githubIntegration.repository_full_name }}
+                                {{ t('sites.show.github.repository', { name: githubIntegration.repository_full_name }) }}
                             </p>
-                            <AppLoader v-if="metricsLoading" block label="Загрузка коммитов…" />
-                            <div v-else-if="!githubConnected" class="text-muted">Репозиторий не привязан</div>
-                            <div v-else-if="!commitRows.length" class="text-muted">Нет коммитов за период</div>
+                            <AppLoader v-if="metricsLoading" block :label="t('sites.show.github.loadingCommits')" />
+                            <div v-else-if="!githubConnected" class="text-muted">{{ t('sites.show.github.notLinked') }}</div>
+                            <div v-else-if="!commitRows.length" class="text-muted">{{ t('sites.show.github.noCommits') }}</div>
                             <div v-else class="table-responsive">
                                 <table class="table table-sm align-middle mb-0">
                                     <thead>
                                         <tr>
                                             <th>SHA</th>
-                                            <th>Сообщение</th>
-                                            <th>Автор</th>
-                                            <th>Дата</th>
+                                            <th>{{ t('sites.show.col.message') }}</th>
+                                            <th>{{ t('sites.show.col.author') }}</th>
+                                            <th>{{ t('sites.show.col.date') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -693,24 +692,24 @@
                             aria-labelledby="metrics-tab-pagespeed"
                         >
                             <p v-if="pagespeedIntegration?.strategy_label" class="text-muted small mb-3">
-                                Стратегия: {{ pagespeedIntegration.strategy_label }}
+                                {{ t('sites.show.pagespeed.strategyLine', { value: pagespeedIntegration.strategy_label }) }}
                                 <template v-if="pagespeedPageUrlsLabel">
                                     · URL: {{ pagespeedPageUrlsLabel }}
                                 </template>
                             </p>
-                            <AppLoader v-if="metricsLoading" block label="Загрузка Chrome UX Report…" />
+                            <AppLoader v-if="metricsLoading" block :label="t('sites.show.pagespeed.loadingCrux')" />
                             <div v-else-if="!pagespeedConnected" class="text-muted">
-                                Chrome UX Report не подключён
+                                {{ t('sites.show.integrations.pagespeedEmpty') }}
                             </div>
                             <template v-else>
                                 <h3 class="h6 mb-2">Lab (Lighthouse)</h3>
-                                <div v-if="!pagespeedLabRows.length" class="text-muted mb-4">Нет lab-снимков</div>
+                                <div v-if="!pagespeedLabRows.length" class="text-muted mb-4">{{ t('sites.show.pagespeed.noLab') }}</div>
                                 <div v-else class="table-responsive mb-4">
                                     <table class="table table-sm align-middle mb-0">
                                         <thead>
                                             <tr>
                                                 <th>URL</th>
-                                                <th>Стратегия</th>
+                                                <th>{{ t('sites.show.col.strategy') }}</th>
                                                 <th>Perf</th>
                                                 <th>A11y</th>
                                                 <th>BP</th>
@@ -722,7 +721,7 @@
                                                 <th>TTFB</th>
                                                 <th>TBT</th>
                                                 <th>SI</th>
-                                                <th>Загружено</th>
+                                                <th>{{ t('sites.show.col.loaded') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -749,8 +748,8 @@
                                     </table>
                                 </div>
 
-                                <h3 class="h6 mb-2">Chrome UX Report (полевые данные)</h3>
-                                <div v-if="!pagespeedCruxRows.length" class="text-muted">Нет снимков Chrome UX Report</div>
+                                <h3 class="h6 mb-2">{{ t('sites.show.pagespeed.cruxTitle') }}</h3>
+                                <div v-if="!pagespeedCruxRows.length" class="text-muted">{{ t('sites.show.pagespeed.noCrux') }}</div>
                                 <div v-else class="table-responsive">
                                     <table class="table table-sm align-middle mb-0">
                                         <thead>
@@ -758,14 +757,14 @@
                                                 <th>Scope</th>
                                                 <th>URL</th>
                                                 <th>Form factor</th>
-                                                <th>Категория</th>
+                                                <th>{{ t('sites.show.col.category') }}</th>
                                                 <th>LCP p75</th>
                                                 <th>INP p75</th>
                                                 <th>CLS p75</th>
                                                 <th>FCP p75</th>
                                                 <th>TTFB p75</th>
-                                                <th>Период</th>
-                                                <th>Загружено</th>
+                                                <th>{{ t('sites.show.col.period') }}</th>
+                                                <th>{{ t('sites.show.col.loaded') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -802,10 +801,10 @@
             >
                 <section
                     class="page-app-sites__panel page-app-sites__events"
-                    aria-label="События сайта"
+                    :aria-label="t('sites.show.events.aria')"
                 >
                     <div class="page-app-sites__panel-head">
-                        <h2 class="h5 mb-0">События</h2>
+                        <h2 class="h5 mb-0">{{ t('sites.show.tabs.events') }}</h2>
                     </div>
 
                     <template v-if="isEventEditing">
@@ -816,12 +815,12 @@
                                 :disabled="eventSaving || Boolean(deletingEventId)"
                                 @click="onBackFromEventEdit"
                             >
-                                Назад
+                                {{ t('common.back') }}
                             </button>
                         </div>
 
                         <p class="text-muted small mb-3">
-                            Редактирование сохранённого события.
+                            {{ t('sites.show.events.editHint') }}
                         </p>
 
                         <div
@@ -837,7 +836,7 @@
                         >
                             <div class="page-app-sites__event-form-grid">
                                 <div class="page-app-sites__period-field">
-                                    <label class="form-label" for="event-edit-occurred-on">Дата</label>
+                                    <label class="form-label" for="event-edit-occurred-on">{{ t('sites.show.field.date') }}</label>
                                     <input
                                         id="event-edit-occurred-on"
                                         v-model="eventForm.occurred_on"
@@ -849,7 +848,7 @@
                                     >
                                 </div>
                                 <div class="page-app-sites__event-field page-app-sites__event-field--title">
-                                    <label class="form-label" for="event-edit-title">Название</label>
+                                    <label class="form-label" for="event-edit-title">{{ t('sites.show.field.title') }}</label>
                                     <input
                                         id="event-edit-title"
                                         v-model="eventForm.title"
@@ -861,7 +860,7 @@
                                     >
                                 </div>
                                 <div class="page-app-sites__event-field page-app-sites__event-field--url">
-                                    <label class="form-label" for="event-edit-url">Ссылка</label>
+                                    <label class="form-label" for="event-edit-url">{{ t('common.link') }}</label>
                                     <input
                                         id="event-edit-url"
                                         v-model="eventForm.url"
@@ -873,14 +872,14 @@
                                     >
                                 </div>
                                 <div class="page-app-sites__event-field page-app-sites__event-field--description">
-                                    <label class="form-label" for="event-edit-description">Описание</label>
+                                    <label class="form-label" for="event-edit-description">{{ t('sites.show.field.description') }}</label>
                                     <textarea
                                         id="event-edit-description"
                                         v-model="eventForm.description"
                                         class="form-control"
                                         rows="3"
                                         maxlength="5000"
-                                        placeholder="Кратко, что произошло и почему это важно"
+                                        :placeholder="t('sites.show.events.descriptionPlaceholder')"
                                         :disabled="busy || eventSaving || Boolean(deletingEventId)"
                                     />
                                 </div>
@@ -896,7 +895,7 @@
                                         size="sm"
                                     />
                                     <span>
-                                        {{ eventSaving ? 'Сохранение…' : 'Сохранить' }}
+                                        {{ eventSaving ? t('common.saving') : t('common.save') }}
                                     </span>
                                 </button>
                                 <button
@@ -905,7 +904,7 @@
                                     :disabled="busy || eventSaving || Boolean(deletingEventId)"
                                     @click="onBackFromEventEdit"
                                 >
-                                    Отмена
+                                    {{ t('common.cancel') }}
                                 </button>
                                 <button
                                     type="button"
@@ -918,7 +917,7 @@
                                         size="sm"
                                     />
                                     <span>
-                                        {{ deletingEventId ? 'Удаление…' : 'Удалить' }}
+                                        {{ deletingEventId ? t('common.deleting') : t('common.delete') }}
                                     </span>
                                 </button>
                             </div>
@@ -929,7 +928,7 @@
                         <AppLoader
                             v-if="!eventsLoaded && eventsLoading"
                             block
-                            label="Загрузка событий…"
+                            :label="t('sites.show.events.loading')"
                         />
 
                         <template v-else>
@@ -944,7 +943,7 @@
                                 v-if="showEventTabs"
                                 class="page-app-sites__view-switch page-app-sites__event-tabs"
                                 role="tablist"
-                                aria-label="Разделы событий"
+                                :aria-label="t('sites.show.events.sectionsAria')"
                             >
                                 <button
                                     v-for="tab in eventTabs"
@@ -958,7 +957,7 @@
                                     :aria-controls="`event-pane-${tab.id}`"
                                     @click="activeEventTab = tab.id"
                                 >
-                                    {{ tab.label }}
+                                    {{ defLabel(tab) }}
                                 </button>
                             </div>
 
@@ -969,19 +968,19 @@
                                 :aria-labelledby="showEventTabs ? 'event-tab-saved' : undefined"
                             >
                                 <p class="text-muted small mb-3">
-                                    События сайта за период отчёта передаются в AI-отчёт как дополнительный контекст.
+                                    {{ t('sites.show.events.description') }}
                                 </p>
 
                                 <AppLoader
                                     v-if="eventsLoading"
                                     block
-                                    label="Загрузка событий…"
+                                    :label="t('sites.show.events.loading')"
                                 />
                                 <p
                                     v-else-if="!eventRows.length"
                                     class="text-muted small mb-0"
                                 >
-                                    Пока нет событий
+                                    {{ t('sites.show.events.empty') }}
                                 </p>
                                 <div
                                     v-else
@@ -1032,7 +1031,7 @@
                                 :aria-labelledby="showEventTabs ? 'event-tab-new' : undefined"
                             >
                                 <p class="text-muted small mb-3">
-                                    Например: «На портале Onliner вышла статья про наш сайт».
+                                    {{ t('sites.show.events.example') }}
                                 </p>
 
                                 <div
@@ -1048,7 +1047,7 @@
                                 >
                                     <div class="page-app-sites__event-form-grid">
                                         <div class="page-app-sites__period-field">
-                                            <label class="form-label" for="event-occurred-on">Дата</label>
+                                            <label class="form-label" for="event-occurred-on">{{ t('sites.show.field.date') }}</label>
                                             <input
                                                 id="event-occurred-on"
                                                 v-model="eventForm.occurred_on"
@@ -1060,7 +1059,7 @@
                                             >
                                         </div>
                                         <div class="page-app-sites__event-field page-app-sites__event-field--title">
-                                            <label class="form-label" for="event-title">Название</label>
+                                            <label class="form-label" for="event-title">{{ t('sites.show.field.title') }}</label>
                                             <input
                                                 id="event-title"
                                                 v-model="eventForm.title"
@@ -1072,7 +1071,7 @@
                                             >
                                         </div>
                                         <div class="page-app-sites__event-field page-app-sites__event-field--url">
-                                            <label class="form-label" for="event-url">Ссылка</label>
+                                            <label class="form-label" for="event-url">{{ t('common.link') }}</label>
                                             <input
                                                 id="event-url"
                                                 v-model="eventForm.url"
@@ -1084,14 +1083,14 @@
                                             >
                                         </div>
                                         <div class="page-app-sites__event-field page-app-sites__event-field--description">
-                                            <label class="form-label" for="event-description">Описание</label>
+                                            <label class="form-label" for="event-description">{{ t('sites.show.field.description') }}</label>
                                             <textarea
                                                 id="event-description"
                                                 v-model="eventForm.description"
                                                 class="form-control"
                                                 rows="3"
                                                 maxlength="5000"
-                                                placeholder="Кратко, что произошло и почему это важно"
+                                                :placeholder="t('sites.show.events.descriptionPlaceholder')"
                                                 :disabled="busy || eventSaving"
                                             />
                                         </div>
@@ -1107,7 +1106,7 @@
                                                 size="sm"
                                             />
                                             <span>
-                                                {{ eventSaving ? 'Сохранение…' : 'Добавить' }}
+                                                {{ eventSaving ? t('common.saving') : t('common.add') }}
                                             </span>
                                         </button>
                                     </div>
@@ -1126,10 +1125,10 @@
             >
                 <section
                     class="page-app-sites__panel page-app-sites__documents"
-                    aria-label="Документы сайта"
+                    :aria-label="t('sites.show.documents.aria')"
                 >
                     <div class="page-app-sites__panel-head">
-                        <h2 class="h5 mb-0">Документы</h2>
+                        <h2 class="h5 mb-0">{{ t('sites.show.tabs.documents') }}</h2>
                     </div>
 
                     <template v-if="isDocumentEditing">
@@ -1140,12 +1139,12 @@
                                 :disabled="documentSaving || Boolean(deletingDocumentId)"
                                 @click="onBackFromDocumentEdit"
                             >
-                                Назад
+                                {{ t('common.back') }}
                             </button>
                         </div>
 
                         <p class="text-muted small mb-3">
-                            Редактирование сохранённого документа.
+                            {{ t('sites.show.documents.editHint') }}
                         </p>
 
                         <div
@@ -1161,7 +1160,7 @@
                         >
                             <div class="page-app-sites__event-form-grid">
                                 <div class="page-app-sites__event-field page-app-sites__event-field--title">
-                                    <label class="form-label" for="document-edit-title">Название</label>
+                                    <label class="form-label" for="document-edit-title">{{ t('sites.show.field.title') }}</label>
                                     <input
                                         id="document-edit-title"
                                         v-model="documentForm.title"
@@ -1173,19 +1172,19 @@
                                     >
                                 </div>
                                 <div class="page-app-sites__event-field page-app-sites__event-field--description">
-                                    <label class="form-label" for="document-edit-description">Краткое описание</label>
+                                    <label class="form-label" for="document-edit-description">{{ t('sites.show.field.shortDescription') }}</label>
                                     <textarea
                                         id="document-edit-description"
                                         v-model="documentForm.description"
                                         class="form-control"
                                         rows="3"
                                         maxlength="2000"
-                                        placeholder="О чём документ и зачем он нужен для отчёта"
+                                        :placeholder="t('sites.show.documents.descriptionPlaceholder')"
                                         :disabled="busy || documentSaving || Boolean(deletingDocumentId)"
                                     />
                                 </div>
                                 <div class="page-app-sites__event-field page-app-sites__event-field--file">
-                                    <label class="form-label" for="document-edit-file">Файл Markdown</label>
+                                    <label class="form-label" for="document-edit-file">{{ t('sites.show.field.markdownFile') }}</label>
                                     <input
                                         id="document-edit-file"
                                         ref="documentFileInput"
@@ -1199,10 +1198,10 @@
                                         v-if="editingDocumentFilename"
                                         class="form-text mb-0"
                                     >
-                                        Текущий файл: {{ editingDocumentFilename }}
+                                        {{ t('sites.show.documents.currentFile', { name: editingDocumentFilename }) }}
                                     </p>
                                     <p class="form-text mb-0">
-                                        Чтобы заменить содержимое, выберите новый файл .md (до 512 КБ).
+                                        {{ t('sites.show.documents.replaceHint') }}
                                     </p>
                                 </div>
                             </div>
@@ -1217,7 +1216,7 @@
                                         size="sm"
                                     />
                                     <span>
-                                        {{ documentSaving ? 'Сохранение…' : 'Сохранить' }}
+                                        {{ documentSaving ? t('common.saving') : t('common.save') }}
                                     </span>
                                 </button>
                                 <button
@@ -1226,7 +1225,7 @@
                                     :disabled="busy || documentSaving || Boolean(deletingDocumentId)"
                                     @click="onBackFromDocumentEdit"
                                 >
-                                    Отмена
+                                    {{ t('common.cancel') }}
                                 </button>
                                 <button
                                     type="button"
@@ -1239,7 +1238,7 @@
                                         size="sm"
                                     />
                                     <span>
-                                        {{ deletingDocumentId ? 'Удаление…' : 'Удалить' }}
+                                        {{ deletingDocumentId ? t('common.deleting') : t('common.delete') }}
                                     </span>
                                 </button>
                             </div>
@@ -1250,7 +1249,7 @@
                         <AppLoader
                             v-if="!documentsLoaded && documentsLoading"
                             block
-                            label="Загрузка документов…"
+                            :label="t('sites.show.documents.loading')"
                         />
 
                         <template v-else>
@@ -1265,7 +1264,7 @@
                                 v-if="showDocumentTabs"
                                 class="page-app-sites__view-switch page-app-sites__event-tabs"
                                 role="tablist"
-                                aria-label="Разделы документов"
+                                :aria-label="t('sites.show.documents.sectionsAria')"
                             >
                                 <button
                                     v-for="tab in documentTabs"
@@ -1279,7 +1278,7 @@
                                     :aria-controls="`document-pane-${tab.id}`"
                                     @click="activeDocumentTab = tab.id"
                                 >
-                                    {{ tab.label }}
+                                    {{ defLabel(tab) }}
                                 </button>
                             </div>
 
@@ -1290,19 +1289,19 @@
                                 :aria-labelledby="showDocumentTabs ? 'document-tab-saved' : undefined"
                             >
                                 <p class="text-muted small mb-3">
-                                    Markdown-документы сайта передаются в AI-отчёт как дополнительный контекст.
+                                    {{ t('sites.show.documents.description') }}
                                 </p>
 
                                 <AppLoader
                                     v-if="documentsLoading"
                                     block
-                                    label="Загрузка документов…"
+                                    :label="t('sites.show.documents.loading')"
                                 />
                                 <p
                                     v-else-if="!documentRows.length"
                                     class="text-muted small mb-0"
                                 >
-                                    Документы ещё не загружены
+                                    {{ t('sites.show.documents.empty') }}
                                 </p>
                                 <div
                                     v-else
@@ -1341,7 +1340,7 @@
                                 :aria-labelledby="showDocumentTabs ? 'document-tab-new' : undefined"
                             >
                                 <p class="text-muted small mb-3">
-                                    Например: брендбук, ТЗ, семантика или контент-гайд в формате Markdown.
+                                    {{ t('sites.show.documents.example') }}
                                 </p>
 
                                 <div
@@ -1357,7 +1356,7 @@
                                 >
                                     <div class="page-app-sites__event-form-grid">
                                         <div class="page-app-sites__event-field page-app-sites__event-field--title">
-                                            <label class="form-label" for="document-title">Название</label>
+                                            <label class="form-label" for="document-title">{{ t('sites.show.field.title') }}</label>
                                             <input
                                                 id="document-title"
                                                 v-model="documentForm.title"
@@ -1369,19 +1368,19 @@
                                             >
                                         </div>
                                         <div class="page-app-sites__event-field page-app-sites__event-field--description">
-                                            <label class="form-label" for="document-description">Краткое описание</label>
+                                            <label class="form-label" for="document-description">{{ t('sites.show.field.shortDescription') }}</label>
                                             <textarea
                                                 id="document-description"
                                                 v-model="documentForm.description"
                                                 class="form-control"
                                                 rows="3"
                                                 maxlength="2000"
-                                                placeholder="О чём документ и зачем он нужен для отчёта"
+                                                :placeholder="t('sites.show.documents.descriptionPlaceholder')"
                                                 :disabled="busy || documentSaving"
                                             />
                                         </div>
                                         <div class="page-app-sites__event-field page-app-sites__event-field--file">
-                                            <label class="form-label" for="document-file">Файл Markdown</label>
+                                            <label class="form-label" for="document-file">{{ t('sites.show.field.markdownFile') }}</label>
                                             <input
                                                 id="document-file"
                                                 ref="documentFileInput"
@@ -1393,7 +1392,7 @@
                                                 @change="onDocumentFileChange"
                                             >
                                             <p class="form-text mb-0">
-                                                Допустимы файлы .md и .txt до 512 КБ.
+                                                {{ t('sites.show.documents.allowedFiles') }}
                                             </p>
                                         </div>
                                     </div>
@@ -1408,7 +1407,7 @@
                                                 size="sm"
                                             />
                                             <span>
-                                                {{ documentSaving ? 'Сохранение…' : 'Добавить' }}
+                                                {{ documentSaving ? t('common.saving') : t('common.add') }}
                                             </span>
                                         </button>
                                     </div>
@@ -1427,10 +1426,10 @@
             >
                 <section
                     class="page-app-sites__panel page-app-sites__ai-report"
-                    aria-label="AI отчёт"
+                    :aria-label="t('sites.show.tabs.aiReport')"
                 >
                     <div class="page-app-sites__panel-head">
-                        <h2 class="h5 mb-0">AI отчёт</h2>
+                        <h2 class="h5 mb-0">{{ t('sites.show.tabs.aiReport') }}</h2>
                         <div
                             v-if="isAiReportOpen"
                             class="page-app-sites__ai-report-toolbar"
@@ -1445,7 +1444,7 @@
                                     :icon="['fas', 'file-pdf']"
                                     aria-hidden="true"
                                 />
-                                <span>{{ aiReportPdfExporting ? 'Сохранение…' : 'Скачать PDF' }}</span>
+                                <span>{{ aiReportPdfExporting ? t('common.saving') : t('sites.show.aiReport.downloadPdf') }}</span>
                             </button>
                             <button
                                 type="button"
@@ -1457,7 +1456,7 @@
                                     :icon="['fas', 'share-nodes']"
                                     aria-hidden="true"
                                 />
-                                <span>Поделиться</span>
+                                <span>{{ t('sites.show.aiReport.share') }}</span>
                             </button>
                         </div>
                     </div>
@@ -1470,7 +1469,7 @@
                                 :disabled="aiReportLoading || aiReportSharingSaving || aiReportPdfExporting"
                                 @click="onBackFromAiReport"
                             >
-                                Назад
+                                {{ t('common.back') }}
                             </button>
                         </div>
 
@@ -1484,13 +1483,13 @@
                         <AppLoader
                             v-if="aiReportLoading"
                             block
-                            label="Загрузка отчёта…"
+                            :label="t('sites.show.aiReport.loadingReport')"
                         />
 
                         <template v-else-if="aiReportReply">
                             <div class="page-app-sites__ai-report-reply">
                                 <div class="page-app-sites__ai-report-reply-head">
-                                    <h3 class="page-app-sites__ai-report-reply-title">Результат</h3>
+                                    <h3 class="page-app-sites__ai-report-reply-title">{{ t('sites.show.aiReport.result') }}</h3>
                                     <span
                                         v-if="aiReportModel"
                                         class="page-app-sites__ai-report-reply-meta"
@@ -1512,10 +1511,10 @@
                             <div
                                 v-if="showAiReportStats"
                                 class="page-app-sites__ai-report-usage mt-3"
-                                aria-label="Статистика запроса к AI"
+                                :aria-label="t('sites.show.aiReport.stats')"
                             >
                                 <h3 class="page-app-sites__ai-report-usage-title">
-                                    Статистика запроса к AI
+                                    {{ t('sites.show.aiReport.stats') }}
                                 </h3>
 
                                 <p
@@ -1546,7 +1545,7 @@
                         <AppLoader
                             v-if="!aiReportsLoaded && aiReportsLoading"
                             block
-                            label="Загрузка отчётов…"
+                            :label="t('sites.show.aiReport.loadingReports')"
                         />
 
                         <template v-else>
@@ -1561,7 +1560,7 @@
                                 v-if="showAiReportTabs"
                                 class="page-app-sites__view-switch page-app-sites__ai-report-tabs"
                                 role="tablist"
-                                aria-label="Разделы AI-отчёта"
+                                :aria-label="t('sites.show.aiReport.sectionsAria')"
                             >
                                 <button
                                     v-for="tab in aiReportTabs"
@@ -1575,7 +1574,7 @@
                                     :aria-controls="`ai-report-pane-${tab.id}`"
                                     @click="activeAiReportTab = tab.id"
                                 >
-                                    {{ tab.label }}
+                                    {{ defLabel(tab) }}
                                 </button>
                             </div>
 
@@ -1588,13 +1587,13 @@
                                 <AppLoader
                                     v-if="aiReportsLoading"
                                     block
-                                    label="Загрузка отчётов…"
+                                    :label="t('sites.show.aiReport.loadingReports')"
                                 />
                                 <p
                                     v-else-if="!aiReports.length"
                                     class="text-muted small mb-0"
                                 >
-                                    Пока нет сохранённых отчётов
+                                    {{ t('sites.show.aiReport.empty') }}
                                 </p>
                                 <div
                                     v-else
@@ -1636,13 +1635,12 @@
                                 :aria-labelledby="showAiReportTabs ? 'ai-report-tab-new' : undefined"
                             >
                                 <p class="text-muted small mb-3">
-                                    В отчёт попадут данные Google Analytics, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub, Chrome UX Report, события и документы сайта. Срезы GSC появляются после загрузки метрик за тот же период
-                                    (тот же, что на вкладках «Данные сервисов» и «События»).
+                                    {{ t('sites.show.aiReport.newHint', { dataTab: t('sites.show.tabs.data'), eventsTab: t('sites.show.tabs.events') }) }}
                                 </p>
 
                                 <div class="page-app-sites__period-row mb-3">
                                     <div class="page-app-sites__period-field">
-                                        <label class="form-label" for="ai-report-from">С</label>
+                                        <label class="form-label" for="ai-report-from">{{ t('sites.show.sync.from') }}</label>
                                         <input
                                             id="ai-report-from"
                                             v-model="period.from"
@@ -1654,7 +1652,7 @@
                                         >
                                     </div>
                                     <div class="page-app-sites__period-field">
-                                        <label class="form-label" for="ai-report-to">По</label>
+                                        <label class="form-label" for="ai-report-to">{{ t('sites.show.sync.to') }}</label>
                                         <input
                                             id="ai-report-to"
                                             v-model="period.to"
@@ -1680,7 +1678,7 @@
                                 <AppLoader
                                     v-if="aiServicesLoading"
                                     block
-                                    label="Загрузка AI-сервисов…"
+                                    :label="t('sites.show.aiReport.loadingAiServices')"
                                 />
                                 <div
                                     v-else-if="aiServicesError"
@@ -1690,7 +1688,7 @@
                                 </div>
                                 <template v-else>
                                     <div class="page-app-sites__ai-report-field mb-3">
-                                        <label class="form-label" for="ai-report-service">AI-сервис</label>
+                                        <label class="form-label" for="ai-report-service">{{ t('sites.show.aiReport.aiService') }}</label>
                                         <select
                                             id="ai-report-service"
                                             v-model="aiReportServiceId"
@@ -1698,11 +1696,11 @@
                                             :disabled="busy || aiReportGenerating || !aiServices.length"
                                         >
                                             <option value="">
-                                                {{ aiServices.length ? 'Выберите сервис' : 'Нет доступных сервисов' }}
+                                                {{ aiServices.length ? t('sites.show.aiReport.chooseService') : t('sites.show.aiReport.noServices') }}
                                             </option>
                                             <optgroup
                                                 v-if="globalAiServices.length"
-                                                label="Общие"
+                                                :label="t('sites.show.aiReport.groupShared')"
                                             >
                                                 <option
                                                     v-for="service in globalAiServices"
@@ -1714,7 +1712,7 @@
                                             </optgroup>
                                             <optgroup
                                                 v-if="ownAiServices.length"
-                                                label="Мои"
+                                                :label="t('sites.show.aiReport.groupOwn')"
                                             >
                                                 <option
                                                     v-for="service in ownAiServices"
@@ -1726,9 +1724,9 @@
                                             </optgroup>
                                         </select>
                                         <p v-if="!aiServices.length" class="form-text mb-0">
-                                            Сначала
+                                            {{ t('sites.show.aiReport.addFirst') }}
                                             <RouterLink :to="{ name: 'ai-services.create' }">
-                                                добавьте AI-сервис
+                                                {{ t('sites.show.aiReport.addLink') }}
                                             </RouterLink>.
                                         </p>
                                     </div>
@@ -1775,7 +1773,7 @@
             <div class="page-app-sites__modal-account">
                 <template v-if="connection && !connection.needs_reauth">
                     <p class="text-muted small mb-2">
-                        Аккаунт Google: <strong>{{ connection.google_account_email }}</strong>
+                        {{ t('sites.show.modal.googleAccount') }} <strong>{{ connection.google_account_email }}</strong>
                     </p>
                     <div class="page-app-sites__modal-actions">
                         <button
@@ -1784,7 +1782,7 @@
                             :disabled="busy"
                             @click="onConnectGoogle"
                         >
-                            Переподключить
+                            {{ t('sites.show.modal.reconnect') }}
                         </button>
                         <button
                             type="button"
@@ -1792,15 +1790,15 @@
                             :disabled="busy"
                             @click="onDisconnectGoogle"
                         >
-                            Отключить Google
+                            {{ t('sites.show.modal.disconnectGoogle') }}
                         </button>
                     </div>
                 </template>
                 <template v-else>
                     <p class="text-muted mb-3">
                         {{ connection?.needs_reauth
-                            ? 'Нужна повторная авторизация Google.'
-                            : 'Подключите Google, чтобы выбрать property Google Analytics.' }}
+                            ? t('sites.show.modal.googleReauth')
+                            : t('sites.show.modal.connectGoogleForGa') }}
                     </p>
                     <button
                         type="button"
@@ -1808,14 +1806,14 @@
                         :disabled="busy"
                         @click="onConnectGoogle"
                     >
-                        Подключить Google
+                        {{ t('sites.show.modal.connectGoogle') }}
                     </button>
                 </template>
             </div>
 
             <template v-if="connection && !connection.needs_reauth">
                 <div v-if="listsError" class="alert alert-danger py-2 mb-3">{{ listsError }}</div>
-                <AppLoader v-if="listsLoading" block label="Загрузка property…" />
+                <AppLoader v-if="listsLoading" block :label="t('sites.show.modal.loadingProperties')" />
                 <template v-else>
                     <label class="form-label" for="ga4-property">Google Analytics property</label>
                     <select
@@ -1824,7 +1822,7 @@
                         class="form-select mb-3"
                         :disabled="busy"
                     >
-                        <option value="">Не выбрано</option>
+                        <option value="">{{ t('sites.show.modal.notSelected') }}</option>
                         <option
                             v-for="item in ga4Properties"
                             :key="item.id"
@@ -1841,7 +1839,7 @@
                             :disabled="busy || !form.ga4_property_id"
                             @click="onSaveGa"
                         >
-                            Сохранить
+                            {{ t('common.save') }}
                         </button>
                     </div>
                 </template>
@@ -1859,7 +1857,7 @@
             <div class="page-app-sites__modal-account">
                 <template v-if="connection && !connection.needs_reauth">
                     <p class="text-muted small mb-2">
-                        Аккаунт Google: <strong>{{ connection.google_account_email }}</strong>
+                        {{ t('sites.show.modal.googleAccount') }} <strong>{{ connection.google_account_email }}</strong>
                     </p>
                     <div class="page-app-sites__modal-actions">
                         <button
@@ -1868,7 +1866,7 @@
                             :disabled="busy"
                             @click="onConnectGoogle"
                         >
-                            Переподключить
+                            {{ t('sites.show.modal.reconnect') }}
                         </button>
                         <button
                             type="button"
@@ -1876,15 +1874,15 @@
                             :disabled="busy"
                             @click="onDisconnectGoogle"
                         >
-                            Отключить Google
+                            {{ t('sites.show.modal.disconnectGoogle') }}
                         </button>
                     </div>
                 </template>
                 <template v-else>
                     <p class="text-muted mb-3">
                         {{ connection?.needs_reauth
-                            ? 'Нужна повторная авторизация Google.'
-                            : 'Подключите Google, чтобы выбрать сайт Search Console.' }}
+                            ? t('sites.show.modal.googleReauth')
+                            : t('sites.show.modal.connectGoogleForGsc') }}
                     </p>
                     <button
                         type="button"
@@ -1892,23 +1890,23 @@
                         :disabled="busy"
                         @click="onConnectGoogle"
                     >
-                        Подключить Google
+                        {{ t('sites.show.modal.connectGoogle') }}
                     </button>
                 </template>
             </div>
 
             <template v-if="connection && !connection.needs_reauth">
                 <div v-if="listsError" class="alert alert-danger py-2 mb-3">{{ listsError }}</div>
-                <AppLoader v-if="listsLoading" block label="Загрузка сайтов…" />
+                <AppLoader v-if="listsLoading" block :label="t('sites.show.modal.loadingSites')" />
                 <template v-else>
-                    <label class="form-label" for="gsc-site">Сайт Search Console</label>
+                    <label class="form-label" for="gsc-site">{{ t('sites.show.modal.gscSite') }}</label>
                     <select
                         id="gsc-site"
                         v-model="form.gsc_site_url"
                         class="form-select mb-3"
                         :disabled="busy"
                     >
-                        <option value="">Не выбрано</option>
+                        <option value="">{{ t('sites.show.modal.notSelected') }}</option>
                         <option
                             v-for="item in gscSites"
                             :key="item.site_url"
@@ -1925,7 +1923,7 @@
                             :disabled="busy || !form.gsc_site_url"
                             @click="onSaveGsc"
                         >
-                            Сохранить
+                            {{ t('common.save') }}
                         </button>
                     </div>
                 </template>
@@ -1943,7 +1941,7 @@
             <div class="page-app-sites__modal-account">
                 <template v-if="githubConnection && !githubConnection.needs_reauth">
                     <p class="text-muted small mb-2">
-                        Аккаунт:
+                        {{ t('sites.show.modal.githubAccount') }}
                         <strong>{{ githubConnection.github_login }}</strong>
                         <span v-if="githubConnection.github_account_email">
                             ({{ githubConnection.github_account_email }})
@@ -1956,7 +1954,7 @@
                             :disabled="busy"
                             @click="onConnectGithub"
                         >
-                            Переподключить
+                            {{ t('sites.show.modal.reconnect') }}
                         </button>
                         <button
                             type="button"
@@ -1964,15 +1962,15 @@
                             :disabled="busy"
                             @click="onDisconnectGithub"
                         >
-                            Отключить GitHub
+                            {{ t('sites.show.modal.disconnectGithub') }}
                         </button>
                     </div>
                 </template>
                 <template v-else>
                     <p class="text-muted mb-3">
                         {{ githubConnection?.needs_reauth
-                            ? 'Нужна повторная авторизация GitHub.'
-                            : 'Подключите GitHub, чтобы выбрать репозиторий.' }}
+                            ? t('sites.show.modal.githubReauth')
+                            : t('sites.show.modal.connectGithubForRepo') }}
                     </p>
                     <button
                         type="button"
@@ -1980,16 +1978,16 @@
                         :disabled="busy"
                         @click="onConnectGithub"
                     >
-                        Подключить GitHub
+                        {{ t('sites.show.modal.connectGithub') }}
                     </button>
                 </template>
             </div>
 
             <template v-if="githubConnection && !githubConnection.needs_reauth">
                 <div v-if="githubReposError" class="alert alert-danger py-2 mb-3">{{ githubReposError }}</div>
-                <AppLoader v-if="githubReposLoading" block label="Загрузка репозиториев…" />
+                <AppLoader v-if="githubReposLoading" block :label="t('sites.show.modal.loadingRepos')" />
                 <template v-else>
-                    <label class="form-label" for="github-repo">Репозиторий</label>
+                    <label class="form-label" for="github-repo">{{ t('sites.show.modal.repository') }}</label>
                     <select
                         id="github-repo"
                         v-model="githubForm.repository_full_name"
@@ -1997,7 +1995,7 @@
                         :disabled="busy"
                         @change="onGithubRepoChange"
                     >
-                        <option value="">Не выбрано</option>
+                        <option value="">{{ t('sites.show.modal.notSelected') }}</option>
                         <option
                             v-for="item in githubRepositories"
                             :key="item.id"
@@ -2010,7 +2008,7 @@
                         v-if="githubIntegration?.repository_full_name && !repoInList"
                         class="form-text mb-3"
                     >
-                        Сейчас привязан: {{ githubIntegration.repository_full_name }}
+                        {{ t('sites.show.modal.currentlyLinked', { name: githubIntegration.repository_full_name }) }}
                     </p>
 
                     <template v-if="githubForm.repository_full_name">
@@ -2023,17 +2021,17 @@
                         <AppLoader
                             v-if="githubBranchesLoading"
                             block
-                            label="Загрузка веток…"
+                            :label="t('sites.show.modal.loadingBranches')"
                         />
                         <template v-else>
-                            <label class="form-label" for="github-branch">Ветка</label>
+                            <label class="form-label" for="github-branch">{{ t('sites.show.modal.branch') }}</label>
                             <select
                                 id="github-branch"
                                 v-model="githubForm.default_branch"
                                 class="form-select mb-2"
                                 :disabled="busy || !githubBranches.length"
                             >
-                                <option value="">Не выбрано</option>
+                                <option value="">{{ t('sites.show.modal.notSelected') }}</option>
                                 <option
                                     v-for="branch in githubBranches"
                                     :key="branch.name"
@@ -2046,7 +2044,7 @@
                                 v-if="githubForm.default_branch && !branchInList"
                                 class="form-text mb-3"
                             >
-                                Сейчас выбрана: {{ githubForm.default_branch }}
+                                {{ t('sites.show.modal.currentBranch', { name: githubForm.default_branch }) }}
                             </p>
                         </template>
                     </template>
@@ -2058,7 +2056,7 @@
                             :disabled="busy || !githubForm.repository_full_name || !githubForm.default_branch"
                             @click="onSaveGithubIntegration"
                         >
-                            Сохранить
+                            {{ t('common.save') }}
                         </button>
                         <button
                             v-if="githubConnected"
@@ -2067,7 +2065,7 @@
                             :disabled="busy"
                             @click="onClearGithubIntegration"
                         >
-                            Отвязать репозиторий
+                            {{ t('sites.show.modal.unlinkRepo') }}
                         </button>
                     </div>
                 </template>
@@ -2085,7 +2083,7 @@
             <div class="page-app-sites__modal-account">
                 <template v-if="connection && !connection.needs_reauth">
                     <p class="text-muted small mb-2">
-                        Аккаунт Google: <strong>{{ connection.google_account_email }}</strong>
+                        {{ t('sites.show.modal.googleAccount') }} <strong>{{ connection.google_account_email }}</strong>
                     </p>
                     <div class="page-app-sites__modal-actions">
                         <button
@@ -2094,7 +2092,7 @@
                             :disabled="busy"
                             @click="onConnectGoogle"
                         >
-                            Переподключить
+                            {{ t('sites.show.modal.reconnect') }}
                         </button>
                         <button
                             type="button"
@@ -2102,15 +2100,15 @@
                             :disabled="busy"
                             @click="onDisconnectGoogle"
                         >
-                            Отключить Google
+                            {{ t('sites.show.modal.disconnectGoogle') }}
                         </button>
                     </div>
                 </template>
                 <template v-else>
                     <p class="text-muted mb-3">
                         {{ connection?.needs_reauth
-                            ? 'Нужна повторная авторизация Google.'
-                            : 'Подключите Google, чтобы включить Chrome UX Report.' }}
+                            ? t('sites.show.modal.googleReauth')
+                            : t('sites.show.modal.connectGoogleForCrux') }}
                     </p>
                     <button
                         type="button"
@@ -2118,13 +2116,13 @@
                         :disabled="busy"
                         @click="onConnectGoogle"
                     >
-                        Подключить Google
+                        {{ t('sites.show.modal.connectGoogle') }}
                     </button>
                 </template>
             </div>
 
             <template v-if="connection && !connection.needs_reauth">
-                <label class="form-label" for="pagespeed-strategy">Стратегия</label>
+                <label class="form-label" for="pagespeed-strategy">{{ t('sites.show.modal.strategy') }}</label>
                 <select
                     id="pagespeed-strategy"
                     v-model="pagespeedForm.strategy"
@@ -2136,11 +2134,11 @@
                         :key="option.value"
                         :value="option.value"
                     >
-                        {{ option.label }}
+                        {{ defLabel(option) }}
                     </option>
                 </select>
 
-                <label class="form-label" for="pagespeed-page-urls">URL страниц для теста</label>
+                <label class="form-label" for="pagespeed-page-urls">{{ t('sites.show.modal.pageUrls') }}</label>
                 <textarea
                     id="pagespeed-page-urls"
                     v-model="pagespeedForm.pageUrlsText"
@@ -2150,8 +2148,7 @@
                     placeholder="https://example.com/&#10;https://example.com/catalog&#10;/about"
                 />
                 <p class="form-text mb-3">
-                    По одному URL на строку, до 10 адресов. Можно указывать относительные пути
-                    относительно URL сайта. Если список пуст, тестируется только главная страница сайта.
+                    {{ t('sites.show.modal.pageUrlsHint') }}
                 </p>
 
                 <div class="page-app-sites__modal-actions">
@@ -2161,7 +2158,7 @@
                         :disabled="busy"
                         @click="onSavePagespeedIntegration"
                     >
-                        {{ pagespeedConnected ? 'Сохранить' : 'Подключить к сайту' }}
+                        {{ pagespeedConnected ? t('common.save') : t('sites.show.modal.connectToSite') }}
                     </button>
                     <button
                         v-if="pagespeedConnected"
@@ -2170,7 +2167,7 @@
                         :disabled="busy"
                         @click="onDisconnectPagespeedIntegration"
                     >
-                        Отключить от сайта
+                        {{ t('sites.show.modal.disconnectFromSite') }}
                     </button>
                 </div>
             </template>
@@ -2178,7 +2175,7 @@
 
         <AppModal
             v-model:open="aiReportSharingOpen"
-            title="Доступ к отчёту"
+            :title="t('sites.show.sharing.title')"
             align="start"
             size="md"
             :show-confirm="false"
@@ -2186,7 +2183,7 @@
         >
             <div class="page-app-sites__ai-report-share">
                 <fieldset class="page-app-sites__ai-report-share-options">
-                    <legend class="form-label">Кто может открыть отчёт</legend>
+                    <legend class="form-label">{{ t('sites.show.sharing.legend') }}</legend>
 
                     <label
                         v-for="option in aiReportSharingOptions"
@@ -2201,7 +2198,7 @@
                             :value="option.value"
                             :disabled="aiReportSharingSaving"
                         >
-                        <span>{{ option.label }}</span>
+                        <span>{{ defLabel(option) }}</span>
                     </label>
                 </fieldset>
 
@@ -2213,7 +2210,7 @@
                         class="form-label"
                         for="ai-report-share-password"
                     >
-                        {{ aiReportSharing.has_password ? 'Новый пароль' : 'Пароль' }}
+                        {{ aiReportSharing.has_password ? t('sites.show.sharing.newPassword') : t('common.password') }}
                     </label>
                     <input
                         id="ai-report-share-password"
@@ -2222,7 +2219,7 @@
                         class="form-control"
                         :class="{ 'is-invalid': Boolean(aiReportSharingErrors.password) }"
                         autocomplete="new-password"
-                        :placeholder="aiReportSharing.has_password ? 'Оставьте пустым, чтобы не менять' : 'Задайте пароль'"
+                        :placeholder="aiReportSharing.has_password ? t('common.leaveEmptyToKeep') : t('sites.show.sharing.setPassword')"
                         :disabled="aiReportSharingSaving"
                     >
                     <div
@@ -2240,7 +2237,7 @@
                     <label
                         class="form-label"
                         for="ai-report-share-url"
-                    >Ссылка</label>
+                    >{{ t('common.link') }}</label>
                     <div class="input-group">
                         <input
                             id="ai-report-share-url"
@@ -2255,7 +2252,7 @@
                             :disabled="aiReportSharingSaving"
                             @click="onCopyAiReportShareLink"
                         >
-                            Копировать
+                            {{ t('sites.show.sharing.copy') }}
                         </button>
                     </div>
                 </div>
@@ -2275,7 +2272,7 @@
                     :disabled="aiReportSharingSaving"
                     @click="aiReportSharingOpen = false"
                 >
-                    Отмена
+                    {{ t('common.cancel') }}
                 </button>
                 <button
                     type="button"
@@ -2288,7 +2285,7 @@
                         class="spinner-border spinner-border-sm"
                         aria-hidden="true"
                     />
-                    {{ aiReportSharingSaving ? 'Сохранение…' : 'Сохранить' }}
+                    {{ aiReportSharingSaving ? t('common.saving') : t('common.save') }}
                 </button>
             </template>
         </AppModal>
@@ -2309,6 +2306,7 @@ import {
     downloadAiReportPdf,
 } from '../../../shared/exportAiReportPdf';
 import { toast } from '../../../shared/toast';
+import { useI18n } from '../../../shared/i18n';
 import { listAiServices } from '../../api/aiServices';
 import {
     disconnectGithub,
@@ -2354,6 +2352,15 @@ import {
 } from '../../api/sites';
 
 const route = useRoute();
+const { t, intlLocale } = useI18n();
+
+/**
+ * @param {{ label?: string, labelKey?: string }} definition
+ * @returns {string}
+ */
+function defLabel(definition) {
+    return definition.labelKey ? t(definition.labelKey) : definition.label;
+}
 
 const site = ref(null);
 
@@ -2476,31 +2483,31 @@ const aiReportSharingErrors = reactive({
     password: '',
 });
 const aiReportSharingOptions = [
-    { value: 'private', label: 'Приватный' },
-    { value: 'link', label: 'Доступен по ссылке' },
-    { value: 'password', label: 'Доступен по ссылке с паролем' },
+    { value: 'private', labelKey: 'sites.show.sharing.private' },
+    { value: 'link', labelKey: 'sites.show.sharing.link' },
+    { value: 'password', labelKey: 'sites.show.sharing.password' },
 ];
 
 const siteViewTabs = [
-    { id: 'data', label: 'Данные сервисов' },
-    { id: 'events', label: 'События' },
-    { id: 'documents', label: 'Документы' },
-    { id: 'ai-report', label: 'AI отчёт' },
+    { id: 'data', labelKey: 'sites.show.tabs.data' },
+    { id: 'events', labelKey: 'sites.show.tabs.events' },
+    { id: 'documents', labelKey: 'sites.show.tabs.documents' },
+    { id: 'ai-report', labelKey: 'sites.show.tabs.aiReport' },
 ];
 
 const aiReportTabs = [
-    { id: 'saved', label: 'Сохранённые отчёты' },
-    { id: 'new', label: 'Новый отчёт' },
+    { id: 'saved', labelKey: 'sites.show.tabs.aiSaved' },
+    { id: 'new', labelKey: 'sites.show.tabs.aiNew' },
 ];
 
 const eventTabs = [
-    { id: 'saved', label: 'Сохранённые события' },
-    { id: 'new', label: 'Новое событие' },
+    { id: 'saved', labelKey: 'sites.show.tabs.eventsSaved' },
+    { id: 'new', labelKey: 'sites.show.tabs.eventsNew' },
 ];
 
 const documentTabs = [
-    { id: 'saved', label: 'Сохранённые документы' },
-    { id: 'new', label: 'Новый документ' },
+    { id: 'saved', labelKey: 'sites.show.tabs.documentsSaved' },
+    { id: 'new', labelKey: 'sites.show.tabs.documentsNew' },
 ];
 
 const metricsTabs = [
@@ -2513,7 +2520,7 @@ const metricsTabs = [
 const pagespeedStrategyOptions = [
     { value: 'mobile', label: 'Mobile' },
     { value: 'desktop', label: 'Desktop' },
-    { value: 'both', label: 'Mobile и Desktop' },
+    { value: 'both', labelKey: 'sites.show.pagespeed.bothStrategies' },
 ];
 
 const periodMax = yesterdayDateString();
@@ -2567,10 +2574,10 @@ const pagespeedConnected = computed(() => Boolean(pagespeedIntegration.value?.is
 
 const metricsCoverageDefs = [
     { key: 'analytics', label: 'Google Analytics', available: () => gaConnected.value },
-    { key: 'search_console_daily', label: 'Search Console (по дням)', available: () => gscConnected.value },
+    { key: 'search_console_daily', labelKey: 'sites.show.sync.groupGscDaily', available: () => gscConnected.value },
     {
         key: 'search_console_dimensions',
-        label: 'Search Console (разрезы)',
+        labelKey: 'sites.show.sync.groupGscDimensions',
         available: () => gscConnected.value,
     },
     { key: 'github_commits', label: 'GitHub', available: () => githubConnected.value },
@@ -2590,7 +2597,7 @@ const metricsCoverageItems = computed(() => (
 
             return {
                 key: item.key,
-                label: item.label,
+                label: defLabel(item),
                 period: formatCoveragePeriod(range.from, range.to),
             };
         })
@@ -2609,7 +2616,7 @@ const aiReportCoverageTimelineItems = computed(() => (
 
             return {
                 key: item.key,
-                label: item.label,
+                label: defLabel(item),
                 from: range.from,
                 to: range.to,
             };
@@ -2660,46 +2667,46 @@ const syncMetricGroups = [
         label: 'Google Analytics',
         available: () => gaConnected.value,
         metrics: [
-            { key: 'sessions', label: 'Сессии', defaultSelected: true },
-            { key: 'total_users', label: 'Пользователи', defaultSelected: true },
-            { key: 'new_users', label: 'Новые пользователи', defaultSelected: true },
-            { key: 'screen_page_views', label: 'Просмотры', defaultSelected: true },
-            { key: 'organic_sessions', label: 'Органические сессии', defaultSelected: true },
-            { key: 'organic_total_users', label: 'Органические пользователи', defaultSelected: true },
-            { key: 'organic_new_users', label: 'Органические новые пользователи', defaultSelected: true },
-            { key: 'engaged_sessions', label: 'Вовлечённые сессии', defaultSelected: false, optional: true },
-            { key: 'engagement_rate', label: 'Доля вовлечённости', defaultSelected: false, optional: true },
-            { key: 'bounce_rate', label: 'Показатель отказов', defaultSelected: false, optional: true },
-            { key: 'average_session_duration', label: 'Средняя длительность сессии', defaultSelected: false, optional: true },
-            { key: 'event_count', label: 'События', defaultSelected: false, optional: true },
-            { key: 'organic_engaged_sessions', label: 'Органические вовлечённые сессии', defaultSelected: false, optional: true },
+            { key: 'sessions', labelKey: 'sites.show.col.sessions', defaultSelected: true },
+            { key: 'total_users', labelKey: 'sites.show.col.users', defaultSelected: true },
+            { key: 'new_users', labelKey: 'sites.show.metric.newUsers', defaultSelected: true },
+            { key: 'screen_page_views', labelKey: 'sites.show.col.views', defaultSelected: true },
+            { key: 'organic_sessions', labelKey: 'sites.show.metric.organicSessions', defaultSelected: true },
+            { key: 'organic_total_users', labelKey: 'sites.show.metric.organicUsers', defaultSelected: true },
+            { key: 'organic_new_users', labelKey: 'sites.show.metric.organicNewUsers', defaultSelected: true },
+            { key: 'engaged_sessions', labelKey: 'sites.show.metric.engagedSessions', defaultSelected: false, optional: true },
+            { key: 'engagement_rate', labelKey: 'sites.show.metric.engagementRate', defaultSelected: false, optional: true },
+            { key: 'bounce_rate', labelKey: 'sites.show.metric.bounceRate', defaultSelected: false, optional: true },
+            { key: 'average_session_duration', labelKey: 'sites.show.metric.averageSessionDuration', defaultSelected: false, optional: true },
+            { key: 'event_count', labelKey: 'sites.show.tabs.events', defaultSelected: false, optional: true },
+            { key: 'organic_engaged_sessions', labelKey: 'sites.show.metric.organicEngagedSessions', defaultSelected: false, optional: true },
         ],
     },
     {
         id: 'gsc-daily',
-        label: 'Search Console (по дням)',
+        labelKey: 'sites.show.sync.groupGscDaily',
         available: () => gscConnected.value,
         metrics: [
-            { key: 'clicks', label: 'Клики', defaultSelected: true },
-            { key: 'impressions', label: 'Показы', defaultSelected: true },
+            { key: 'clicks', labelKey: 'sites.show.col.clicks', defaultSelected: true },
+            { key: 'impressions', labelKey: 'sites.show.col.impressions', defaultSelected: true },
             { key: 'ctr', label: 'CTR', defaultSelected: true },
-            { key: 'position', label: 'Позиция', defaultSelected: true },
+            { key: 'position', labelKey: 'sites.show.col.position', defaultSelected: true },
         ],
     },
     {
         id: 'gsc-dimensions',
-        label: 'Search Console (разрезы)',
+        labelKey: 'sites.show.sync.groupGscDimensions',
         available: () => gscConnected.value,
         metrics: [
-            { key: 'queries', label: 'Запросы', defaultSelected: true, limitKey: 'queries' },
-            { key: 'pages', label: 'Страницы', defaultSelected: true, limitKey: 'pages' },
-            { key: 'devices', label: 'Устройства', defaultSelected: true },
-            { key: 'countries', label: 'Страны', defaultSelected: true },
-            { key: 'search_appearances', label: 'Типы отображения в поиске', defaultSelected: false, optional: true },
+            { key: 'queries', labelKey: 'sites.show.metric.queries', defaultSelected: true, limitKey: 'queries' },
+            { key: 'pages', labelKey: 'sites.show.metric.pages', defaultSelected: true, limitKey: 'pages' },
+            { key: 'devices', labelKey: 'sites.show.gsc.devices', defaultSelected: true },
+            { key: 'countries', labelKey: 'sites.show.gsc.countries', defaultSelected: true },
+            { key: 'search_appearances', labelKey: 'sites.show.gsc.searchAppearances', defaultSelected: false, optional: true },
             { key: 'sitemaps', label: 'Sitemaps', defaultSelected: false, optional: true },
             {
                 key: 'url_inspections',
-                label: 'URL Inspection (топ-страницы)',
+                labelKey: 'sites.show.sync.urlInspectionTop',
                 defaultSelected: false,
                 optional: true,
                 limitKey: 'url_inspections',
@@ -2711,7 +2718,7 @@ const syncMetricGroups = [
         label: 'GitHub',
         available: () => githubConnected.value,
         metrics: [
-            { key: 'commits', label: 'Коммиты', defaultSelected: true },
+            { key: 'commits', labelKey: 'sites.show.metric.commits', defaultSelected: true },
         ],
     },
     {
@@ -2871,14 +2878,14 @@ const canGenerateAiReport = computed(() => (
 
 const aiReportGenerateButtonLabel = computed(() => {
     if (!aiReportGenerating.value) {
-        return 'Сформировать отчёт';
+        return t('sites.show.aiReport.generate');
     }
 
     if (aiReportAttempt.value > 1) {
-        return `Попытка ${aiReportAttempt.value} из ${AI_REPORT_MAX_ATTEMPTS}`;
+        return t('sites.show.aiReport.attempt', { current: aiReportAttempt.value, max: AI_REPORT_MAX_ATTEMPTS });
     }
 
-    return 'Формирование…';
+    return t('sites.show.aiReport.generating');
 });
 
 const isAiReportOpen = computed(() => Boolean(selectedAiReportId.value));
@@ -2891,10 +2898,10 @@ const aiReportUsageItems = computed(() => {
     }
 
     const fields = [
-        { key: 'prompt_tokens', label: 'Входные токены' },
-        { key: 'candidates_tokens', label: 'Выходные токены' },
-        { key: 'thoughts_tokens', label: 'Токены размышлений' },
-        { key: 'total_tokens', label: 'Всего токенов' },
+        { key: 'prompt_tokens', label: t('sites.show.aiReport.promptTokens') },
+        { key: 'candidates_tokens', label: t('sites.show.aiReport.candidatesTokens') },
+        { key: 'thoughts_tokens', label: t('sites.show.aiReport.thoughtsTokens') },
+        { key: 'total_tokens', label: t('sites.show.aiReport.totalTokens') },
     ];
 
     return fields
@@ -2982,7 +2989,7 @@ const pagespeedDetail = computed(() => {
         return '';
     }
 
-    const strategy = pagespeedIntegration.value?.strategy_label || 'Подключено';
+    const strategy = pagespeedIntegration.value?.strategy_label || t('common.connected');
     const urls = pagespeedIntegration.value?.page_urls;
 
     if (Array.isArray(urls) && urls.length) {
@@ -3003,7 +3010,7 @@ const pagespeedPageUrlsLabel = computed(() => {
         return urls.join(', ');
     }
 
-    return `${urls[0]}, ${urls[1]} и ещё ${urls.length - 2}`;
+    return `${urls[0]}, ${urls[1]} ${t('sites.show.pagespeed.andMore', { count: urls.length - 2 })}`;
 });
 
 const repoInList = computed(() => {
@@ -3050,7 +3057,7 @@ function formatDateTime(value) {
     }
 
     try {
-        return new Date(value).toLocaleString('ru-RU');
+        return new Date(value).toLocaleString(intlLocale());
     } catch {
         return value;
     }
@@ -3062,7 +3069,7 @@ function formatDate(value) {
     }
 
     try {
-        return new Date(`${value}T00:00:00`).toLocaleDateString('ru-RU');
+        return new Date(`${value}T00:00:00`).toLocaleDateString(intlLocale());
     } catch {
         return value;
     }
@@ -3078,7 +3085,7 @@ function formatCoveragePeriod(from, to) {
     }
 
     if (from === to) {
-        return `${fromLabel} (1 день)`;
+        return `${fromLabel} (1 ${pluralDays(1)})`;
     }
 
     return `${fromLabel} — ${toLabel} (${days} ${pluralDays(days)})`;
@@ -3098,17 +3105,17 @@ function formatDuration(value) {
     const secs = Math.round(seconds % 60);
 
     if (mins <= 0) {
-        return `${secs} с`;
+        return t('sites.show.format.durationSeconds', { seconds: secs });
     }
 
-    return `${mins} м ${secs.toString().padStart(2, '0')} с`;
+    return t('sites.show.format.durationMinutes', { minutes: mins, seconds: secs.toString().padStart(2, '0') });
 }
 
 function formatGscDevice(value) {
     const map = {
-        DESKTOP: 'Компьютер',
-        MOBILE: 'Мобильный',
-        TABLET: 'Планшет',
+        DESKTOP: t('sites.show.format.deviceDesktop'),
+        MOBILE: t('sites.show.format.deviceMobile'),
+        TABLET: t('sites.show.format.deviceTablet'),
     };
 
     return map[String(value || '').toUpperCase()] || value || '—';
@@ -3121,22 +3128,22 @@ function formatInspectionLabel(value) {
 
     const map = {
         PASS: 'OK',
-        FAIL: 'Ошибка',
-        NEUTRAL: 'Исключено',
-        PARTIAL: 'Частично',
-        SUCCESSFUL: 'Успешно',
+        FAIL: t('sites.show.inspection.fail'),
+        NEUTRAL: t('sites.show.inspection.neutral'),
+        PARTIAL: t('sites.show.inspection.partial'),
+        SUCCESSFUL: t('sites.show.inspection.successful'),
         SOFT_404: 'Soft 404',
         NOT_FOUND: '404',
-        SERVER_ERROR: 'Ошибка сервера',
+        SERVER_ERROR: t('sites.show.inspection.serverError'),
         BLOCKED_ROBOTS_TXT: 'robots.txt',
         ACCESS_DENIED: '401',
         ACCESS_FORBIDDEN: '403',
-        REDIRECT_ERROR: 'Редирект',
-        INDEXING_ALLOWED: 'Разрешено',
+        REDIRECT_ERROR: t('sites.show.inspection.redirectError'),
+        INDEXING_ALLOWED: t('sites.show.inspection.allowed'),
         BLOCKED_BY_META_TAG: 'noindex (meta)',
         BLOCKED_BY_HTTP_HEADER: 'noindex (header)',
-        ALLOWED: 'Разрешено',
-        DISALLOWED: 'Запрещено',
+        ALLOWED: t('sites.show.inspection.allowed'),
+        DISALLOWED: t('sites.show.inspection.disallowed'),
         MOBILE: 'Mobile',
         DESKTOP: 'Desktop',
     };
@@ -3227,9 +3234,9 @@ function formatCruxOverallCategory(value) {
     }
 
     const map = {
-        FAST: 'Быстро',
-        AVERAGE: 'Средне',
-        SLOW: 'Медленно',
+        FAST: t('sites.show.crux.fast'),
+        AVERAGE: t('sites.show.crux.average'),
+        SLOW: t('sites.show.crux.slow'),
     };
 
     return map[String(value).toUpperCase()] || value;
@@ -3285,11 +3292,11 @@ function aiReportSharingLabel(report) {
     const visibility = report?.sharing?.visibility;
 
     if (visibility === 'link') {
-        return 'По ссылке';
+        return t('sites.show.sharing.badgeLink');
     }
 
     if (visibility === 'password') {
-        return 'По ссылке с паролем';
+        return t('sites.show.sharing.badgePassword');
     }
 
     return '';
@@ -3316,9 +3323,9 @@ async function onCopyAiReportShareLink() {
 
     try {
         await navigator.clipboard.writeText(url);
-        toast.show({ ok: true, message: 'Ссылка скопирована.' });
+        toast.show({ ok: true, message: t('sites.show.sharing.copied') });
     } catch {
-        toast.show({ ok: false, message: 'Не удалось скопировать ссылку.' });
+        toast.show({ ok: false, message: t('sites.show.sharing.copyFailed') });
     }
 }
 
@@ -3348,7 +3355,7 @@ async function onSaveAiReportSharing() {
 
         applyAiReportSharing(report.sharing);
         upsertAiReportListItem(report);
-        toast.show({ ok: true, message: 'Настройки доступа сохранены.' });
+        toast.show({ ok: true, message: t('sites.show.sharing.saved') });
 
         if (report.sharing?.visibility === 'private') {
             aiReportSharingOpen.value = false;
@@ -3357,7 +3364,7 @@ async function onSaveAiReportSharing() {
         aiReportSharingErrors.password = e.response?.data?.errors?.password?.[0] || '';
         aiReportSharingError.value = e.response?.data?.message
             || e.response?.data?.errors?.visibility?.[0]
-            || (aiReportSharingErrors.password ? '' : 'Не удалось сохранить доступ.');
+            || (aiReportSharingErrors.password ? '' : t('sites.show.sharing.saveFailed'));
     } finally {
         aiReportSharingSaving.value = false;
     }
@@ -3385,7 +3392,7 @@ function upsertAiReportListItem(report) {
 }
 
 function formatTokenCount(value) {
-    return Number(value).toLocaleString('ru-RU');
+    return Number(value).toLocaleString(intlLocale());
 }
 
 function aiServiceOptionLabel(service) {
@@ -3397,7 +3404,7 @@ function aiServiceOptionLabel(service) {
 function aiReportCardTitle(report) {
     return report.created_at
         ? formatDateTime(report.created_at)
-        : 'Без даты';
+        : t('sites.show.aiReport.noDate');
 }
 
 function aiReportCardTool(report) {
@@ -3436,22 +3443,9 @@ function aiReportPeriodDays(from, to) {
 }
 
 function pluralDays(count) {
-    const abs = Math.abs(count) % 100;
-    const last = abs % 10;
+    const category = new Intl.PluralRules(intlLocale()).select(Math.abs(count));
 
-    if (abs > 10 && abs < 20) {
-        return 'дней';
-    }
-
-    if (last === 1) {
-        return 'день';
-    }
-
-    if (last >= 2 && last <= 4) {
-        return 'дня';
-    }
-
-    return 'дней';
+    return t(`common.days.${category}`);
 }
 
 function applyAiReport(report) {
@@ -3497,65 +3491,28 @@ function formatDataCounts(counts) {
         return '';
     }
 
-    const parts = [];
+    const countLabels = [
+        ['analytics', 'countsAnalytics'],
+        ['search_console', 'countsSearchConsole'],
+        ['search_console_queries', 'countsQueries'],
+        ['search_console_pages', 'countsPages'],
+        ['search_console_devices', 'countsDevices'],
+        ['search_console_countries', 'countsCountries'],
+        ['search_console_appearances', 'countsAppearances'],
+        ['search_console_sitemaps', 'countsSitemaps'],
+        ['search_console_url_inspections', 'countsUrlInspections'],
+        ['pagespeed_lab', 'countsPagespeedLab'],
+        ['pagespeed_crux', 'countsCrux'],
+        ['github_commits', 'countsGithub'],
+        ['events', 'countsEvents'],
+        ['documents', 'countsDocuments'],
+    ];
 
-    if (counts.analytics) {
-        parts.push(`Google Analytics: ${counts.analytics}`);
-    }
+    const parts = countLabels
+        .filter(([field]) => counts[field])
+        .map(([field, labelKey]) => t(`sites.show.aiReport.${labelKey}`, { count: counts[field] }));
 
-    if (counts.search_console) {
-        parts.push(`Search Console (дни): ${counts.search_console}`);
-    }
-
-    if (counts.search_console_queries) {
-        parts.push(`запросы: ${counts.search_console_queries}`);
-    }
-
-    if (counts.search_console_pages) {
-        parts.push(`страницы: ${counts.search_console_pages}`);
-    }
-
-    if (counts.search_console_devices) {
-        parts.push(`устройства: ${counts.search_console_devices}`);
-    }
-
-    if (counts.search_console_countries) {
-        parts.push(`страны: ${counts.search_console_countries}`);
-    }
-
-    if (counts.search_console_appearances) {
-        parts.push(`типы отображения: ${counts.search_console_appearances}`);
-    }
-
-    if (counts.search_console_sitemaps) {
-        parts.push(`sitemaps: ${counts.search_console_sitemaps}`);
-    }
-
-    if (counts.search_console_url_inspections) {
-        parts.push(`URL Inspection: ${counts.search_console_url_inspections}`);
-    }
-
-    if (counts.pagespeed_lab) {
-        parts.push(`PageSpeed lab: ${counts.pagespeed_lab}`);
-    }
-
-    if (counts.pagespeed_crux) {
-        parts.push(`Chrome UX Report: ${counts.pagespeed_crux}`);
-    }
-
-    if (counts.github_commits) {
-        parts.push(`GitHub: ${counts.github_commits}`);
-    }
-
-    if (counts.events) {
-        parts.push(`События: ${counts.events}`);
-    }
-
-    if (counts.documents) {
-        parts.push(`Документы: ${counts.documents}`);
-    }
-
-    return parts.length ? `В промпт передано — ${parts.join(', ')}.` : '';
+    return parts.length ? t('sites.show.aiReport.countsSummary', { parts: parts.join(', ') }) : '';
 }
 
 async function loadAiReports() {
@@ -3581,7 +3538,7 @@ async function loadAiReports() {
         syncAiReportTab();
     } catch (e) {
         aiReportsLoaded.value = true;
-        aiReportsError.value = e.response?.data?.message || 'Не удалось загрузить отчёты';
+        aiReportsError.value = e.response?.data?.message || t('sites.show.errors.loadReports');
         syncAiReportTab();
     } finally {
         aiReportsLoading.value = false;
@@ -3608,7 +3565,7 @@ async function loadAiServices() {
             aiReportServiceId.value = '';
         }
     } catch (e) {
-        aiServicesError.value = e.response?.data?.message || 'Не удалось загрузить AI-сервисы';
+        aiServicesError.value = e.response?.data?.message || t('sites.show.errors.loadAiServices');
     } finally {
         aiServicesLoading.value = false;
     }
@@ -3635,7 +3592,7 @@ async function onOpenAiReport(report) {
     } catch (e) {
         clearAiReportView();
         selectedAiReportId.value = '';
-        aiReportError.value = e.response?.data?.message || 'Не удалось загрузить отчёт';
+        aiReportError.value = e.response?.data?.message || t('sites.show.errors.loadReport');
     } finally {
         aiReportLoading.value = false;
     }
@@ -3654,7 +3611,7 @@ async function onDownloadAiReportPdf() {
         const subtitleParts = [];
 
         if (from || to) {
-            subtitleParts.push(`Период: ${from || '—'} — ${to || '—'}`);
+            subtitleParts.push(t('sites.show.aiReport.pdfPeriod', { from: from || '—', to: to || '—' }));
         }
 
         if (aiReportModel.value) {
@@ -3668,14 +3625,14 @@ async function onDownloadAiReportPdf() {
                 periodFrom: period.from,
                 periodTo: period.to,
             }),
-            title: site.value?.name || 'AI-отчёт',
+            title: site.value?.name || t('sites.show.aiReport.pdfFallbackTitle'),
             subtitle: subtitleParts.join(' · '),
         });
 
-        toast.show({ message: 'PDF сохранён' });
+        toast.show({ message: t('sites.show.aiReport.pdfSaved') });
     } catch (e) {
         toast.show({
-            message: e?.message || 'Не удалось сохранить PDF',
+            message: e?.message || t('sites.show.errors.savePdf'),
             ok: false,
         });
     } finally {
@@ -3730,7 +3687,7 @@ async function onGenerateAiReport() {
                     continue;
                 }
 
-                aiReportError.value = result.message || 'Не удалось сформировать отчёт';
+                aiReportError.value = result.message || t('sites.show.errors.generateReport');
                 aiReportMeta.value = formatDataCounts(result.data_counts);
 
                 return;
@@ -3750,7 +3707,7 @@ async function onGenerateAiReport() {
 
                 aiReportError.value = e.response?.data?.message
                     || e.response?.data?.errors?.ai_service_id?.[0]
-                    || 'Не удалось сформировать отчёт';
+                    || t('sites.show.errors.generateReport');
 
                 return;
             }
@@ -3810,7 +3767,7 @@ async function loadEvents() {
     } catch (e) {
         eventRows.value = [];
         eventsLoaded.value = true;
-        eventsError.value = e.response?.data?.message || 'Не удалось загрузить события';
+        eventsError.value = e.response?.data?.message || t('sites.show.errors.loadEvents');
         syncEventTab();
     } finally {
         eventsLoading.value = false;
@@ -3908,7 +3865,7 @@ async function onSubmitEvent() {
                 return a.occurred_on < b.occurred_on ? 1 : -1;
             });
 
-            toast.show({ ok: true, message: 'Событие обновлено.' });
+            toast.show({ ok: true, message: t('sites.show.toast.eventUpdated') });
             resetEventForm();
             activeEventTab.value = eventRows.value.length ? 'saved' : 'new';
         } else {
@@ -3922,14 +3879,14 @@ async function onSubmitEvent() {
                 return a.occurred_on < b.occurred_on ? 1 : -1;
             });
 
-            toast.show({ ok: true, message: 'Событие добавлено.' });
+            toast.show({ ok: true, message: t('sites.show.toast.eventAdded') });
             resetEventForm();
             activeEventTab.value = eventRows.value.length ? 'saved' : 'new';
         }
     } catch (e) {
         eventFormError.value = firstValidationError(e.response?.data?.errors)
             || e.response?.data?.message
-            || 'Не удалось сохранить событие';
+            || t('sites.show.errors.saveEvent');
     } finally {
         eventSaving.value = false;
     }
@@ -3948,7 +3905,7 @@ async function onDeleteEvent(row) {
         return;
     }
 
-    if (!window.confirm('Удалить это событие?')) {
+    if (!window.confirm(t('sites.show.confirm.deleteEvent'))) {
         return;
     }
 
@@ -3965,11 +3922,11 @@ async function onDeleteEvent(row) {
             syncEventTab();
         }
 
-        toast.show({ ok: true, message: 'Событие удалено.' });
+        toast.show({ ok: true, message: t('sites.show.toast.eventDeleted') });
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось удалить событие',
+            message: e.response?.data?.message || t('sites.show.errors.deleteEvent'),
         });
     } finally {
         deletingEventId.value = null;
@@ -3999,7 +3956,7 @@ async function loadDocuments() {
     } catch (e) {
         documentRows.value = [];
         documentsLoaded.value = true;
-        documentsError.value = e.response?.data?.message || 'Не удалось загрузить документы';
+        documentsError.value = e.response?.data?.message || t('sites.show.errors.loadDocuments');
         syncDocumentTab();
     } finally {
         documentsLoading.value = false;
@@ -4093,12 +4050,12 @@ async function onSubmitDocument() {
                 ...documentRows.value.filter((item) => item.id !== updated.id),
             ].sort((a, b) => b.id - a.id);
 
-            toast.show({ ok: true, message: 'Документ обновлён.' });
+            toast.show({ ok: true, message: t('sites.show.toast.documentUpdated') });
             resetDocumentForm();
             activeDocumentTab.value = documentRows.value.length ? 'saved' : 'new';
         } else {
             if (!payload.document) {
-                documentFormError.value = 'Прикрепите файл Markdown (.md).';
+                documentFormError.value = t('sites.show.errors.attachMarkdown');
 
                 return;
             }
@@ -4106,14 +4063,14 @@ async function onSubmitDocument() {
             const created = await createSiteDocument(site.value.id, payload);
             documentRows.value = [created, ...documentRows.value].sort((a, b) => b.id - a.id);
 
-            toast.show({ ok: true, message: 'Документ добавлен.' });
+            toast.show({ ok: true, message: t('sites.show.toast.documentAdded') });
             resetDocumentForm();
             activeDocumentTab.value = documentRows.value.length ? 'saved' : 'new';
         }
     } catch (e) {
         documentFormError.value = firstValidationError(e.response?.data?.errors)
             || e.response?.data?.message
-            || 'Не удалось сохранить документ';
+            || t('sites.show.errors.saveDocument');
     } finally {
         documentSaving.value = false;
     }
@@ -4132,7 +4089,7 @@ async function onDeleteDocument(row) {
         return;
     }
 
-    if (!window.confirm('Удалить этот документ?')) {
+    if (!window.confirm(t('sites.show.confirm.deleteDocument'))) {
         return;
     }
 
@@ -4149,11 +4106,11 @@ async function onDeleteDocument(row) {
             syncDocumentTab();
         }
 
-        toast.show({ ok: true, message: 'Документ удалён.' });
+        toast.show({ ok: true, message: t('sites.show.toast.documentDeleted') });
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось удалить документ',
+            message: e.response?.data?.message || t('sites.show.errors.deleteDocument'),
         });
     } finally {
         deletingDocumentId.value = null;
@@ -4262,7 +4219,7 @@ async function loadPropertyLists() {
         ga4Properties.value = properties;
         gscSites.value = sites;
     } catch (e) {
-        listsError.value = e.response?.data?.message || 'Не удалось загрузить списки Google';
+        listsError.value = e.response?.data?.message || t('sites.show.errors.loadGoogleLists');
     } finally {
         listsLoading.value = false;
     }
@@ -4279,7 +4236,7 @@ async function loadGithubRepositories() {
     try {
         githubRepositories.value = await listGithubRepositories({ per_page: 100 });
     } catch (e) {
-        githubReposError.value = e.response?.data?.message || 'Не удалось загрузить репозитории GitHub';
+        githubReposError.value = e.response?.data?.message || t('sites.show.errors.loadGithubRepos');
     } finally {
         githubReposLoading.value = false;
     }
@@ -4320,7 +4277,7 @@ async function loadGithubBranches() {
         }
     } catch (e) {
         githubBranches.value = [];
-        githubBranchesError.value = e.response?.data?.message || 'Не удалось загрузить ветки репозитория';
+        githubBranchesError.value = e.response?.data?.message || t('sites.show.errors.loadGithubBranches');
     } finally {
         githubBranchesLoading.value = false;
     }
@@ -4413,7 +4370,7 @@ async function reload() {
             loadEvents(),
         ]);
     } catch (e) {
-        error.value = e.response?.data?.message || 'Не удалось загрузить сайт';
+        error.value = e.response?.data?.message || t('sites.show.errors.loadSite');
     } finally {
         loading.value = false;
     }
@@ -4428,14 +4385,14 @@ async function onConnectGoogle() {
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось начать авторизацию Google',
+            message: e.response?.data?.message || t('sites.show.errors.startGoogleAuth'),
         });
         busy.value = false;
     }
 }
 
 async function onDisconnectGoogle() {
-    if (!window.confirm('Отключить аккаунт Google и удалить привязки у всех сайтов?')) {
+    if (!window.confirm(t('sites.show.confirm.disconnectGoogle'))) {
         return;
     }
 
@@ -4458,11 +4415,11 @@ async function onDisconnectGoogle() {
         gscModalOpen.value = false;
         pagespeedModalOpen.value = false;
         preferConnectedMetricsTab();
-        toast.show({ ok: true, message: 'Аккаунт Google отключён.' });
+        toast.show({ ok: true, message: t('sites.show.toast.googleDisconnected') });
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось отключить Google',
+            message: e.response?.data?.message || t('sites.show.errors.disconnectGoogle'),
         });
     } finally {
         busy.value = false;
@@ -4478,14 +4435,14 @@ async function onConnectGithub() {
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось начать авторизацию GitHub',
+            message: e.response?.data?.message || t('sites.show.errors.startGithubAuth'),
         });
         busy.value = false;
     }
 }
 
 async function onDisconnectGithub() {
-    if (!window.confirm('Отключить аккаунт GitHub и удалить привязки репозиториев у всех сайтов?')) {
+    if (!window.confirm(t('sites.show.confirm.disconnectGithub'))) {
         return;
     }
 
@@ -4501,11 +4458,11 @@ async function onDisconnectGithub() {
         githubRepositories.value = [];
         githubBranches.value = [];
         githubModalOpen.value = false;
-        toast.show({ ok: true, message: 'Аккаунт GitHub отключён.' });
+        toast.show({ ok: true, message: t('sites.show.toast.githubDisconnected') });
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось отключить GitHub',
+            message: e.response?.data?.message || t('sites.show.errors.disconnectGithub'),
         });
     } finally {
         busy.value = false;
@@ -4522,7 +4479,7 @@ async function onSaveGa() {
         });
         toast.show({
             ok: true,
-            message: 'Google Analytics привязан.',
+            message: t('sites.show.toast.gaLinked'),
         });
         gaModalOpen.value = false;
         await loadMetrics();
@@ -4530,7 +4487,7 @@ async function onSaveGa() {
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось сохранить привязку',
+            message: e.response?.data?.message || t('sites.show.errors.saveBinding'),
         });
     } finally {
         busy.value = false;
@@ -4547,7 +4504,7 @@ async function onSaveGsc() {
         });
         toast.show({
             ok: true,
-            message: 'Search Console привязан.',
+            message: t('sites.show.toast.gscLinked'),
         });
         gscModalOpen.value = false;
         await loadMetrics();
@@ -4555,7 +4512,7 @@ async function onSaveGsc() {
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось сохранить привязку',
+            message: e.response?.data?.message || t('sites.show.errors.saveBinding'),
         });
     } finally {
         busy.value = false;
@@ -4581,14 +4538,14 @@ async function onSaveGithubIntegration() {
         });
         toast.show({
             ok: true,
-            message: 'Репозиторий GitHub привязан к сайту.',
+            message: t('sites.show.toast.repoLinked'),
         });
         githubModalOpen.value = false;
         preferConnectedMetricsTab();
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось сохранить репозиторий',
+            message: e.response?.data?.message || t('sites.show.errors.saveRepository'),
         });
     } finally {
         busy.value = false;
@@ -4596,7 +4553,7 @@ async function onSaveGithubIntegration() {
 }
 
 async function onClearGithubIntegration() {
-    if (!window.confirm('Отвязать репозиторий от этого сайта?')) {
+    if (!window.confirm(t('sites.show.confirm.unlinkRepo'))) {
         return;
     }
 
@@ -4611,11 +4568,11 @@ async function onClearGithubIntegration() {
         githubBranches.value = [];
         githubModalOpen.value = false;
         preferConnectedMetricsTab();
-        toast.show({ ok: true, message: 'Репозиторий отвязан от сайта.' });
+        toast.show({ ok: true, message: t('sites.show.toast.repoUnlinked') });
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось отвязать репозиторий',
+            message: e.response?.data?.message || t('sites.show.errors.unlinkRepository'),
         });
     } finally {
         busy.value = false;
@@ -4640,14 +4597,14 @@ async function onSavePagespeedIntegration() {
             : '';
         toast.show({
             ok: true,
-            message: 'Chrome UX Report подключён к сайту.',
+            message: t('sites.show.toast.cruxConnected'),
         });
         pagespeedModalOpen.value = false;
         preferConnectedMetricsTab();
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось сохранить подключение',
+            message: e.response?.data?.message || t('sites.show.errors.saveConnection'),
         });
     } finally {
         busy.value = false;
@@ -4655,7 +4612,7 @@ async function onSavePagespeedIntegration() {
 }
 
 async function onDisconnectPagespeedIntegration() {
-    if (!window.confirm('Отключить Chrome UX Report от этого сайта?')) {
+    if (!window.confirm(t('sites.show.confirm.disconnectCrux'))) {
         return;
     }
 
@@ -4670,11 +4627,11 @@ async function onDisconnectPagespeedIntegration() {
         pagespeedCruxRows.value = [];
         pagespeedModalOpen.value = false;
         preferConnectedMetricsTab();
-        toast.show({ ok: true, message: 'Chrome UX Report отключён от сайта.' });
+        toast.show({ ok: true, message: t('sites.show.toast.cruxDisconnected') });
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось отключить Chrome UX Report',
+            message: e.response?.data?.message || t('sites.show.errors.disconnectCrux'),
         });
     } finally {
         busy.value = false;
@@ -4711,7 +4668,7 @@ async function onSyncPeriod() {
                 if (e.response?.data?.data) {
                     integration.value = e.response.data.data;
                 }
-                errors.push(e.response?.data?.message || 'Не удалось загрузить данные Google');
+                errors.push(e.response?.data?.message || t('sites.show.errors.loadGoogleData'));
             }
         }
 
@@ -4729,7 +4686,7 @@ async function onSyncPeriod() {
                 if (e.response?.data?.data) {
                     githubIntegration.value = e.response.data.data;
                 }
-                errors.push(e.response?.data?.message || 'Не удалось загрузить коммиты GitHub');
+                errors.push(e.response?.data?.message || t('sites.show.errors.loadCommits'));
             }
         }
 
@@ -4746,7 +4703,7 @@ async function onSyncPeriod() {
                 if (e.response?.data?.data) {
                     pagespeedIntegration.value = e.response.data.data;
                 }
-                errors.push(e.response?.data?.message || 'Не удалось загрузить Chrome UX Report');
+                errors.push(e.response?.data?.message || t('sites.show.errors.loadCruxData'));
             }
         }
 
@@ -4767,7 +4724,7 @@ async function onSyncPeriod() {
         } else {
             toast.show({
                 ok: true,
-                message: 'Данные за выбранный период загружены.',
+                message: t('sites.show.toast.periodImported'),
             });
         }
     } finally {
@@ -4777,18 +4734,18 @@ async function onSyncPeriod() {
 
 onMounted(async () => {
     if (route.query.google === 'connected') {
-        toast.show({ ok: true, message: 'Аккаунт Google подключён.' });
+        toast.show({ ok: true, message: t('sites.googleConnected') });
     } else if (route.query.google === 'error') {
         toast.show({
             ok: false,
-            message: route.query.message || 'Не удалось подключить Google.',
+            message: route.query.message || t('sites.googleConnectFailed'),
         });
     } else if (route.query.github === 'connected') {
-        toast.show({ ok: true, message: 'Аккаунт GitHub подключён.' });
+        toast.show({ ok: true, message: t('sites.githubConnected') });
     } else if (route.query.github === 'error') {
         toast.show({
             ok: false,
-            message: route.query.message || 'Не удалось подключить GitHub.',
+            message: route.query.message || t('sites.githubConnectFailed'),
         });
     }
 

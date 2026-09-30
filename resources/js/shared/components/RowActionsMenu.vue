@@ -6,7 +6,7 @@
             class="row-actions-menu__trigger"
             :aria-expanded="open ? 'true' : 'false'"
             aria-haspopup="menu"
-            aria-label="Действия"
+            :aria-label="t('common.actions')"
             :disabled="disabled"
             @click.stop="toggle"
         >
@@ -30,7 +30,10 @@
 
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useI18n } from '../i18n';
 import { FontAwesomeIcon } from '../icons';
+
+const { t } = useI18n();
 
 defineProps({
     disabled: {

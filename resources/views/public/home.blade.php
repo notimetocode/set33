@@ -1,7 +1,7 @@
 @extends('public.layouts.app')
 
-@section('title', config('app.name').' — AI-отчёты по SEO сайта')
-@section('meta_description', 'AI-отчёты по сайту на основе Google Analytics, Search Console, GitHub и других сервисов. Подключите источники — получайте понятные выводы по трафику, поиску и релизам.')
+@section('title', __('public.home.title', ['app' => config('app.name')]))
+@section('meta_description', __('public.home.meta_description'))
 
 @section('content')
     <div class="page-home" data-home-tabs>
@@ -10,22 +10,21 @@
 
             <div class="container page-home__hero-inner">
                 <h1 id="home-hero-heading" class="page-home__headline">
-                    ИИ-аналитика SEO сайта
+                    {{ __('public.home.hero_title') }}
                 </h1>
                 <p class="page-home__lead">
-                    ИИ-отчёты на основе Google Analytics, Search Console, Chrome UX Report, GitHub и&nbsp;др.
-                    Выводы по трафику, поиску, динамике и&nbsp;релизам без ручной сводки.
+                    {{ __('public.home.hero_lead') }}
                 </p>
                 <div class="page-home__cta">
                     <a href="#how-it-works" class="btn btn-secondary btn-lg">
-                        Как это работает
+                        {{ __('public.home.cta_how') }}
                     </a>
                     <a
                         href="{{ url('/app/register') }}"
                         class="btn btn-primary btn-lg"
                         data-public-auth-cta="register"
                         data-public-auth-keep
-                    >Попробовать</a>
+                    >{{ __('public.home.cta_try') }}</a>
                 </div>
             </div>
         </section>
@@ -41,7 +40,7 @@
                 <div
                     class="page-home__tabs"
                     role="tablist"
-                    aria-label="Возможности продукта"
+                    aria-label="{{ __('public.home.tabs_label') }}"
                     data-home-draw="frame"
                     data-home-draw-rail
                 >
@@ -54,8 +53,8 @@
                         aria-selected="true"
                         tabindex="0"
                     >
-                        <span class="page-home__tab-title">Автоматический сбор данных</span>
-                        <span class="page-home__tab-caption">GA, GSC, Chrome UX, GitHub</span>
+                        <span class="page-home__tab-title">{{ __('public.home.tab_sources_title') }}</span>
+                        <span class="page-home__tab-caption">{{ __('public.home.tab_sources_caption') }}</span>
                     </button>
                     <button
                         type="button"
@@ -66,8 +65,8 @@
                         aria-selected="false"
                         tabindex="-1"
                     >
-                        <span class="page-home__tab-title">Метрики и события</span>
-                        <span class="page-home__tab-caption">полный контекст периода</span>
+                        <span class="page-home__tab-title">{{ __('public.home.tab_metrics_title') }}</span>
+                        <span class="page-home__tab-caption">{{ __('public.home.tab_metrics_caption') }}</span>
                     </button>
                     <button
                         type="button"
@@ -78,8 +77,8 @@
                         aria-selected="false"
                         tabindex="-1"
                     >
-                        <span class="page-home__tab-title">AI-отчёты</span>
-                        <span class="page-home__tab-caption">выводы, а не сырые цифры</span>
+                        <span class="page-home__tab-title">{{ __('public.home.tab_reports_title') }}</span>
+                        <span class="page-home__tab-caption">{{ __('public.home.tab_reports_caption') }}</span>
                     </button>
                     <button
                         type="button"
@@ -90,8 +89,8 @@
                         aria-selected="false"
                         tabindex="-1"
                     >
-                        <span class="page-home__tab-title">Гибкая настройка</span>
-                        <span class="page-home__tab-caption">под сайт и задачу</span>
+                        <span class="page-home__tab-title">{{ __('public.home.tab_sites_title') }}</span>
+                        <span class="page-home__tab-caption">{{ __('public.home.tab_sites_caption') }}</span>
                     </button>
                 </div>
             </div>
@@ -100,11 +99,10 @@
                 <div class="page-home__bento-panel" data-home-draw="frame">
                     <header class="page-home__bento-intro">
                         <h2 id="how-heading" class="page-home__bento-title">
-                            Готовая система, а не шаблон
+                            {{ __('public.home.bento_title') }}
                         </h2>
                         <p class="page-home__bento-lead">
-                            Подключаем сервисы, события и документы сайта —
-                            в отчёт попадает то, что реально влияет на SEO.
+                            {{ __('public.home.bento_lead') }}
                         </p>
                     </header>
 
@@ -122,12 +120,10 @@
                                 <h3 class="page-home__bento-cell-title">Google Analytics</h3>
                             </div>
                             <p class="page-home__bento-source-data">
-                                Сессии, пользователи, просмотры и органический трафик
-                                с вовлечённостью по дням.
+                                {{ __('public.home.ga_data') }}
                             </p>
                             <p class="page-home__bento-cell-text">
-                                Видно, как меняется поведение аудитории после SEO-работ —
-                                не только визиты, но и качество трафика.
+                                {{ __('public.home.ga_text') }}
                             </p>
                         </article>
 
@@ -144,12 +140,10 @@
                                 <h3 class="page-home__bento-cell-title">Search Console</h3>
                             </div>
                             <p class="page-home__bento-source-data">
-                                Клики, показы, CTR, позиции; топ-запросы и страницы;
-                                устройства, страны, sitemaps и URL Inspection.
+                                {{ __('public.home.gsc_data') }}
                             </p>
                             <p class="page-home__bento-cell-text">
-                                Прямые данные поиска Google: видимость, индексация
-                                и запросы, по которым вас находят.
+                                {{ __('public.home.gsc_text') }}
                             </p>
                         </article>
 
@@ -166,12 +160,10 @@
                                 <h3 class="page-home__bento-cell-title">GitHub</h3>
                             </div>
                             <p class="page-home__bento-source-data">
-                                Коммиты за период: сообщения, авторы и даты
-                                из привязанного репозитория.
+                                {{ __('public.home.github_data') }}
                             </p>
                             <p class="page-home__bento-cell-text">
-                                Связывает релизы и правки кода со скачками метрик —
-                                что в разработке могло повлиять на SEO.
+                                {{ __('public.home.github_text') }}
                             </p>
                         </article>
 
@@ -188,37 +180,33 @@
                                 <h3 class="page-home__bento-cell-title">Chrome UX Report</h3>
                             </div>
                             <p class="page-home__bento-source-data">
-                                Core Web Vitals (LCP, INP, CLS), оценки Lighthouse
-                                и полевые данные Chrome UX Report.
+                                {{ __('public.home.crux_data') }}
                             </p>
                             <p class="page-home__bento-cell-text">
-                                Скорость и стабильность — фактор ранжирования и UX;
-                                без них SEO-отчёт неполный.
+                                {{ __('public.home.crux_text') }}
                             </p>
                         </article>
 
                         <article class="page-home__bento-cell page-home__bento-cell--full" role="listitem">
                             <div class="page-home__bento-wide-copy">
-                                <h3 class="page-home__bento-cell-title">События и документы</h3>
+                                <h3 class="page-home__bento-cell-title">{{ __('public.home.events_title') }}</h3>
                                 <p class="page-home__bento-source-data">
-                                    Ручные заметки за период и Markdown-файлы сайта:
-                                    публикации, акции, инциденты, брендбук, ТЗ, семантика.
+                                    {{ __('public.home.events_data') }}
                                 </p>
                                 <p class="page-home__bento-cell-text">
-                                    Внешние факторы объясняют скачки метрик, а документы
-                                    дают AI рамку продукта — рекомендации не из шаблона.
+                                    {{ __('public.home.events_text') }}
                                 </p>
                             </div>
                             <div class="page-home__bento-wide-illus" aria-hidden="true">
                                 <div class="page-home__bento-stack">
                                     <div class="page-home__bento-mini page-home__bento-mini--event">
-                                        <span class="page-home__bento-mini-label">Событие</span>
-                                        <span class="page-home__bento-mini-title">Запуск раздела блога</span>
-                                        <span class="page-home__bento-mini-meta">12 сен · ссылка</span>
+                                        <span class="page-home__bento-mini-label">{{ __('public.home.mini_event_label') }}</span>
+                                        <span class="page-home__bento-mini-title">{{ __('public.home.mini_event_title') }}</span>
+                                        <span class="page-home__bento-mini-meta">{{ __('public.home.mini_event_meta') }}</span>
                                     </div>
                                     <div class="page-home__bento-mini page-home__bento-mini--doc">
-                                        <span class="page-home__bento-mini-label">Документ</span>
-                                        <span class="page-home__bento-mini-title">Семантика · brand.md</span>
+                                        <span class="page-home__bento-mini-label">{{ __('public.home.mini_doc_label') }}</span>
+                                        <span class="page-home__bento-mini-title">{{ __('public.home.mini_doc_title') }}</span>
                                         <span class="page-home__bento-mini-lines">
                                             <span></span><span></span><span></span>
                                         </span>
@@ -242,22 +230,14 @@
                 <div class="page-home__outcome-panel" data-home-draw="frame">
                     <div class="page-home__outcome-copy">
                         <h2 id="outcome-heading" class="page-home__outcome-title">
-                            Что получаете на выходе
+                            {{ __('public.home.outcome_title') }}
                         </h2>
                         <p class="page-home__outcome-lead">
-                            Не дашборд с десятками графиков, а готовый AI-отчёт:
-                            источники, метрики, события и документы сайта собираются
-                            в одну картину — с выводами, что изменилось и что делать дальше.
+                            {{ __('public.home.outcome_lead') }}
                         </p>
                         <ul class="page-home__outcome-points">
-                            <li>
-                                Понятные выводы по трафику, поиску и релизам:
-                                что выросло, что просело и какие факторы на это влияют.
-                            </li>
-                            <li>
-                                Рекомендации под ваш продукт — AI опирается на события
-                                и документы сайта, а не на общие шаблоны.
-                            </li>
+                            <li>{{ __('public.home.outcome_point_1') }}</li>
+                            <li>{{ __('public.home.outcome_point_2') }}</li>
                         </ul>
                     </div>
 
@@ -363,77 +343,77 @@
             <div class="container page-home__pricing-inner">
                 <div class="page-home__pricing-panel" data-home-draw="frame">
                     <header class="page-home__pricing-intro">
-                        <h2 id="pricing-heading" class="page-home__pricing-title">Цены</h2>
+                        <h2 id="pricing-heading" class="page-home__pricing-title">{{ __('public.home.pricing_title') }}</h2>
                         <p class="page-home__pricing-lead">
-                            Выберите объём отчётов — все тарифы включают полный набор инструментов
+                            {{ __('public.home.pricing_lead') }}
                         </p>
                     </header>
 
                     <div class="page-home__plans">
                         <article class="page-home__plan">
                             <header class="page-home__plan-head">
-                                <h3 class="page-home__plan-name">Стандарт</h3>
+                                <h3 class="page-home__plan-name">{{ __('public.home.plan_standard') }}</h3>
                                 <p class="page-home__plan-price">
                                     <span class="page-home__plan-amount">$10</span>
                                 </p>
-                                <p class="page-home__plan-desc">Пакет из 10 AI-отчётов</p>
+                                <p class="page-home__plan-desc">{{ __('public.home.plan_standard_desc') }}</p>
                             </header>
                             <ul class="page-home__plan-features">
-                                <li>10 отчётов</li>
-                                <li>Google Analytics</li>
-                                <li>Search Console</li>
-                                <li>GitHub</li>
-                                <li>Chrome UX Report</li>
-                                <li>События</li>
-                                <li>Документы сайта</li>
+                                <li>{{ __('public.home.feature_reports_10') }}</li>
+                                <li>{{ __('public.home.feature_ga') }}</li>
+                                <li>{{ __('public.home.feature_gsc') }}</li>
+                                <li>{{ __('public.home.feature_github') }}</li>
+                                <li>{{ __('public.home.feature_crux') }}</li>
+                                <li>{{ __('public.home.feature_events') }}</li>
+                                <li>{{ __('public.home.feature_documents') }}</li>
                             </ul>
-                            <a href="{{ url('/app/login') }}" class="btn btn-secondary w-100">Начать</a>
+                            <a href="{{ url('/app/login') }}" class="btn btn-secondary w-100">{{ __('public.home.plan_start') }}</a>
                         </article>
 
                         <article class="page-home__plan page-home__plan--featured">
-                            <p class="page-home__plan-badge">Рекомендуем</p>
+                            <p class="page-home__plan-badge">{{ __('public.home.plan_badge') }}</p>
                             <header class="page-home__plan-head">
-                                <h3 class="page-home__plan-name">Про</h3>
+                                <h3 class="page-home__plan-name">{{ __('public.home.plan_pro') }}</h3>
                                 <p class="page-home__plan-price">
                                     <span class="page-home__plan-amount">$80</span>
-                                    <span class="page-home__plan-period">/ мес</span>
+                                    <span class="page-home__plan-period">{{ __('public.home.plan_per_month') }}</span>
                                 </p>
-                                <p class="page-home__plan-desc">Ежемесячный объём без расписания и выбор AI-модели</p>
+                                <p class="page-home__plan-desc">{{ __('public.home.plan_pro_desc') }}</p>
                             </header>
                             <ul class="page-home__plan-features">
-                                <li>100 отчётов в месяц</li>
-                                <li>Выбор AI-модели</li>
-                                <li>Google Analytics</li>
-                                <li>Search Console</li>
-                                <li>GitHub</li>
-                                <li>Chrome UX Report</li>
-                                <li>События</li>
-                                <li>Документы сайта</li>
+                                <li>{{ __('public.home.feature_reports_100') }}</li>
+                                <li>{{ __('public.home.feature_ai_model') }}</li>
+                                <li>{{ __('public.home.feature_ga') }}</li>
+                                <li>{{ __('public.home.feature_gsc') }}</li>
+                                <li>{{ __('public.home.feature_github') }}</li>
+                                <li>{{ __('public.home.feature_crux') }}</li>
+                                <li>{{ __('public.home.feature_events') }}</li>
+                                <li>{{ __('public.home.feature_documents') }}</li>
                             </ul>
-                            <a href="{{ url('/app/login') }}" class="btn btn-primary w-100">Начать</a>
+                            <a href="{{ url('/app/login') }}" class="btn btn-primary w-100">{{ __('public.home.plan_start') }}</a>
                         </article>
 
                         <article class="page-home__plan">
                             <header class="page-home__plan-head">
-                                <h3 class="page-home__plan-name">Агентство</h3>
+                                <h3 class="page-home__plan-name">{{ __('public.home.plan_agency') }}</h3>
                                 <p class="page-home__plan-price">
                                     <span class="page-home__plan-amount">$600</span>
-                                    <span class="page-home__plan-period">/ мес</span>
+                                    <span class="page-home__plan-period">{{ __('public.home.plan_per_month') }}</span>
                                 </p>
-                                <p class="page-home__plan-desc">Максимальный объём, свои AI-модели для команды</p>
+                                <p class="page-home__plan-desc">{{ __('public.home.plan_agency_desc') }}</p>
                             </header>
                             <ul class="page-home__plan-features">
-                                <li>1000 отчётов в месяц</li>
-                                <li>Выбор AI-модели</li>
-                                <li>Добавление своих AI-моделей</li>
-                                <li>Google Analytics</li>
-                                <li>Search Console</li>
-                                <li>GitHub</li>
-                                <li>Chrome UX Report</li>
-                                <li>События</li>
-                                <li>Документы сайта</li>
+                                <li>{{ __('public.home.feature_reports_1000') }}</li>
+                                <li>{{ __('public.home.feature_ai_model') }}</li>
+                                <li>{{ __('public.home.feature_custom_models') }}</li>
+                                <li>{{ __('public.home.feature_ga') }}</li>
+                                <li>{{ __('public.home.feature_gsc') }}</li>
+                                <li>{{ __('public.home.feature_github') }}</li>
+                                <li>{{ __('public.home.feature_crux') }}</li>
+                                <li>{{ __('public.home.feature_events') }}</li>
+                                <li>{{ __('public.home.feature_documents') }}</li>
                             </ul>
-                            <a href="{{ url('/app/login') }}" class="btn btn-secondary w-100">Начать</a>
+                            <a href="{{ url('/app/login') }}" class="btn btn-secondary w-100">{{ __('public.home.plan_start') }}</a>
                         </article>
                     </div>
                 </div>

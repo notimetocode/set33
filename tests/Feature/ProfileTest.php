@@ -49,6 +49,7 @@ class ProfileTest extends TestCase
                     'phone',
                     'telegram',
                     'viber',
+                    'locale',
                 ],
             ]);
     }
@@ -65,12 +66,14 @@ class ProfileTest extends TestCase
             'phone' => '+375291111111',
             'telegram' => '@petr',
             'viber' => '+375291111111',
+            'locale' => 'ru',
         ])
             ->assertOk()
             ->assertJsonPath('data.last_name', 'Петров')
             ->assertJsonPath('data.first_name', 'Пётр')
             ->assertJsonPath('data.email', 'petr@example.com')
-            ->assertJsonPath('data.phone', '+375291111111');
+            ->assertJsonPath('data.phone', '+375291111111')
+            ->assertJsonPath('data.locale', 'ru');
 
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
@@ -78,6 +81,7 @@ class ProfileTest extends TestCase
             'first_name' => 'Пётр',
             'email' => 'petr@example.com',
             'name' => 'Петров Пётр Петрович',
+            'locale' => 'ru',
         ]);
     }
 
@@ -88,6 +92,7 @@ class ProfileTest extends TestCase
 
         $this->putJson('/api/app/profile', [
             'email' => 'taken@example.com',
+            'locale' => 'en',
         ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email']);
@@ -97,6 +102,7 @@ class ProfileTest extends TestCase
     {
         $this->putJson('/api/app/profile', [
             'email' => 'guest@example.com',
+            'locale' => 'en',
         ])->assertUnauthorized();
     }
 }
