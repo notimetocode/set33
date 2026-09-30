@@ -1,5 +1,6 @@
 import * as bootstrap from 'bootstrap';
 import { getToken } from '../shared/api/http';
+import { setStoredLocale } from '../shared/i18n/storage';
 import { initHomeLineDraw } from './home-line-draw';
 import { initHomeTabs } from './home-tabs';
 import { initLangSelect } from './lang-select';
@@ -114,6 +115,8 @@ function initPublicNav() {
 }
 
 function initPublicUi() {
+    setStoredLocale(document.documentElement.lang);
+
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
         bootstrap.Tooltip.getOrCreateInstance(el);
     });

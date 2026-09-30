@@ -1,6 +1,9 @@
 import { ref } from 'vue';
 import en from './locales/en.json';
 import ru from './locales/ru.json';
+import { setStoredLocale } from './storage';
+
+export { ensureStoredLocale, getStoredLocale, setStoredLocale } from './storage';
 
 export const DEFAULT_LOCALE = 'ru';
 
@@ -73,6 +76,7 @@ export function t(key, params) {
  */
 export function setLocale(code) {
     locale.value = normalizeLocale(code);
+    setStoredLocale(locale.value);
 
     if (typeof document !== 'undefined') {
         document.documentElement.lang = locale.value;

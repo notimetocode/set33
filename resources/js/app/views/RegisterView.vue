@@ -82,10 +82,10 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { register } from '../api/auth';
-import { useI18n } from '../../shared/i18n';
+import { ensureStoredLocale, useI18n } from '../../shared/i18n';
 
 const router = useRouter();
-const { t, setLocale } = useI18n();
+const { t, locale } = useI18n();
 const name = ref('');
 const email = ref('');
 const password = ref('');
@@ -98,10 +98,16 @@ async function submit() {
     error.value = '';
 
     try {
-        const { user } = await register(name.value, email.value, password.value, passwordConfirmation.value);
+        const { user } = await register(
+            name.value,
+            email.value,
+            password.value,
+            passwordConfirmation.value,
+            locale.value,
+        );
 
         if (user?.locale) {
-            setLocale(user.locale);
+            ensureStoredLocale(user.locale);
         }
 
         await router.push({ name: 'sites.index' });

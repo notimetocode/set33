@@ -9,12 +9,13 @@ export async function login(email, password) {
     return data;
 }
 
-export async function register(name, email, password, passwordConfirmation) {
+export async function register(name, email, password, passwordConfirmation, locale) {
     const { data } = await http.post('/auth/register', {
         name,
         email,
         password,
         password_confirmation: passwordConfirmation,
+        locale,
     });
     storeToken('/api/app', data.token);
 
