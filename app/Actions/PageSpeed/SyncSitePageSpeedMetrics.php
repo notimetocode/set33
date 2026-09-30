@@ -33,7 +33,7 @@ class SyncSitePageSpeedMetrics
         $selected = SiteSyncMetrics::resolvePageSpeed($metrics);
 
         if ($selected === []) {
-            throw new RuntimeException('Выберите хотя бы одну метрику PageSpeed / Chrome UX Report.');
+            throw new RuntimeException('Выберите хотя бы одну метрику Chrome UX Report.');
         }
 
         $siteUrl = (string) ($integration->site?->url ?? '');

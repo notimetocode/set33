@@ -166,7 +166,7 @@ class PageSpeedIntegrationTest extends TestCase
             'metrics' => ['psi_lab'],
         ])
             ->assertStatus(422)
-            ->assertJsonPath('message', 'Сначала подключите PageSpeed Insights к сайту.');
+            ->assertJsonPath('message', 'Сначала подключите Chrome UX Report к сайту.');
     }
 
     public function test_quota_error_without_api_key_is_translated(): void

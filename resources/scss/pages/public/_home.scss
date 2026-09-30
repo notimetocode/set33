@@ -383,11 +383,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
-    padding: 1.5rem 1.4rem 1.55rem;
 
     @media (min-width: 768px) {
       flex: 0 1 22rem;
-      padding: 0;
     }
   }
 
@@ -736,8 +734,8 @@
       height: 6.2rem;
 
       @media (max-width: 767.98px) {
-        width: 4.1rem;
-        height: 4.1rem;
+        width: 5rem;
+        height: 5rem;
       }
     }
 
@@ -748,8 +746,7 @@
       animation-direction: reverse;
 
       @media (max-width: 767.98px) {
-        width: 5.75rem;
-        height: 5.75rem;
+        display: none;
       }
     }
   }

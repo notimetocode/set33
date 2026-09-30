@@ -60,11 +60,11 @@
                     @configure="openGithubModal"
                 />
                 <SiteIntegrationCard
-                    title="PageSpeed / Chrome UX Report"
+                    title="Chrome UX Report"
                     logo="/images/integrations/pagespeed.svg"
                     :connected="pagespeedConnected"
                     :detail="pagespeedDetail"
-                    empty-detail="PageSpeed Insights не подключён"
+                    empty-detail="Chrome UX Report не подключён"
                     :disabled="busy"
                     @configure="openPagespeedModal"
                 />
@@ -698,9 +698,9 @@
                                     · URL: {{ pagespeedPageUrlsLabel }}
                                 </template>
                             </p>
-                            <AppLoader v-if="metricsLoading" block label="Загрузка PageSpeed / Chrome UX Report…" />
+                            <AppLoader v-if="metricsLoading" block label="Загрузка Chrome UX Report…" />
                             <div v-else-if="!pagespeedConnected" class="text-muted">
-                                PageSpeed Insights не подключён
+                                Chrome UX Report не подключён
                             </div>
                             <template v-else>
                                 <h3 class="h6 mb-2">Lab (Lighthouse)</h3>
@@ -1636,7 +1636,7 @@
                                 :aria-labelledby="showAiReportTabs ? 'ai-report-tab-new' : undefined"
                             >
                                 <p class="text-muted small mb-3">
-                                    В отчёт попадут данные Google Analytics, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub, PageSpeed / Chrome UX Report, события и документы сайта. Срезы GSC появляются после загрузки метрик за тот же период
+                                    В отчёт попадут данные Google Analytics, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub, Chrome UX Report, события и документы сайта. Срезы GSC появляются после загрузки метрик за тот же период
                                     (тот же, что на вкладках «Данные сервисов» и «События»).
                                 </p>
 
@@ -2076,7 +2076,7 @@
 
         <AppModal
             v-model:open="pagespeedModalOpen"
-            title="PageSpeed Insights / Chrome UX Report"
+            title="Chrome UX Report"
             size="md"
             align="start"
             :show-confirm="false"
@@ -2110,7 +2110,7 @@
                     <p class="text-muted mb-3">
                         {{ connection?.needs_reauth
                             ? 'Нужна повторная авторизация Google.'
-                            : 'Подключите Google, чтобы включить PageSpeed Insights / Chrome UX Report.' }}
+                            : 'Подключите Google, чтобы включить Chrome UX Report.' }}
                     </p>
                     <button
                         type="button"
@@ -2507,7 +2507,7 @@ const metricsTabs = [
     { id: 'ga4', label: 'Google Analytics' },
     { id: 'gsc', label: 'Search Console' },
     { id: 'github', label: 'GitHub' },
-    { id: 'pagespeed', label: 'PageSpeed / Chrome UX Report' },
+    { id: 'pagespeed', label: 'Chrome UX Report' },
 ];
 
 const pagespeedStrategyOptions = [
@@ -2716,7 +2716,7 @@ const syncMetricGroups = [
     },
     {
         id: 'pagespeed',
-        label: 'PageSpeed / Chrome UX Report',
+        label: 'Chrome UX Report',
         available: () => pagespeedConnected.value,
         metrics: [
             { key: 'psi_lab', label: 'Lab (Lighthouse)', defaultSelected: true },
@@ -2768,7 +2768,7 @@ const syncStatusItems = computed(() => {
     if (pagespeedConnected.value) {
         items.push({
             key: 'pagespeed',
-            label: 'PageSpeed / Chrome UX Report',
+            label: 'Chrome UX Report',
             at: pagespeedIntegration.value?.last_synced_at || null,
             error: pagespeedIntegration.value?.last_error || null,
         });
@@ -4640,7 +4640,7 @@ async function onSavePagespeedIntegration() {
             : '';
         toast.show({
             ok: true,
-            message: 'PageSpeed Insights подключён к сайту.',
+            message: 'Chrome UX Report подключён к сайту.',
         });
         pagespeedModalOpen.value = false;
         preferConnectedMetricsTab();
@@ -4655,7 +4655,7 @@ async function onSavePagespeedIntegration() {
 }
 
 async function onDisconnectPagespeedIntegration() {
-    if (!window.confirm('Отключить PageSpeed Insights от этого сайта?')) {
+    if (!window.confirm('Отключить Chrome UX Report от этого сайта?')) {
         return;
     }
 
@@ -4670,11 +4670,11 @@ async function onDisconnectPagespeedIntegration() {
         pagespeedCruxRows.value = [];
         pagespeedModalOpen.value = false;
         preferConnectedMetricsTab();
-        toast.show({ ok: true, message: 'PageSpeed Insights отключён от сайта.' });
+        toast.show({ ok: true, message: 'Chrome UX Report отключён от сайта.' });
     } catch (e) {
         toast.show({
             ok: false,
-            message: e.response?.data?.message || 'Не удалось отключить PageSpeed',
+            message: e.response?.data?.message || 'Не удалось отключить Chrome UX Report',
         });
     } finally {
         busy.value = false;
@@ -4746,7 +4746,7 @@ async function onSyncPeriod() {
                 if (e.response?.data?.data) {
                     pagespeedIntegration.value = e.response.data.data;
                 }
-                errors.push(e.response?.data?.message || 'Не удалось загрузить PageSpeed / Chrome UX Report');
+                errors.push(e.response?.data?.message || 'Не удалось загрузить Chrome UX Report');
             }
         }
 

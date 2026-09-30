@@ -12,7 +12,7 @@ const INTEGRATIONS = {
         logo: '/images/integrations/github.svg',
     },
     pagespeed: {
-        label: 'PageSpeed Insights',
+        label: 'Chrome UX Report',
         logo: '/images/integrations/pagespeed.svg',
     },
 };

@@ -13,7 +13,7 @@
                     ИИ-аналитика SEO сайта
                 </h1>
                 <p class="page-home__lead">
-                    ИИ-отчёты на основе Google Analytics, Search Console, PageSpeed, GitHub и&nbsp;др.
+                    ИИ-отчёты на основе Google Analytics, Search Console, Chrome UX Report, GitHub и&nbsp;др.
                     Выводы по трафику, поиску, динамике и&nbsp;релизам без ручной сводки.
                 </p>
                 <div class="page-home__cta">
@@ -53,7 +53,7 @@
                         tabindex="0"
                     >
                         <span class="page-home__tab-title">Автоматический сбор данных</span>
-                        <span class="page-home__tab-caption">GA, GSC, PageSpeed, GitHub</span>
+                        <span class="page-home__tab-caption">GA, GSC, Chrome UX, GitHub</span>
                     </button>
                     <button
                         type="button"
@@ -183,7 +183,7 @@
                                     height="24"
                                     decoding="async"
                                 >
-                                <h3 class="page-home__bento-cell-title">PageSpeed / CrUX</h3>
+                                <h3 class="page-home__bento-cell-title">Chrome UX Report</h3>
                             </div>
                             <p class="page-home__bento-source-data">
                                 Core Web Vitals (LCP, INP, CLS), оценки Lighthouse
@@ -363,7 +363,7 @@
                     <header class="page-home__pricing-intro">
                         <h2 id="pricing-heading" class="page-home__pricing-title">Цены</h2>
                         <p class="page-home__pricing-lead">
-                            Выберите объём отчётов под задачу — от разового анализа до агентского потока
+                            Выберите объём отчётов — все тарифы включают полный набор инструментов
                         </p>
                     </header>
 
@@ -374,12 +374,16 @@
                                 <p class="page-home__plan-price">
                                     <span class="page-home__plan-amount">$10</span>
                                 </p>
-                                <p class="page-home__plan-desc">Разовый отчёт по одному сайту</p>
+                                <p class="page-home__plan-desc">Пакет из 10 AI-отчётов</p>
                             </header>
                             <ul class="page-home__plan-features">
-                                <li>1 AI-отчёт</li>
-                                <li>1 сайт</li>
-                                <li>Analytics, Search Console и GitHub</li>
+                                <li>10 отчётов</li>
+                                <li>Google Analytics</li>
+                                <li>Search Console</li>
+                                <li>GitHub</li>
+                                <li>Chrome UX Report</li>
+                                <li>События</li>
+                                <li>Документы сайта</li>
                             </ul>
                             <a href="{{ url('/app/login') }}" class="btn btn-secondary w-100">Начать</a>
                         </article>
@@ -392,13 +396,17 @@
                                     <span class="page-home__plan-amount">$80</span>
                                     <span class="page-home__plan-period">/ мес</span>
                                 </p>
-                                <p class="page-home__plan-desc">Регулярные отчёты для нескольких проектов</p>
+                                <p class="page-home__plan-desc">Ежемесячный объём без расписания и выбор AI-модели</p>
                             </header>
                             <ul class="page-home__plan-features">
-                                <li>10 отчётов в месяц по расписанию</li>
-                                <li>Несколько сайтов</li>
-                                <li>Analytics, Search Console и GitHub</li>
-                                <li>События и история отчётов</li>
+                                <li>100 отчётов в месяц</li>
+                                <li>Выбор AI-модели</li>
+                                <li>Google Analytics</li>
+                                <li>Search Console</li>
+                                <li>GitHub</li>
+                                <li>Chrome UX Report</li>
+                                <li>События</li>
+                                <li>Документы сайта</li>
                             </ul>
                             <a href="{{ url('/app/login') }}" class="btn btn-primary w-100">Начать</a>
                         </article>
@@ -410,14 +418,18 @@
                                     <span class="page-home__plan-amount">$600</span>
                                     <span class="page-home__plan-period">/ мес</span>
                                 </p>
-                                <p class="page-home__plan-desc">Масштаб для команд и клиентских портфелей</p>
+                                <p class="page-home__plan-desc">Максимальный объём, свои AI-модели для команды</p>
                             </header>
                             <ul class="page-home__plan-features">
-                                <li>100 отчётов в месяц по расписанию</li>
-                                <li>Несколько сайтов</li>
+                                <li>1000 отчётов в месяц</li>
                                 <li>Выбор AI-модели</li>
-                                <li>Интеграция с проектом по API</li>
-                                <li>Analytics, Search Console и GitHub</li>
+                                <li>Добавление своих AI-моделей</li>
+                                <li>Google Analytics</li>
+                                <li>Search Console</li>
+                                <li>GitHub</li>
+                                <li>Chrome UX Report</li>
+                                <li>События</li>
+                                <li>Документы сайта</li>
                             </ul>
                             <a href="{{ url('/app/login') }}" class="btn btn-secondary w-100">Начать</a>
                         </article>

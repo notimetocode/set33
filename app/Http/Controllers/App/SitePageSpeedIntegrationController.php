@@ -68,7 +68,7 @@ class SitePageSpeedIntegrationController extends Controller
 
         if ($integration === null || ! $integration->isConfigured()) {
             return response()->json([
-                'message' => 'Сначала подключите PageSpeed Insights к сайту.',
+                'message' => 'Сначала подключите Chrome UX Report к сайту.',
             ], 422);
         }
 
@@ -76,7 +76,7 @@ class SitePageSpeedIntegrationController extends Controller
             $integration = $sync->handle($integration, $request->metrics());
         } catch (Throwable $e) {
             return response()->json([
-                'message' => $e->getMessage() ?: 'Не удалось загрузить данные PageSpeed / Chrome UX Report.',
+                'message' => $e->getMessage() ?: 'Не удалось загрузить данные Chrome UX Report.',
                 'data' => new SitePageSpeedIntegrationResource($integration->refresh()->load('googleConnection')),
             ], 422);
         }

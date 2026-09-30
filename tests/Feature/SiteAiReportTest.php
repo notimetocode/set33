@@ -451,7 +451,7 @@ class SiteAiReportTest extends TestCase
                 && str_contains($prompt, 'is_sitemaps_index')
                 && str_contains($prompt, 'URL Inspection')
                 && str_contains($prompt, 'robots_txt_state')
-                && str_contains($prompt, 'PageSpeed Insights / Chrome UX Report')
+                && str_contains($prompt, 'Chrome UX Report')
                 && str_contains($prompt, '"performance_score":91')
                 && str_contains($prompt, '"lcp_p75_ms":2400')
                 && str_contains($prompt, 'Improve SEO meta')

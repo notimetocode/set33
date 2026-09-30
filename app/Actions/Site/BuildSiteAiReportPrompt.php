@@ -239,10 +239,10 @@ PROMPT;
         $crux = $pageSpeed['crux'] ?? [];
 
         if ($lab === [] && $crux === []) {
-            return "## PageSpeed Insights / Chrome UX Report\nДанные отсутствуют.";
+            return "## Chrome UX Report\nДанные отсутствуют.";
         }
 
-        $parts = ['## PageSpeed Insights / Chrome UX Report'];
+        $parts = ['## Chrome UX Report'];
 
         if ($lab !== []) {
             $parts[] = "### Lab (Lighthouse)\n"
