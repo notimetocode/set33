@@ -54,6 +54,8 @@ class SiteAiReportController extends Controller
             $aiService,
             $validated['from'],
             $validated['to'],
+            (bool) ($validated['use_system_prompt'] ?? true),
+            $validated['prompt'] ?? null,
         );
 
         if (! $result['ok'] || ! filled($result['reply'])) {
@@ -74,6 +76,8 @@ class SiteAiReportController extends Controller
             'usage' => $result['usage'],
             'period' => $result['period'],
             'data_counts' => $result['data_counts'],
+            'use_system_prompt' => $result['use_system_prompt'],
+            'prompt' => $result['prompt'],
         ]);
 
         return response()->json([

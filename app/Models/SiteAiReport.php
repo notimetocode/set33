@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AiReportVisibility;
+use App\Support\Localization;
 use Database\Factories\SiteAiReportFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,10 +25,13 @@ class SiteAiReport extends Model
         'model',
         'period_from',
         'period_to',
+        'use_system_prompt',
+        'prompt',
         'reply',
         'charts',
         'usage',
         'data_counts',
+        'locale',
         'visibility',
         'share_token',
         'share_password',
@@ -45,6 +49,7 @@ class SiteAiReport extends Model
      */
     protected $attributes = [
         'visibility' => 'private',
+        'use_system_prompt' => true,
     ];
 
     /**
@@ -55,6 +60,7 @@ class SiteAiReport extends Model
         return [
             'period_from' => 'date',
             'period_to' => 'date',
+            'use_system_prompt' => 'boolean',
             'charts' => 'array',
             'usage' => 'array',
             'data_counts' => 'array',
@@ -93,7 +99,28 @@ class SiteAiReport extends Model
             return null;
         }
 
-        return route('public.ai-reports.show', ['token' => $this->share_token]);
+        return localized_route(
+            'public.ai-reports.show',
+            ['token' => $this->share_token],
+            $this->shareLocale(),
+        );
+    }
+
+    public function shareLocale(): string
+    {
+        $locale = is_string($this->locale) ? $this->locale : null;
+
+        if ($locale !== null && Localization::isSupported($locale)) {
+            return $locale;
+        }
+
+        $appLocale = app()->getLocale();
+
+        if (Localization::isSupported($appLocale)) {
+            return $appLocale;
+        }
+
+        return Localization::defaultLocale();
     }
 
     public function hasSharePassword(): bool

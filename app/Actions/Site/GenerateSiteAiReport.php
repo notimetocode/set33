@@ -51,12 +51,21 @@ class GenerateSiteAiReport
      *         pagespeed_crux: int,
      *         github_commits: int,
      *         events: int,
-     *         documents: int
-     *     }
+     *         documents: int,
+     *         website: int
+     *     },
+     *     use_system_prompt: bool,
+     *     prompt: string|null
      * }
      */
-    public function handle(Site $site, AiService $aiService, string $from, string $to): array
-    {
+    public function handle(
+        Site $site,
+        AiService $aiService,
+        string $from,
+        string $to,
+        bool $useSystemPrompt = true,
+        ?string $customPrompt = null,
+    ): array {
         $analytics = $this->loadAnalytics($site, $from, $to);
         $searchConsole = $this->loadSearchConsole($site, $from, $to);
         $searchConsoleDimensions = $this->loadSearchConsoleDimensions($site, $from, $to);
@@ -66,6 +75,7 @@ class GenerateSiteAiReport
         $documents = $this->loadDocuments($site);
 
         $dataCounts = [
+            'website' => $this->hasWebsiteData($site) ? 1 : 0,
             'analytics' => count($analytics),
             'search_console' => count($searchConsole),
             'search_console_queries' => count($searchConsoleDimensions['queries']),
@@ -81,6 +91,8 @@ class GenerateSiteAiReport
             'events' => count($events),
             'documents' => count($documents),
         ];
+
+        $savedPrompt = $useSystemPrompt ? null : (filled($customPrompt) ? trim($customPrompt) : null);
 
         if ($dataCounts['analytics'] === 0
             && $dataCounts['search_console'] === 0
@@ -105,6 +117,8 @@ class GenerateSiteAiReport
                 'usage' => null,
                 'period' => ['from' => $from, 'to' => $to],
                 'data_counts' => $dataCounts,
+                'use_system_prompt' => $useSystemPrompt,
+                'prompt' => $savedPrompt,
             ];
         }
 
@@ -119,6 +133,7 @@ class GenerateSiteAiReport
             $events,
             $pageSpeed,
             $documents,
+            $useSystemPrompt ? null : $savedPrompt,
         );
 
         $result = $this->generateContent->handle($aiService, $prompt);
@@ -134,6 +149,8 @@ class GenerateSiteAiReport
                 'usage' => $result['usage'],
                 'period' => ['from' => $from, 'to' => $to],
                 'data_counts' => $dataCounts,
+                'use_system_prompt' => $useSystemPrompt,
+                'prompt' => $savedPrompt,
             ];
         }
 
@@ -149,6 +166,8 @@ class GenerateSiteAiReport
             'usage' => $result['usage'],
             'period' => ['from' => $from, 'to' => $to],
             'data_counts' => $dataCounts,
+            'use_system_prompt' => $useSystemPrompt,
+            'prompt' => $savedPrompt,
         ];
     }
 
@@ -406,5 +425,19 @@ class GenerateSiteAiReport
                 'original_filename' => $row->original_filename,
             ])
             ->all();
+    }
+
+    private function hasWebsiteData(Site $site): bool
+    {
+        return filled($site->page_title)
+            || filled($site->meta_description)
+            || filled($site->meta_keywords)
+            || filled($site->og_title)
+            || filled($site->og_description)
+            || filled($site->og_image_url)
+            || filled($site->canonical_url)
+            || filled($site->html_lang)
+            || filled($site->favicon_path)
+            || filled($site->robots_txt);
     }
 }

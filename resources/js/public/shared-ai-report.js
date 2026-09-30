@@ -20,10 +20,6 @@ function mountSharedAiReport() {
     createApp(SharedAiReportApp, {
         source: payload.reply || '',
         charts: Array.isArray(payload.charts) ? payload.charts : [],
-        siteName: payload.site?.name || '',
-        periodFrom: payload.period?.from || '',
-        periodTo: payload.period?.to || '',
-        formedAt: payload.created_at || '',
     }).mount(root);
 }
 

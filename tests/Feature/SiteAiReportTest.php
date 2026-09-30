@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\SearchConsoleDimension;
+use App\Enums\SiteWebDataStatus;
 use App\Models\AiService;
 use App\Models\Site;
 use App\Models\SiteAiReport;
@@ -191,6 +192,7 @@ class SiteAiReportTest extends TestCase
             ->assertJsonPath('ok', false)
             ->assertJsonPath('data', null)
             ->assertJsonFragment([
+                'website' => 0,
                 'analytics' => 0,
                 'search_console' => 0,
                 'search_console_queries' => 0,
@@ -265,6 +267,15 @@ class SiteAiReportTest extends TestCase
             'name' => 'Demo Site',
             'url' => 'https://example.com',
         ]);
+        $site->forceFill([
+            'web_data_status' => SiteWebDataStatus::Ready,
+            'page_title' => 'Demo homepage title',
+            'meta_description' => 'Demo meta description for SEO',
+            'canonical_url' => 'https://example.com/',
+            'html_lang' => 'en',
+            'robots_txt' => "User-agent: *\nDisallow: /private\n",
+            'web_data_fetched_at' => now(),
+        ])->save();
         $service = AiService::factory()->for($user)->create([
             'name' => 'Google Gemini · gemini-3.6-flash',
             'api_key' => 'valid-gemini-key',
@@ -393,6 +404,9 @@ class SiteAiReportTest extends TestCase
             ->assertJsonPath('data.tool.model', 'gemini-3.6-flash')
             ->assertJsonPath('data.period.from', '2026-09-01')
             ->assertJsonPath('data.period.to', '2026-09-07')
+            ->assertJsonPath('data.use_system_prompt', true)
+            ->assertJsonPath('data.prompt', null)
+            ->assertJsonPath('data_counts.website', 1)
             ->assertJsonPath('data_counts.analytics', 1)
             ->assertJsonPath('data_counts.search_console', 1)
             ->assertJsonPath('data_counts.search_console_queries', 1)
@@ -415,6 +429,8 @@ class SiteAiReportTest extends TestCase
             'model' => 'gemini-3.6-flash',
             'period_from' => '2026-09-01',
             'period_to' => '2026-09-07',
+            'use_system_prompt' => 1,
+            'prompt' => null,
         ]);
 
         $saved = SiteAiReport::query()->where('site_id', $site->id)->first();
@@ -435,6 +451,10 @@ class SiteAiReportTest extends TestCase
                 && str_contains($prompt, 'charts-json')
                 && str_contains($prompt, 'Demo Site')
                 && str_contains($prompt, 'https://example.com')
+                && str_contains($prompt, 'Снимок сайта')
+                && str_contains($prompt, 'Demo homepage title')
+                && str_contains($prompt, 'Demo meta description for SEO')
+                && str_contains($prompt, 'Disallow: /private')
                 && str_contains($prompt, 'Google Analytics')
                 && str_contains($prompt, 'Google Search Console')
                 && str_contains($prompt, 'Топ-запросы')
@@ -461,6 +481,92 @@ class SiteAiReportTest extends TestCase
                 && str_contains($prompt, '## Документы сайта')
                 && str_contains($prompt, 'Брендбук')
                 && str_contains($prompt, 'Пишите просто и по делу.');
+        });
+    }
+
+    public function test_custom_prompt_is_required_when_system_prompt_disabled(): void
+    {
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create();
+        $service = AiService::factory()->for($user)->create([
+            'api_key' => 'valid-key',
+            'settings' => $this->geminiSettings(),
+        ]);
+
+        SiteAnalyticsDaily::factory()->for($site)->create([
+            'date' => '2026-09-01',
+        ]);
+
+        $this->postJson("/api/app/sites/{$site->id}/ai-reports", [
+            'ai_service_id' => $service->id,
+            'from' => '2026-09-01',
+            'to' => '2026-09-07',
+            'use_system_prompt' => false,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['prompt']);
+    }
+
+    public function test_user_can_generate_report_with_custom_prompt(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'generativelanguage.googleapis.com/v1beta/models/*:generateContent' => Http::response(
+                $this->generateContentResponse('## Краткое резюме\nКастомный промпт.'),
+            ),
+        ]);
+
+        $user = $this->actingAsAppUser();
+        $site = Site::factory()->for($user)->create([
+            'name' => 'Custom Prompt Site',
+            'url' => 'https://custom.example.com',
+        ]);
+        $service = AiService::factory()->for($user)->create([
+            'api_key' => 'valid-key',
+            'settings' => $this->geminiSettings(),
+        ]);
+
+        SiteAnalyticsDaily::factory()->for($site)->create([
+            'date' => '2026-09-01',
+            'sessions' => 50,
+            'organic_sessions' => 20,
+        ]);
+
+        $customPrompt = 'Сделай короткий отчёт только про органику. Без общих фраз.';
+
+        $this->postJson("/api/app/sites/{$site->id}/ai-reports", [
+            'ai_service_id' => $service->id,
+            'from' => '2026-09-01',
+            'to' => '2026-09-07',
+            'use_system_prompt' => false,
+            'prompt' => $customPrompt,
+        ])
+            ->assertCreated()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('data.use_system_prompt', false)
+            ->assertJsonPath('data.prompt', $customPrompt)
+            ->assertJsonPath('data.reply', "## Краткое резюме\nКастомный промпт.");
+
+        $this->assertDatabaseHas('site_ai_reports', [
+            'site_id' => $site->id,
+            'ai_service_id' => $service->id,
+            'use_system_prompt' => 0,
+            'prompt' => $customPrompt,
+        ]);
+
+        Http::assertSent(function (Request $request) use ($customPrompt) {
+            if (! str_contains($request->url(), ':generateContent')) {
+                return false;
+            }
+
+            $prompt = data_get($request->data(), 'contents.0.parts.0.text');
+
+            return is_string($prompt)
+                && str_starts_with($prompt, $customPrompt)
+                && ! str_contains($prompt, 'сформируй SEO-отчёт')
+                && str_contains($prompt, 'Custom Prompt Site')
+                && str_contains($prompt, 'Google Analytics')
+                && str_contains($prompt, '"organic_sessions":20');
         });
     }
 

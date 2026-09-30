@@ -181,8 +181,7 @@
         },
         "loader": {
             "aria": "Loading"
-        },
-        "pdfBlockNotFound": "Report block for export not found"
+        }
     },
     "sites": {
         "confirmDelete": "Delete “{name}”?",
@@ -227,7 +226,7 @@
                 "countsSitemaps": "sitemaps: {count}",
                 "countsSummary": "Included in the prompt — {parts}.",
                 "countsUrlInspections": "URL Inspection: {count}",
-                "downloadPdf": "Download PDF",
+                "countsWebsite": "Website snapshot: {count}",
                 "empty": "No saved reports yet",
                 "generate": "Generate report",
                 "generating": "Generating…",
@@ -236,19 +235,22 @@
                 "loadingAiServices": "Loading AI services…",
                 "loadingReport": "Loading report…",
                 "loadingReports": "Loading reports…",
-                "newHint": "The report will include data from Google Analytics, Search Console (including top queries, pages, devices and countries for the selected period), GitHub, Chrome UX Report, and the site events and documents. GSC breakdowns appear after metrics are imported for the same period (the one used on the “{dataTab}” and “{eventsTab}” tabs).",
+                "newHint": "The report will include the website snapshot (title, description, Open Graph, robots.txt), data from Google Analytics, Search Console (including top queries, pages, devices and countries for the selected period), GitHub, Chrome UX Report, and the site events and documents. GSC breakdowns appear after metrics are imported for the same period (the one used on the “{dataTab}” and “{eventsTab}” tabs).",
                 "noDate": "No date",
                 "noServices": "No services available",
-                "pdfFallbackTitle": "AI report",
-                "pdfPeriod": "Period: {from} — {to}",
-                "pdfSaved": "PDF saved",
                 "promptTokens": "Input tokens",
+                "customPrompt": "Prompt",
+                "customPromptHint": "This text replaces the built-in report instructions. Site data for the period is still appended to the request.",
+                "customPromptPlaceholder": "Describe the report you need: focus, structure, tone…",
                 "result": "Result",
+                "savedPrompt": "Prompt used",
                 "sectionsAria": "AI report sections",
                 "share": "Share",
                 "stats": "AI request statistics",
                 "thoughtsTokens": "Thinking tokens",
-                "totalTokens": "Total tokens"
+                "totalTokens": "Total tokens",
+                "useSystemPrompt": "Use system prompt",
+                "useSystemPromptHint": "Uncheck to write your own prompt for the AI."
             },
             "col": {
                 "author": "Author",
@@ -340,11 +342,11 @@
                 "loadReport": "Failed to load the report",
                 "loadReports": "Failed to load reports",
                 "loadSite": "Failed to load the site",
+                "refreshWebData": "Failed to refresh website data",
                 "saveBinding": "Failed to save the link",
                 "saveConnection": "Failed to save the connection",
                 "saveDocument": "Failed to save the document",
                 "saveEvent": "Failed to save the event",
-                "savePdf": "Failed to save the PDF",
                 "saveRepository": "Failed to save the repository",
                 "startGithubAuth": "Failed to start GitHub authorization",
                 "startGoogleAuth": "Failed to start Google authorization",
@@ -512,7 +514,8 @@
                 "documentsSaved": "Saved documents",
                 "events": "Events",
                 "eventsNew": "New event",
-                "eventsSaved": "Saved events"
+                "eventsSaved": "Saved events",
+                "website": "Website"
             },
             "toast": {
                 "cruxConnected": "Chrome UX Report connected to the site.",
@@ -529,7 +532,30 @@
                 "gscLinked": "Search Console linked.",
                 "periodImported": "Data for the selected period imported.",
                 "repoLinked": "GitHub repository linked to the site.",
-                "repoUnlinked": "Repository unlinked from the site."
+                "repoUnlinked": "Repository unlinked from the site.",
+                "webDataRefreshStarted": "Website data refresh started."
+            },
+            "website": {
+                "aria": "Website data",
+                "collecting": "Collecting website data…",
+                "description": "Metadata, favicon, and robots.txt collected from the site homepage when the site was added.",
+                "empty": "Website data has not been collected yet.",
+                "fetchedAt": "Collected {date}",
+                "fields": {
+                    "canonical": "Canonical URL",
+                    "description": "Description",
+                    "faviconSource": "Favicon source",
+                    "keywords": "Keywords",
+                    "lang": "Language",
+                    "ogDescription": "Open Graph description",
+                    "ogImage": "Open Graph image",
+                    "ogTitle": "Open Graph title",
+                    "title": "Page title"
+                },
+                "refresh": "Refresh",
+                "refreshing": "Refreshing…",
+                "robotsEmpty": "robots.txt was not found or could not be loaded.",
+                "robotsTitle": "robots.txt"
             }
         },
         "sync": "Synchronization",

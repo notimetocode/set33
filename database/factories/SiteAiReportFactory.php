@@ -33,6 +33,8 @@ class SiteAiReportFactory extends Factory
             'model' => $model,
             'period_from' => $from,
             'period_to' => $to,
+            'use_system_prompt' => true,
+            'prompt' => null,
             'reply' => "## Краткое резюме\n\n".fake()->paragraph(),
             'charts' => [],
             'usage' => [
@@ -56,6 +58,7 @@ class SiteAiReportFactory extends Factory
                 'github_commits' => 3,
                 'events' => 1,
             ],
+            'locale' => 'ru',
             'visibility' => AiReportVisibility::Private,
             'share_token' => null,
             'share_password' => null,

@@ -6,7 +6,7 @@
   }
 
   &__inner {
-    max-width: 48rem;
+    max-width: 52rem;
 
     &--narrow {
       max-width: 26rem;
@@ -15,7 +15,7 @@
 
   &__header {
     margin-bottom: 1.75rem;
-    padding-bottom: 1.25rem;
+    padding-bottom: 1.35rem;
     border-bottom: 1px solid var(--border);
   }
 
@@ -44,30 +44,18 @@
     color: var(--muted);
   }
 
-  &__toolbar {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1rem;
-  }
-
-  &__pdf-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-
-    svg {
-      font-size: 0.8125rem;
-    }
-  }
-
   &__body {
-    padding: 1rem 0 0;
+    padding: 0;
   }
 
-  &__export {
+  &__content {
+    padding: 1.35rem 1.25rem 1.6rem;
+    @include soft-panel;
     min-width: 0;
+
+    @media (min-width: 768px) {
+      padding: 1.85rem 2rem 2.15rem;
+    }
   }
 
   &__form {

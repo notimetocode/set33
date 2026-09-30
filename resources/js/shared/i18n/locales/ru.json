@@ -181,8 +181,7 @@
         },
         "loader": {
             "aria": "Загрузка"
-        },
-        "pdfBlockNotFound": "Не найден блок отчёта для экспорта"
+        }
     },
     "sites": {
         "confirmDelete": "Удалить «{name}»?",
@@ -227,7 +226,7 @@
                 "countsSitemaps": "sitemaps: {count}",
                 "countsSummary": "В промпт передано — {parts}.",
                 "countsUrlInspections": "URL Inspection: {count}",
-                "downloadPdf": "Скачать PDF",
+                "countsWebsite": "Снимок сайта: {count}",
                 "empty": "Пока нет сохранённых отчётов",
                 "generate": "Сформировать отчёт",
                 "generating": "Формирование…",
@@ -236,19 +235,22 @@
                 "loadingAiServices": "Загрузка AI-сервисов…",
                 "loadingReport": "Загрузка отчёта…",
                 "loadingReports": "Загрузка отчётов…",
-                "newHint": "В отчёт попадут данные Google Analytics, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub, Chrome UX Report, события и документы сайта. Срезы GSC появляются после загрузки метрик за тот же период (тот же, что на вкладках «{dataTab}» и «{eventsTab}»).",
+                "newHint": "В отчёт попадут снимок сайта (title, description, Open Graph, robots.txt), данные Google Analytics, Search Console (включая топ-запросы, страницы, устройства и страны за выбранный период), GitHub, Chrome UX Report, события и документы сайта. Срезы GSC появляются после загрузки метрик за тот же период (тот же, что на вкладках «{dataTab}» и «{eventsTab}»).",
                 "noDate": "Без даты",
                 "noServices": "Нет доступных сервисов",
-                "pdfFallbackTitle": "AI-отчёт",
-                "pdfPeriod": "Период: {from} — {to}",
-                "pdfSaved": "PDF сохранён",
                 "promptTokens": "Входные токены",
+                "customPrompt": "Промпт",
+                "customPromptHint": "Этот текст заменит системные инструкции отчёта. Данные сайта за период всё равно будут добавлены к запросу.",
+                "customPromptPlaceholder": "Опишите, какой отчёт нужен: фокус, структура, тон…",
                 "result": "Результат",
+                "savedPrompt": "Использованный промпт",
                 "sectionsAria": "Разделы AI-отчёта",
                 "share": "Поделиться",
                 "stats": "Статистика запроса к AI",
                 "thoughtsTokens": "Токены размышлений",
-                "totalTokens": "Всего токенов"
+                "totalTokens": "Всего токенов",
+                "useSystemPrompt": "Использовать системный промпт",
+                "useSystemPromptHint": "Если снять галочку, можно задать свой промпт для AI."
             },
             "col": {
                 "author": "Автор",
@@ -340,11 +342,11 @@
                 "loadReport": "Не удалось загрузить отчёт",
                 "loadReports": "Не удалось загрузить отчёты",
                 "loadSite": "Не удалось загрузить сайт",
+                "refreshWebData": "Не удалось обновить данные сайта",
                 "saveBinding": "Не удалось сохранить привязку",
                 "saveConnection": "Не удалось сохранить подключение",
                 "saveDocument": "Не удалось сохранить документ",
                 "saveEvent": "Не удалось сохранить событие",
-                "savePdf": "Не удалось сохранить PDF",
                 "saveRepository": "Не удалось сохранить репозиторий",
                 "startGithubAuth": "Не удалось начать авторизацию GitHub",
                 "startGoogleAuth": "Не удалось начать авторизацию Google",
@@ -512,7 +514,8 @@
                 "documentsSaved": "Сохранённые документы",
                 "events": "События",
                 "eventsNew": "Новое событие",
-                "eventsSaved": "Сохранённые события"
+                "eventsSaved": "Сохранённые события",
+                "website": "Сайт"
             },
             "toast": {
                 "cruxConnected": "Chrome UX Report подключён к сайту.",
@@ -529,7 +532,30 @@
                 "gscLinked": "Search Console привязан.",
                 "periodImported": "Данные за выбранный период загружены.",
                 "repoLinked": "Репозиторий GitHub привязан к сайту.",
-                "repoUnlinked": "Репозиторий отвязан от сайта."
+                "repoUnlinked": "Репозиторий отвязан от сайта.",
+                "webDataRefreshStarted": "Обновление данных сайта запущено."
+            },
+            "website": {
+                "aria": "Данные сайта",
+                "collecting": "Собираем данные сайта…",
+                "description": "Метаданные, favicon и robots.txt, собранные с главной страницы при добавлении сайта.",
+                "empty": "Данные сайта ещё не собраны.",
+                "fetchedAt": "Собрано {date}",
+                "fields": {
+                    "canonical": "Canonical URL",
+                    "description": "Description",
+                    "faviconSource": "Источник favicon",
+                    "keywords": "Keywords",
+                    "lang": "Язык",
+                    "ogDescription": "Open Graph description",
+                    "ogImage": "Open Graph image",
+                    "ogTitle": "Open Graph title",
+                    "title": "Title"
+                },
+                "refresh": "Обновить",
+                "refreshing": "Обновление…",
+                "robotsEmpty": "Файл robots.txt не найден или не удалось загрузить.",
+                "robotsTitle": "robots.txt"
             }
         },
         "sync": "Синхронизация",

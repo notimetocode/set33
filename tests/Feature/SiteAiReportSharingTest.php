@@ -42,7 +42,7 @@ class SiteAiReportSharingTest extends TestCase
         $this->assertSame(AiReportVisibility::Link, $report->visibility);
         $this->assertNotNull($report->share_token);
         $this->assertNull($report->share_password);
-        $this->assertStringContainsString('/r/'.$report->share_token, $report->shareUrl());
+        $this->assertStringContainsString('/ru/r/'.$report->share_token, (string) $report->shareUrl());
     }
 
     public function test_owner_can_share_report_with_password(): void

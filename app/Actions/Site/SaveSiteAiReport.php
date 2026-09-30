@@ -5,6 +5,7 @@ namespace App\Actions\Site;
 use App\Models\AiService;
 use App\Models\Site;
 use App\Models\SiteAiReport;
+use App\Support\Localization;
 
 class SaveSiteAiReport
 {
@@ -41,11 +42,16 @@ class SaveSiteAiReport
      *         github_commits: int,
      *         events: int,
      *         documents?: int
-     *     }
+     *     },
+     *     use_system_prompt?: bool,
+     *     prompt?: string|null,
+     *     locale?: string|null
      * }  $result
      */
     public function handle(Site $site, AiService $aiService, array $result): SiteAiReport
     {
+        $useSystemPrompt = (bool) ($result['use_system_prompt'] ?? true);
+
         return SiteAiReport::query()->create([
             'site_id' => $site->id,
             'ai_service_id' => $aiService->id,
@@ -54,10 +60,28 @@ class SaveSiteAiReport
             'model' => $result['model'] ?? ($aiService->settings['model'] ?? null),
             'period_from' => $result['period']['from'],
             'period_to' => $result['period']['to'],
+            'use_system_prompt' => $useSystemPrompt,
+            'prompt' => $useSystemPrompt ? null : ($result['prompt'] ?? null),
             'reply' => $result['reply'],
             'charts' => $result['charts'] ?? [],
             'usage' => $result['usage'],
             'data_counts' => $result['data_counts'],
+            'locale' => $this->resolveLocale($result['locale'] ?? null),
         ]);
+    }
+
+    private function resolveLocale(?string $locale): string
+    {
+        if (is_string($locale) && Localization::isSupported($locale)) {
+            return $locale;
+        }
+
+        $appLocale = app()->getLocale();
+
+        if (Localization::isSupported($appLocale)) {
+            return $appLocale;
+        }
+
+        return Localization::defaultLocale();
     }
 }

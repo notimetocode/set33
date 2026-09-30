@@ -18,6 +18,7 @@ use App\Http\Controllers\App\SiteGithubIntegrationController;
 use App\Http\Controllers\App\SiteGoogleIntegrationController;
 use App\Http\Controllers\App\SiteMetricsController;
 use App\Http\Controllers\App\SitePageSpeedIntegrationController;
+use App\Http\Controllers\App\SiteWebDataController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('app.locale')->group(function (): void {
@@ -50,6 +51,9 @@ Route::middleware(['auth:sanctum', 'ability:app', 'app.locale'])->group(function
     Route::apiResource('ai-services', AiServiceController::class)->names('app.ai-services');
 
     Route::apiResource('sites', SiteController::class)->names('app.sites');
+    Route::post('/sites/{site}/web-data/refresh', [SiteWebDataController::class, 'refresh'])
+        ->middleware('throttle:30,1')
+        ->name('app.sites.web-data.refresh');
 
     Route::get('/google/connection', [GoogleConnectionController::class, 'show'])
         ->name('app.google.connection.show');

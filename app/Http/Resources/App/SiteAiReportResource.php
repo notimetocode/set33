@@ -23,6 +23,11 @@ class SiteAiReportResource extends JsonResource
                 'from' => $this->period_from?->toDateString(),
                 'to' => $this->period_to?->toDateString(),
             ],
+            'use_system_prompt' => (bool) $this->use_system_prompt,
+            'prompt' => $this->when(
+                ! $request->routeIs('app.sites.ai-reports.index'),
+                $this->prompt,
+            ),
             'tool' => [
                 'ai_service_id' => $this->ai_service_id,
                 'name' => $this->ai_service_name,

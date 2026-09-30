@@ -30,6 +30,12 @@ export async function deleteSite(id) {
     await http.delete(`/sites/${id}`);
 }
 
+export async function refreshSiteWebData(id) {
+    const { data } = await http.post(`/sites/${id}/web-data/refresh`);
+
+    return data.data ?? data;
+}
+
 export async function getGoogleConnection() {
     const { data } = await http.get('/google/connection');
 

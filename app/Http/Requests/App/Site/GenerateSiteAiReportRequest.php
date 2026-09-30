@@ -17,6 +17,8 @@ class GenerateSiteAiReportRequest extends FormRequest
      */
     public function rules(): array
     {
+        $useSystemPrompt = $this->boolean('use_system_prompt', true);
+
         return [
             'ai_service_id' => [
                 'required',
@@ -30,6 +32,14 @@ class GenerateSiteAiReportRequest extends FormRequest
             ],
             'from' => ['required', 'date'],
             'to' => ['required', 'date', 'after_or_equal:from'],
+            'use_system_prompt' => ['sometimes', 'boolean'],
+            'prompt' => [
+                Rule::excludeIf($useSystemPrompt),
+                Rule::requiredIf(! $useSystemPrompt),
+                'string',
+                'min:1',
+                'max:10000',
+            ],
         ];
     }
 
@@ -44,6 +54,9 @@ class GenerateSiteAiReportRequest extends FormRequest
             'from.required' => 'Укажите дату начала.',
             'to.required' => 'Укажите дату окончания.',
             'to.after_or_equal' => 'Дата окончания не может быть раньше даты начала.',
+            'prompt.required' => 'Введите промпт.',
+            'prompt.min' => 'Введите промпт.',
+            'prompt.max' => 'Промпт слишком длинный (максимум 10 000 символов).',
         ];
     }
 
@@ -55,6 +68,10 @@ class GenerateSiteAiReportRequest extends FormRequest
 
         if (! $this->filled('to')) {
             $this->merge(['to' => now()->subDay()->toDateString()]);
+        }
+
+        if (! $this->exists('use_system_prompt')) {
+            $this->merge(['use_system_prompt' => true]);
         }
     }
 }

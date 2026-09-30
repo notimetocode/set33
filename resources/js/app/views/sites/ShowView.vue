@@ -1,11 +1,21 @@
 <template>
     <div class="page-app-sites page-app-sites--show">
         <div class="page-app-sites__header">
-            <div>
-                <h1 class="page-app-sites__title">{{ site?.name || t('sites.show.fallbackTitle') }}</h1>
-                <p v-if="site" class="page-app-sites__lede">
-                    <a :href="site.url" target="_blank" rel="noopener noreferrer">{{ site.url }}</a>
-                </p>
+            <div class="page-app-sites__header-main">
+                <img
+                    v-if="site?.favicon_url"
+                    class="page-app-sites__favicon"
+                    :src="site.favicon_url"
+                    alt=""
+                    width="32"
+                    height="32"
+                >
+                <div>
+                    <h1 class="page-app-sites__title">{{ site?.name || t('sites.show.fallbackTitle') }}</h1>
+                    <p v-if="site" class="page-app-sites__lede">
+                        <a :href="site.url" target="_blank" rel="noopener noreferrer">{{ site.url }}</a>
+                    </p>
+                </div>
             </div>
             <div class="page-app-sites__header-actions">
                 <RouterLink
@@ -89,6 +99,130 @@
                 >
                     {{ defLabel(tab) }}
                 </button>
+            </div>
+
+            <div
+                v-show="activeSiteView === 'website'"
+                id="site-view-pane-website"
+                role="tabpanel"
+                aria-labelledby="site-view-tab-website"
+            >
+                <section
+                    class="page-app-sites__panel page-app-sites__website"
+                    :aria-label="t('sites.show.website.aria')"
+                >
+                    <div class="page-app-sites__panel-head">
+                        <h2 class="h5 mb-0">{{ t('sites.show.tabs.website') }}</h2>
+                        <button
+                            type="button"
+                            class="btn btn-secondary btn-sm"
+                            :disabled="busy || webDataRefreshing || isWebDataPending"
+                            @click="onRefreshWebData"
+                        >
+                            <AppLoader
+                                v-if="webDataRefreshing || isWebDataPending"
+                                size="sm"
+                            />
+                            <span>
+                                {{
+                                    webDataRefreshing || isWebDataPending
+                                        ? t('sites.show.website.refreshing')
+                                        : t('sites.show.website.refresh')
+                                }}
+                            </span>
+                        </button>
+                    </div>
+
+                    <p class="text-muted small mb-3">
+                        {{ t('sites.show.website.description') }}
+                    </p>
+
+                    <div
+                        v-if="site.web_data_error && site.web_data_status === 'failed'"
+                        class="alert alert-danger py-2 mb-3"
+                    >
+                        {{ site.web_data_error }}
+                    </div>
+
+                    <AppLoader
+                        v-if="isWebDataPending"
+                        block
+                        :label="t('sites.show.website.collecting')"
+                    />
+
+                    <p
+                        v-else-if="!hasWebsiteData"
+                        class="page-app-sites__empty text-muted mb-0"
+                    >
+                        {{ t('sites.show.website.empty') }}
+                    </p>
+
+                    <template v-else>
+                        <div class="page-app-sites__website-summary">
+                            <img
+                                v-if="site.favicon_url"
+                                class="page-app-sites__website-favicon"
+                                :src="site.favicon_url"
+                                alt=""
+                                width="48"
+                                height="48"
+                            >
+                            <div class="page-app-sites__website-summary-text">
+                                <p class="page-app-sites__website-title mb-1">
+                                    {{ site.page_title || site.name }}
+                                </p>
+                                <p
+                                    v-if="site.meta_description"
+                                    class="page-app-sites__website-description mb-0"
+                                >
+                                    {{ site.meta_description }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <dl class="page-app-sites__website-meta">
+                            <div
+                                v-for="row in websiteMetaRows"
+                                :key="row.key"
+                                class="page-app-sites__website-meta-row"
+                            >
+                                <dt>{{ row.label }}</dt>
+                                <dd>
+                                    <a
+                                        v-if="row.href"
+                                        :href="row.href"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >{{ row.value }}</a>
+                                    <template v-else>{{ row.value }}</template>
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <div class="page-app-sites__website-robots">
+                            <h3 class="page-app-sites__website-robots-title">
+                                {{ t('sites.show.website.robotsTitle') }}
+                            </h3>
+                            <pre
+                                v-if="site.robots_txt"
+                                class="page-app-sites__website-robots-body"
+                            >{{ site.robots_txt }}</pre>
+                            <p
+                                v-else
+                                class="text-muted small mb-0"
+                            >
+                                {{ t('sites.show.website.robotsEmpty') }}
+                            </p>
+                        </div>
+
+                        <p
+                            v-if="site.web_data_fetched_at"
+                            class="page-app-sites__website-fetched text-muted small mb-0"
+                        >
+                            {{ t('sites.show.website.fetchedAt', { date: formatWebsiteFetchedAt(site.web_data_fetched_at) }) }}
+                        </p>
+                    </template>
+                </section>
             </div>
 
             <div
@@ -1437,19 +1571,7 @@
                             <button
                                 type="button"
                                 class="btn btn-outline-primary btn-sm page-app-sites__ai-report-share-btn"
-                                :disabled="aiReportLoading || aiReportPdfExporting || !aiReportReply"
-                                @click="onDownloadAiReportPdf"
-                            >
-                                <FontAwesomeIcon
-                                    :icon="['fas', 'file-pdf']"
-                                    aria-hidden="true"
-                                />
-                                <span>{{ aiReportPdfExporting ? t('common.saving') : t('sites.show.aiReport.downloadPdf') }}</span>
-                            </button>
-                            <button
-                                type="button"
-                                class="btn btn-outline-primary btn-sm page-app-sites__ai-report-share-btn"
-                                :disabled="aiReportLoading || !selectedAiReportId || aiReportSharingSaving || aiReportPdfExporting"
+                                :disabled="aiReportLoading || !selectedAiReportId || aiReportSharingSaving"
                                 @click="openAiReportSharingModal"
                             >
                                 <FontAwesomeIcon
@@ -1466,7 +1588,7 @@
                             <button
                                 type="button"
                                 class="btn btn-secondary"
-                                :disabled="aiReportLoading || aiReportSharingSaving || aiReportPdfExporting"
+                                :disabled="aiReportLoading || aiReportSharingSaving"
                                 @click="onBackFromAiReport"
                             >
                                 {{ t('common.back') }}
@@ -1498,9 +1620,15 @@
                                     </span>
                                 </div>
                                 <div
-                                    ref="aiReportExportEl"
-                                    class="page-app-sites__ai-report-reply-body"
+                                    v-if="aiReportPrompt"
+                                    class="page-app-sites__ai-report-saved-prompt mb-3"
                                 >
+                                    <h4 class="page-app-sites__ai-report-saved-prompt-title">
+                                        {{ t('sites.show.aiReport.savedPrompt') }}
+                                    </h4>
+                                    <pre class="page-app-sites__ai-report-saved-prompt-body">{{ aiReportPrompt }}</pre>
+                                </div>
+                                <div class="page-app-sites__ai-report-reply-body">
                                     <AppAiReportBody
                                         :source="aiReportReply"
                                         :charts="aiReportCharts"
@@ -1729,6 +1857,48 @@
                                                 {{ t('sites.show.aiReport.addLink') }}
                                             </RouterLink>.
                                         </p>
+                                    </div>
+
+                                    <div class="page-app-sites__ai-report-prompt mb-3">
+                                        <div class="form-check">
+                                            <input
+                                                id="ai-report-use-system-prompt"
+                                                v-model="aiReportUseSystemPrompt"
+                                                class="form-check-input"
+                                                type="checkbox"
+                                                :disabled="busy || aiReportGenerating"
+                                            >
+                                            <label
+                                                class="form-check-label"
+                                                for="ai-report-use-system-prompt"
+                                            >
+                                                {{ t('sites.show.aiReport.useSystemPrompt') }}
+                                            </label>
+                                        </div>
+                                        <p class="form-text mb-0">
+                                            {{ t('sites.show.aiReport.useSystemPromptHint') }}
+                                        </p>
+
+                                        <div
+                                            v-if="!aiReportUseSystemPrompt"
+                                            class="page-app-sites__ai-report-prompt-field mt-3"
+                                        >
+                                            <label
+                                                class="form-label"
+                                                for="ai-report-custom-prompt"
+                                            >{{ t('sites.show.aiReport.customPrompt') }}</label>
+                                            <textarea
+                                                id="ai-report-custom-prompt"
+                                                v-model="aiReportCustomPrompt"
+                                                class="form-control"
+                                                rows="8"
+                                                :placeholder="t('sites.show.aiReport.customPromptPlaceholder')"
+                                                :disabled="busy || aiReportGenerating"
+                                            />
+                                            <p class="form-text mb-0">
+                                                {{ t('sites.show.aiReport.customPromptHint') }}
+                                            </p>
+                                        </div>
                                     </div>
 
                                     <div class="page-app-sites__ai-report-actions mb-3">
@@ -2301,10 +2471,6 @@ import AppLoader from '../../../shared/components/AppLoader.vue';
 import AppMetricsCoverageTimeline from '../../../shared/components/AppMetricsCoverageTimeline.vue';
 import AppModal from '../../../shared/components/AppModal.vue';
 import { setDynamicBreadcrumbLabel } from '../../../shared/dynamicBreadcrumbLabel';
-import {
-    buildAiReportPdfFilename,
-    downloadAiReportPdf,
-} from '../../../shared/exportAiReportPdf';
 import { toast } from '../../../shared/toast';
 import { useI18n } from '../../../shared/i18n';
 import { listAiServices } from '../../api/aiServices';
@@ -2343,6 +2509,7 @@ import {
     listSiteAiReports,
     listSiteDocuments,
     listSiteEvents,
+    refreshSiteWebData,
     startGoogleOAuth,
     syncSiteGoogleIntegration,
     updateSiteAiReportSharing,
@@ -2374,6 +2541,7 @@ watch(
 
 onUnmounted(() => {
     setDynamicBreadcrumbLabel(null);
+    stopWebDataPolling();
 });
 
 const connection = ref(null);
@@ -2437,14 +2605,151 @@ const gaModalOpen = ref(false);
 const gscModalOpen = ref(false);
 const githubModalOpen = ref(false);
 const pagespeedModalOpen = ref(false);
-const activeSiteView = ref('data');
+const activeSiteView = ref('website');
 const activeMetricsTab = ref('ga4');
+const webDataRefreshing = ref(false);
+let webDataPollTimer = null;
+
+const isWebDataPending = computed(() => site.value?.web_data_status === 'pending');
+
+const hasWebsiteData = computed(() => {
+    if (!site.value) {
+        return false;
+    }
+
+    return site.value.web_data_status === 'ready'
+        || Boolean(site.value.page_title)
+        || Boolean(site.value.meta_description)
+        || Boolean(site.value.favicon_url)
+        || Boolean(site.value.robots_txt);
+});
+
+const websiteMetaRows = computed(() => {
+    if (!site.value) {
+        return [];
+    }
+
+    /** @type {Array<{ key: string, label: string, value: string, href?: string }>} */
+    const rows = [];
+
+    const pushRow = (key, labelKey, value, href = null) => {
+        if (!value) {
+            return;
+        }
+
+        rows.push({
+            key,
+            label: t(labelKey),
+            value,
+            ...(href ? { href } : {}),
+        });
+    };
+
+    pushRow('page_title', 'sites.show.website.fields.title', site.value.page_title);
+    pushRow('meta_description', 'sites.show.website.fields.description', site.value.meta_description);
+    pushRow('meta_keywords', 'sites.show.website.fields.keywords', site.value.meta_keywords);
+    pushRow('og_title', 'sites.show.website.fields.ogTitle', site.value.og_title);
+    pushRow('og_description', 'sites.show.website.fields.ogDescription', site.value.og_description);
+    pushRow('og_image_url', 'sites.show.website.fields.ogImage', site.value.og_image_url, site.value.og_image_url);
+    pushRow('canonical_url', 'sites.show.website.fields.canonical', site.value.canonical_url, site.value.canonical_url);
+    pushRow('html_lang', 'sites.show.website.fields.lang', site.value.html_lang);
+    pushRow(
+        'favicon_source_url',
+        'sites.show.website.fields.faviconSource',
+        site.value.favicon_source_url,
+        site.value.favicon_source_url,
+    );
+
+    return rows;
+});
+
+function formatWebsiteFetchedAt(value) {
+    try {
+        return new Intl.DateTimeFormat(intlLocale.value, {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+        }).format(new Date(value));
+    } catch {
+        return value;
+    }
+}
+
+function stopWebDataPolling() {
+    if (webDataPollTimer) {
+        clearInterval(webDataPollTimer);
+        webDataPollTimer = null;
+    }
+}
+
+function startWebDataPolling() {
+    stopWebDataPolling();
+
+    if (!isWebDataPending.value) {
+        return;
+    }
+
+    webDataPollTimer = setInterval(async () => {
+        if (!site.value || !isWebDataPending.value) {
+            stopWebDataPolling();
+
+            return;
+        }
+
+        try {
+            const siteData = await getSite(site.value.id);
+            site.value = {
+                ...site.value,
+                ...siteData,
+                google_integration: siteData.google_integration ?? site.value.google_integration,
+                github_integration: siteData.github_integration ?? site.value.github_integration,
+                pagespeed_integration: siteData.pagespeed_integration ?? site.value.pagespeed_integration,
+            };
+
+            if (siteData.web_data_status !== 'pending') {
+                stopWebDataPolling();
+            }
+        } catch {
+            // Keep polling until the user leaves the page.
+        }
+    }, 3000);
+}
+
+async function onRefreshWebData() {
+    if (!site.value || webDataRefreshing.value) {
+        return;
+    }
+
+    webDataRefreshing.value = true;
+
+    try {
+        const siteData = await refreshSiteWebData(site.value.id);
+        site.value = {
+            ...site.value,
+            ...siteData,
+            google_integration: siteData.google_integration ?? site.value.google_integration,
+            github_integration: siteData.github_integration ?? site.value.github_integration,
+            pagespeed_integration: siteData.pagespeed_integration ?? site.value.pagespeed_integration,
+        };
+        startWebDataPolling();
+        toast.show({ ok: true, message: t('sites.show.toast.webDataRefreshStarted') });
+    } catch (e) {
+        toast.show({
+            ok: false,
+            message: e.response?.data?.message || t('sites.show.errors.refreshWebData'),
+        });
+    } finally {
+        webDataRefreshing.value = false;
+    }
+}
 
 const aiServices = ref([]);
 const aiServicesLoading = ref(false);
 const aiServicesError = ref('');
 const aiServicesLoaded = ref(false);
 const aiReportServiceId = ref('');
+const aiReportUseSystemPrompt = ref(true);
+const aiReportCustomPrompt = ref('');
+const aiReportPrompt = ref('');
 
 const globalAiServices = computed(() => aiServices.value.filter((service) => service.is_global));
 const ownAiServices = computed(() => aiServices.value.filter((service) => !service.is_global));
@@ -2465,8 +2770,6 @@ const aiReportsError = ref('');
 const aiReportsLoaded = ref(false);
 const selectedAiReportId = ref('');
 const activeAiReportTab = ref('saved');
-const aiReportExportEl = ref(null);
-const aiReportPdfExporting = ref(false);
 const aiReportSharing = reactive({
     visibility: 'private',
     share_url: null,
@@ -2489,6 +2792,7 @@ const aiReportSharingOptions = [
 ];
 
 const siteViewTabs = [
+    { id: 'website', labelKey: 'sites.show.tabs.website' },
     { id: 'data', labelKey: 'sites.show.tabs.data' },
     { id: 'events', labelKey: 'sites.show.tabs.events' },
     { id: 'documents', labelKey: 'sites.show.tabs.documents' },
@@ -2874,6 +3178,7 @@ const canGenerateAiReport = computed(() => (
     && !busy.value
     && !aiReportGenerating.value
     && !aiServicesLoading.value
+    && (aiReportUseSystemPrompt.value || Boolean(aiReportCustomPrompt.value.trim()))
 ));
 
 const aiReportGenerateButtonLabel = computed(() => {
@@ -3264,6 +3569,7 @@ function clearAiReportView() {
     aiReportModel.value = '';
     aiReportMeta.value = '';
     aiReportUsage.value = null;
+    aiReportPrompt.value = '';
     resetAiReportSharing();
 }
 
@@ -3455,6 +3761,9 @@ function applyAiReport(report) {
     aiReportModel.value = report?.tool?.label || report?.tool?.model || '';
     aiReportMeta.value = formatDataCounts(report?.data_counts);
     aiReportUsage.value = report?.usage ?? null;
+    aiReportPrompt.value = report?.use_system_prompt === false && report?.prompt
+        ? report.prompt
+        : '';
     applyAiReportSharing(report?.sharing);
 
     if (report?.period?.from) {
@@ -3492,6 +3801,7 @@ function formatDataCounts(counts) {
     }
 
     const countLabels = [
+        ['website', 'countsWebsite'],
         ['analytics', 'countsAnalytics'],
         ['search_console', 'countsSearchConsole'],
         ['search_console_queries', 'countsQueries'],
@@ -3584,6 +3894,7 @@ async function onOpenAiReport(report) {
     aiReportModel.value = report.tool?.label || report.tool?.model || '';
     aiReportMeta.value = formatDataCounts(report.data_counts);
     aiReportUsage.value = report.usage ?? null;
+    aiReportPrompt.value = '';
     applyAiReportSharing(report.sharing);
 
     try {
@@ -3595,48 +3906,6 @@ async function onOpenAiReport(report) {
         aiReportError.value = e.response?.data?.message || t('sites.show.errors.loadReport');
     } finally {
         aiReportLoading.value = false;
-    }
-}
-
-async function onDownloadAiReportPdf() {
-    if (!aiReportExportEl.value || !aiReportReply.value || aiReportPdfExporting.value) {
-        return;
-    }
-
-    aiReportPdfExporting.value = true;
-
-    try {
-        const from = period.from ? formatDate(period.from) : '';
-        const to = period.to ? formatDate(period.to) : '';
-        const subtitleParts = [];
-
-        if (from || to) {
-            subtitleParts.push(t('sites.show.aiReport.pdfPeriod', { from: from || '—', to: to || '—' }));
-        }
-
-        if (aiReportModel.value) {
-            subtitleParts.push(aiReportModel.value);
-        }
-
-        await downloadAiReportPdf({
-            element: aiReportExportEl.value,
-            filename: buildAiReportPdfFilename({
-                siteName: site.value?.name,
-                periodFrom: period.from,
-                periodTo: period.to,
-            }),
-            title: site.value?.name || t('sites.show.aiReport.pdfFallbackTitle'),
-            subtitle: subtitleParts.join(' · '),
-        });
-
-        toast.show({ message: t('sites.show.aiReport.pdfSaved') });
-    } catch (e) {
-        toast.show({
-            message: e?.message || t('sites.show.errors.savePdf'),
-            ok: false,
-        });
-    } finally {
-        aiReportPdfExporting.value = false;
     }
 }
 
@@ -3655,7 +3924,12 @@ async function onGenerateAiReport() {
         ai_service_id: Number(aiReportServiceId.value),
         from: period.from,
         to: period.to,
+        use_system_prompt: aiReportUseSystemPrompt.value,
     };
+
+    if (!aiReportUseSystemPrompt.value) {
+        payload.prompt = aiReportCustomPrompt.value.trim();
+    }
 
     try {
         for (let attempt = 1; attempt <= AI_REPORT_MAX_ATTEMPTS; attempt += 1) {
@@ -4337,6 +4611,7 @@ async function openPagespeedModal() {
 async function reload() {
     loading.value = true;
     error.value = '';
+    stopWebDataPolling();
 
     try {
         const [siteData, connectionData, githubConnectionData] = await Promise.all([
@@ -4369,6 +4644,7 @@ async function reload() {
             loadMetrics(),
             loadEvents(),
         ]);
+        startWebDataPolling();
     } catch (e) {
         error.value = e.response?.data?.message || t('sites.show.errors.loadSite');
     } finally {

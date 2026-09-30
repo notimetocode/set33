@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\SiteWebDataStatus;
 use Database\Factories\SiteFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 class Site extends Model
 {
@@ -21,7 +23,28 @@ class Site extends Model
         'user_id',
         'name',
         'url',
+        'web_data_status',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'web_data_status' => SiteWebDataStatus::class,
+            'web_data_fetched_at' => 'datetime',
+        ];
+    }
+
+    public function faviconUrl(): ?string
+    {
+        if (! filled($this->favicon_path)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->favicon_path);
+    }
 
     /**
      * @return BelongsTo<User, $this>

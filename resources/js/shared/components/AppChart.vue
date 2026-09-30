@@ -92,11 +92,20 @@ function buildConfig(chart) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 8,
+                        right: 12,
+                        bottom: 8,
+                        left: 8,
+                    },
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
                         labels: {
                             boxWidth: 12,
+                            padding: 16,
                             font: { family: 'Instrument Sans, system-ui, sans-serif', size: 12 },
                             color: '#5C6670',
                         },
@@ -134,6 +143,14 @@ function buildConfig(chart) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    top: 8,
+                    right: 12,
+                    bottom: 4,
+                    left: 4,
+                },
+            },
             interaction: {
                 mode: 'index',
                 intersect: false,
@@ -144,6 +161,7 @@ function buildConfig(chart) {
                     position: 'bottom',
                     labels: {
                         boxWidth: 12,
+                        padding: 16,
                         font: { family: 'Instrument Sans, system-ui, sans-serif', size: 12 },
                         color: '#5C6670',
                     },
@@ -162,6 +180,7 @@ function buildConfig(chart) {
                         maxRotation: 0,
                         autoSkip: true,
                         maxTicksLimit: 8,
+                        padding: 8,
                     },
                 },
                 y: {
@@ -170,6 +189,7 @@ function buildConfig(chart) {
                     ticks: {
                         color: '#5C6670',
                         font: { family: 'Instrument Sans, system-ui, sans-serif', size: 11 },
+                        padding: 10,
                     },
                 },
             },

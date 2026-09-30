@@ -47,7 +47,7 @@ class SharedAiReportController extends Controller
 
         $request->session()->put($this->sessionKey($token), true);
 
-        return redirect()->route('public.ai-reports.show', ['token' => $token]);
+        return redirect()->to(localized_route('public.ai-reports.show', ['token' => $token]));
     }
 
     private function findSharedReport(string $token): SiteAiReport

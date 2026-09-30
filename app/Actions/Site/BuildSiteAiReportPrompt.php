@@ -15,6 +15,8 @@ class BuildSiteAiReportPrompt
 
     private const MAX_DOCUMENT_CONTENT_CHARS = 15000;
 
+    private const MAX_ROBOTS_TXT_CHARS = 8000;
+
     /**
      * @param  list<array<string, mixed>>  $analytics
      * @param  list<array<string, mixed>>  $searchConsole
@@ -34,6 +36,7 @@ class BuildSiteAiReportPrompt
      *     crux?: list<array<string, mixed>>
      * }  $pageSpeed
      * @param  list<array<string, mixed>>  $documents
+     * @param  string|null  $customInstructions  When set, replaces the built-in system instructions.
      */
     public function handle(
         Site $site,
@@ -46,10 +49,16 @@ class BuildSiteAiReportPrompt
         array $events = [],
         array $pageSpeed = [],
         array $documents = [],
+        ?string $customInstructions = null,
     ): string {
+        $instructions = filled($customInstructions)
+            ? trim($customInstructions)
+            : $this->instructions();
+
         $sections = [
-            $this->instructions(),
+            $instructions,
             $this->siteContext($site, $from, $to),
+            $this->websiteDataSection($site),
             $this->analyticsSection($analytics),
             $this->searchConsoleSection($searchConsole, $searchConsoleDimensions),
             $this->pageSpeedSection($pageSpeed),
@@ -74,15 +83,17 @@ class BuildSiteAiReportPrompt
 5. Оцени скорость и Core Web Vitals (PageSpeed lab и Chrome UX Report field data): LCP, INP, CLS, TTFB и связанные метрики; свяжи с SEO и UX, если данные есть.
 6. Сопоставь изменения метрик с активностью разработки (коммиты GitHub), если такие данные есть: возможные корреляции деплоев/изменений с ростом или падением показателей.
 7. Учти ручные события периода (упоминания в СМИ, публикации, акции, инциденты и т.п.): оцени их возможное влияние на трафик и видимость.
-8. Учти приложенные Markdown-документы сайта (брендбук, ТЗ, семантика, контент-гайд и т.п.): используй их как контекст о продукте, аудитории и ограничениях; не выдумывай факты вне документов и метрик.
-9. Выдели сильные стороны, риски и конкретные гипотезы для улучшения SEO.
-10. Если какого-то источника данных нет или он пуст — явно укажи это и не выдумывай цифры.
+8. Учти снимок сайта (title, description, Open Graph, canonical, lang, robots.txt): оцени базовое SEO главной страницы и ограничения обхода; сопоставь с данными Search Console и URL Inspection, если они есть.
+9. Учти приложенные Markdown-документы сайта (брендбук, ТЗ, семантика, контент-гайд и т.п.): используй их как контекст о продукте, аудитории и ограничениях; не выдумывай факты вне документов и метрик.
+10. Выдели сильные стороны, риски и конкретные гипотезы для улучшения SEO.
+11. Если какого-то источника данных нет или он пуст — явно укажи это и не выдумывай цифры.
 
 Структура отчёта (используй Markdown):
 ## Краткое резюме
 ## Динамика и закономерности
 ## Органический трафик и видимость
 ## Запросы, страницы, устройства и страны
+## Метаданные и robots.txt главной страницы
 ## Индексация и техническое SEO
 ## Скорость и Core Web Vitals
 ## Связь с разработкой
@@ -118,6 +129,53 @@ PROMPT;
             '- URL: '.$site->url,
             '- Период анализа: с '.$from.' по '.$to,
         ]);
+    }
+
+    private function websiteDataSection(Site $site): string
+    {
+        $meta = array_filter([
+            'page_title' => $site->page_title,
+            'meta_description' => $site->meta_description,
+            'meta_keywords' => $site->meta_keywords,
+            'og_title' => $site->og_title,
+            'og_description' => $site->og_description,
+            'og_image_url' => $site->og_image_url,
+            'canonical_url' => $site->canonical_url,
+            'html_lang' => $site->html_lang,
+            'favicon_source_url' => $site->favicon_source_url,
+            'has_stored_favicon' => filled($site->favicon_path),
+            'web_data_status' => $site->web_data_status?->value,
+            'web_data_fetched_at' => $site->web_data_fetched_at?->toIso8601String(),
+            'web_data_error' => $site->web_data_error,
+        ], static fn (mixed $value): bool => $value !== null && $value !== '');
+
+        $robotsTxt = filled($site->robots_txt)
+            ? $this->truncate((string) $site->robots_txt, self::MAX_ROBOTS_TXT_CHARS)
+            : null;
+
+        if ($meta === [] && $robotsTxt === null) {
+            return "## Снимок сайта (главная страница)\nДанные ещё не собраны.";
+        }
+
+        $parts = [
+            '## Снимок сайта (главная страница)',
+            'Ниже — метаданные и robots.txt, собранные с главной страницы сайта. Используй их для оценки базового SEO и правил обхода.',
+        ];
+
+        if ($meta !== []) {
+            $parts[] = "### Метаданные\n"
+                ."```json\n"
+                .$this->encodeValue($meta)
+                ."\n```";
+        }
+
+        if ($robotsTxt !== null) {
+            $parts[] = "### robots.txt\n```\n{$robotsTxt}\n```";
+        } else {
+            $parts[] = "### robots.txt\nФайл не найден или не удалось загрузить.";
+        }
+
+        return implode("\n\n", $parts);
     }
 
     /**
@@ -397,8 +455,13 @@ PROMPT;
      */
     private function encodeJson(array $rows): string
     {
+        return $this->encodeValue($rows);
+    }
+
+    private function encodeValue(mixed $value): string
+    {
         return (string) json_encode(
-            $rows,
+            $value,
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
         );
     }
