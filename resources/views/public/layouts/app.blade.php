@@ -4,14 +4,22 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>@yield('title', config('app.name'))</title>
-    <meta name="description" content="@yield('meta_description', config('app.name'))">
+    @php
+        // Nested @yield inside @hasSection/@else is not compiled by Blade and leaks as literal text to crawlers.
+        $pageTitle = trim($__env->yieldContent('title')) ?: config('app.name');
+        $pageDescription = trim($__env->yieldContent('meta_description')) ?: config('app.name');
+        $ogTitle = trim($__env->yieldContent('og_title')) ?: $pageTitle;
+        $ogDescription = trim($__env->yieldContent('og_description')) ?: $pageDescription;
+        $ogImage = trim($__env->yieldContent('og_image')) ?: asset('images/og-image.png');
+    @endphp
+    <title>{{ $pageTitle }}</title>
+    <meta name="description" content="{{ $pageDescription }}">
     <x-site-icons />
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="{{ config('app.name') }}">
-    <meta property="og:title" content="@hasSection('og_title')@yield('og_title')@else@yield('title', config('app.name'))@endif">
-    <meta property="og:description" content="@hasSection('og_description')@yield('og_description')@else@yield('meta_description', config('app.name'))@endif">
-    <meta property="og:image" content="@yield('og_image', asset('images/og-image.png'))">
+    <meta property="og:title" content="{{ $ogTitle }}">
+    <meta property="og:description" content="{{ $ogDescription }}">
+    <meta property="og:image" content="{{ $ogImage }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:locale" content="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -25,9 +33,9 @@
         <link rel="alternate" hreflang="x-default" href="{{ $defaultAlternate }}">
     @endif
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="@hasSection('og_title')@yield('og_title')@else@yield('title', config('app.name'))@endif">
-    <meta name="twitter:description" content="@hasSection('og_description')@yield('og_description')@else@yield('meta_description', config('app.name'))@endif">
-    <meta name="twitter:image" content="@yield('og_image', asset('images/og-image.png'))">
+    <meta name="twitter:title" content="{{ $ogTitle }}">
+    <meta name="twitter:description" content="{{ $ogDescription }}">
+    <meta name="twitter:image" content="{{ $ogImage }}">
     @stack('meta')
     @vite(['resources/scss/public.scss', 'resources/js/public/app.js'])
 </head>
