@@ -6,42 +6,36 @@ import { initLangSelect } from './lang-select';
 
 function syncPublicAuthCtas() {
     const authed = Boolean(getToken('/api/app'));
-    const root = document.body;
-    const fallbackCabinet = root?.dataset.i18nCabinet || 'Personal account';
-    const fallbackLogin = root?.dataset.i18nLogin || 'Log in';
-    const fallbackRegister = root?.dataset.i18nRegister || 'Sign up';
+    const fallbackCabinet = document.body?.dataset.i18nCabinet || 'Personal account';
 
     document.querySelectorAll('[data-public-auth-cta]').forEach((el) => {
         const mode = el.getAttribute('data-public-auth-cta') || 'login';
         const keepWhenAuthed = el.hasAttribute('data-public-auth-keep');
-        const labelCabinet = el.dataset.labelAuthed || fallbackCabinet;
-        const labelLogin = el.dataset.labelLogin || fallbackLogin;
-        const labelRegister = el.dataset.labelRegister || fallbackRegister;
 
         if (authed) {
             if (mode === 'register' && !keepWhenAuthed) {
                 el.hidden = true;
+
                 return;
             }
 
             el.hidden = false;
             el.setAttribute('href', '/app');
-            el.textContent = labelCabinet;
+            el.textContent = el.dataset.labelAuthed || fallbackCabinet;
 
             return;
         }
 
+        // Guest: keep Blade-rendered labels/hrefs — do not overwrite with JS.
         el.hidden = false;
 
         if (mode === 'register') {
             el.setAttribute('href', '/app/register');
-            el.textContent = labelRegister;
 
             return;
         }
 
         el.setAttribute('href', '/app/login');
-        el.textContent = labelLogin;
     });
 }
 
