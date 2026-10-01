@@ -73,6 +73,8 @@ class GenerateSiteAiReport
         $commits = $this->loadCommits($site, $from, $to);
         $events = $this->loadEvents($site, $from, $to);
         $documents = $this->loadDocuments($site);
+        $analyticsPages = $this->loadAnalyticsPages($site, $from, $to);
+        $pageSnapshots = $this->loadPageSnapshots($site);
 
         $dataCounts = [
             'website' => $this->hasWebsiteData($site) ? 1 : 0,
@@ -90,6 +92,8 @@ class GenerateSiteAiReport
             'github_commits' => count($commits),
             'events' => count($events),
             'documents' => count($documents),
+            'analytics_pages' => count($analyticsPages),
+            'page_snapshots' => count($pageSnapshots),
         ];
 
         $savedPrompt = $useSystemPrompt ? null : (filled($customPrompt) ? trim($customPrompt) : null);
@@ -134,6 +138,8 @@ class GenerateSiteAiReport
             $pageSpeed,
             $documents,
             $useSystemPrompt ? null : $savedPrompt,
+            $analyticsPages,
+            $pageSnapshots,
         );
 
         $result = $this->generateContent->handle($aiService, $prompt);
@@ -343,6 +349,9 @@ class GenerateSiteAiReport
                     'ttfb_ms' => $row->ttfb_ms,
                     'tbt_ms' => $row->tbt_ms,
                     'speed_index_ms' => $row->speed_index_ms,
+                    'details' => $row->include_details_in_report
+                        ? $this->extractLabDetails(is_array($row->payload) ? $row->payload : [])
+                        : null,
                 ])
                 ->all(),
             'crux' => $site->cruxSnapshots()
@@ -363,9 +372,148 @@ class GenerateSiteAiReport
                     'fcp_p75_ms' => $row->fcp_p75_ms,
                     'ttfb_p75_ms' => $row->ttfb_p75_ms,
                     'fetched_at' => $row->fetched_at?->toIso8601String(),
+                    'details' => $row->include_details_in_report
+                        ? $this->extractCruxDetails(is_array($row->metrics) ? $row->metrics : [])
+                        : null,
                 ])
                 ->all(),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array{opportunities: list<array{id: string, title: string, score: float|null}>, diagnostics: list<array{id: string, title: string}>}
+     */
+    private function extractLabDetails(array $payload): array
+    {
+        $audits = is_array($payload['lighthouseResult']['audits'] ?? null)
+            ? $payload['lighthouseResult']['audits']
+            : [];
+        $categories = is_array($payload['lighthouseResult']['categories'] ?? null)
+            ? $payload['lighthouseResult']['categories']
+            : [];
+
+        $opportunityRefs = is_array($categories['performance']['auditRefs'] ?? null)
+            ? $categories['performance']['auditRefs']
+            : [];
+
+        $opportunities = [];
+        foreach ($opportunityRefs as $ref) {
+            if (! is_array($ref) || ($ref['group'] ?? null) !== 'load-opportunities') {
+                continue;
+            }
+
+            $id = (string) ($ref['id'] ?? '');
+            $audit = is_array($audits[$id] ?? null) ? $audits[$id] : null;
+            if ($audit === null || ($audit['score'] ?? 1) >= 1) {
+                continue;
+            }
+
+            $opportunities[] = [
+                'id' => $id,
+                'title' => (string) ($audit['title'] ?? $id),
+                'score' => isset($audit['score']) && is_numeric($audit['score']) ? (float) $audit['score'] : null,
+            ];
+
+            if (count($opportunities) >= 8) {
+                break;
+            }
+        }
+
+        $diagnostics = [];
+        foreach ($opportunityRefs as $ref) {
+            if (! is_array($ref) || ($ref['group'] ?? null) !== 'diagnostics') {
+                continue;
+            }
+            $id = (string) ($ref['id'] ?? '');
+            $audit = is_array($audits[$id] ?? null) ? $audits[$id] : null;
+            if ($audit === null) {
+                continue;
+            }
+            $diagnostics[] = [
+                'id' => $id,
+                'title' => (string) ($audit['title'] ?? $id),
+            ];
+            if (count($diagnostics) >= 8) {
+                break;
+            }
+        }
+
+        return [
+            'opportunities' => $opportunities,
+            'diagnostics' => $diagnostics,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $metrics
+     * @return array<string, array{p75: float|int|null, category: string|null}>
+     */
+    private function extractCruxDetails(array $metrics): array
+    {
+        $details = [];
+
+        foreach ($metrics as $key => $metric) {
+            if (! is_array($metric) || count($details) >= 10) {
+                continue;
+            }
+
+            $details[(string) $key] = [
+                'p75' => isset($metric['percentile']) && is_numeric($metric['percentile'])
+                    ? $metric['percentile']
+                    : null,
+                'category' => isset($metric['category']) && is_string($metric['category'])
+                    ? $metric['category']
+                    : null,
+            ];
+        }
+
+        return $details;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function loadAnalyticsPages(Site $site, string $from, string $to): array
+    {
+        return $site->analyticsPages()
+            ->where('period_from', $from)
+            ->where('period_to', $to)
+            ->orderBy('rank')
+            ->limit(50)
+            ->get()
+            ->map(fn ($row) => [
+                'page_path' => $row->page_path,
+                'rank' => $row->rank,
+                'sessions' => $row->sessions,
+                'screen_page_views' => $row->screen_page_views,
+                'total_users' => $row->total_users,
+            ])
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function loadPageSnapshots(Site $site): array
+    {
+        return $site->pageSnapshots()
+            ->whereNull('error')
+            ->orderByDesc('fetched_at')
+            ->limit(20)
+            ->get()
+            ->map(fn ($row) => [
+                'url' => $row->url,
+                'final_url' => $row->final_url,
+                'page_title' => $row->page_title,
+                'meta_description' => $row->meta_description,
+                'canonical_url' => $row->canonical_url,
+                'og_title' => $row->og_title,
+                'og_description' => $row->og_description,
+                'html_lang' => $row->html_lang,
+                'fetched_at' => $row->fetched_at?->toIso8601String(),
+            ])
+            ->all();
     }
 
     /**
@@ -387,6 +535,9 @@ class GenerateSiteAiReport
                 'message' => $row->message,
                 'author_name' => $row->author_name,
                 'author_date' => $row->author_date?->toIso8601String(),
+                'stats' => $row->hasFiles() && is_array($row->stats) ? $row->stats : null,
+                'files' => $row->hasFiles() && is_array($row->files) ? $row->files : null,
+                'files_incomplete' => $row->hasFiles() ? (bool) $row->files_incomplete : null,
             ])
             ->all();
     }

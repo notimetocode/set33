@@ -193,6 +193,154 @@ class GithubApiClient
         return $all;
     }
 
+    /**
+     * @return array{
+     *     sha: string,
+     *     message: string,
+     *     html_url: string,
+     *     stats: array{additions: int, deletions: int, total: int},
+     *     files: list<array{
+     *         filename: string,
+     *         status: string,
+     *         additions: int,
+     *         deletions: int,
+     *         changes: int,
+     *         previous_filename: ?string,
+     *         patch: ?string
+     *     }>,
+     *     files_incomplete: bool
+     * }
+     */
+    public function getCommit(
+        GithubConnection $connection,
+        string $owner,
+        string $repo,
+        string $sha,
+        bool $followPagination = false,
+    ): array {
+        $path = '/repos/'.rawurlencode($owner).'/'.rawurlencode($repo).'/commits/'.rawurlencode($sha);
+        $response = $this->authenticatedRequest($connection)
+            ->timeout(45)
+            ->get($path);
+
+        if ($response->status() === 404) {
+            throw new RuntimeException('Коммит не найден или нет доступа.');
+        }
+
+        if (! $response->successful()) {
+            throw new RuntimeException($this->errorMessage($response->status(), 'Не удалось получить изменения коммита.'));
+        }
+
+        /** @var array<string, mixed> $payload */
+        $payload = $response->json() ?? [];
+
+        /** @var array<string, mixed> $commit */
+        $commit = is_array($payload['commit'] ?? null) ? $payload['commit'] : [];
+        /** @var array<string, mixed> $stats */
+        $stats = is_array($payload['stats'] ?? null) ? $payload['stats'] : [];
+        /** @var list<array<string, mixed>> $rawFiles */
+        $rawFiles = is_array($payload['files'] ?? null) ? $payload['files'] : [];
+
+        $files = $this->normalizeCommitFiles($rawFiles);
+        $linkHeader = (string) $response->header('Link');
+        $filesIncomplete = str_contains($linkHeader, 'rel="next"');
+
+        if ($followPagination && $filesIncomplete) {
+            $page = 2;
+            $maxPages = 10;
+
+            while ($page <= $maxPages) {
+                $pageResponse = $this->authenticatedRequest($connection)
+                    ->timeout(45)
+                    ->get($path, ['page' => $page]);
+
+                if (! $pageResponse->successful()) {
+                    break;
+                }
+
+                /** @var array<string, mixed> $pagePayload */
+                $pagePayload = $pageResponse->json() ?? [];
+                /** @var list<array<string, mixed>> $pageFiles */
+                $pageFiles = is_array($pagePayload['files'] ?? null) ? $pagePayload['files'] : [];
+
+                if ($pageFiles === []) {
+                    $filesIncomplete = false;
+                    break;
+                }
+
+                $files = [...$files, ...$this->normalizeCommitFiles($pageFiles)];
+                $pageLink = (string) $pageResponse->header('Link');
+                $filesIncomplete = str_contains($pageLink, 'rel="next"');
+
+                if (! $filesIncomplete) {
+                    break;
+                }
+
+                $page++;
+            }
+        }
+
+        return [
+            'sha' => (string) ($payload['sha'] ?? $sha),
+            'message' => (string) ($commit['message'] ?? ''),
+            'html_url' => (string) ($payload['html_url'] ?? ''),
+            'stats' => [
+                'additions' => (int) ($stats['additions'] ?? 0),
+                'deletions' => (int) ($stats['deletions'] ?? 0),
+                'total' => (int) ($stats['total'] ?? 0),
+            ],
+            'files' => $files,
+            'files_incomplete' => $filesIncomplete,
+        ];
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rawFiles
+     * @return list<array{
+     *     filename: string,
+     *     status: string,
+     *     additions: int,
+     *     deletions: int,
+     *     changes: int,
+     *     previous_filename: ?string,
+     *     patch: ?string
+     * }>
+     */
+    private function normalizeCommitFiles(array $rawFiles): array
+    {
+        $files = [];
+
+        foreach ($rawFiles as $file) {
+            if (! is_array($file)) {
+                continue;
+            }
+
+            $filename = isset($file['filename']) && is_string($file['filename']) ? $file['filename'] : '';
+            if ($filename === '') {
+                continue;
+            }
+
+            $patch = isset($file['patch']) && is_string($file['patch']) ? $file['patch'] : null;
+            if ($patch !== null && mb_strlen($patch) > 8000) {
+                $patch = mb_substr($patch, 0, 7997).'...';
+            }
+
+            $files[] = [
+                'filename' => $filename,
+                'status' => isset($file['status']) && is_string($file['status']) ? $file['status'] : 'modified',
+                'additions' => (int) ($file['additions'] ?? 0),
+                'deletions' => (int) ($file['deletions'] ?? 0),
+                'changes' => (int) ($file['changes'] ?? 0),
+                'previous_filename' => isset($file['previous_filename']) && is_string($file['previous_filename'])
+                    ? $file['previous_filename']
+                    : null,
+                'patch' => $patch,
+            ];
+        }
+
+        return $files;
+    }
+
     public function revoke(GithubConnection $connection): void
     {
         $clientId = (string) config('services.github.client_id');

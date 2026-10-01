@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers\App;
 
+use App\Actions\Site\ApplySiteAiReportPreprocessItems;
 use App\Actions\Site\GenerateSiteAiReport;
+use App\Actions\Site\PreprocessSiteAiReport;
 use App\Actions\Site\SaveSiteAiReport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\App\Site\ApplySiteAiReportPreprocessRequest;
 use App\Http\Requests\App\Site\GenerateSiteAiReportRequest;
+use App\Http\Requests\App\Site\PreprocessSiteAiReportRequest;
 use App\Http\Resources\App\SiteAiReportResource;
 use App\Models\AiService;
 use App\Models\Site;
@@ -87,5 +91,57 @@ class SiteAiReportController extends Controller
             'data_counts' => $result['data_counts'],
             'data' => (new SiteAiReportResource($report))->resolve(),
         ], 201);
+    }
+
+    public function preprocess(
+        PreprocessSiteAiReportRequest $request,
+        Site $site,
+        PreprocessSiteAiReport $preprocess,
+    ): JsonResponse {
+        Gate::authorize('app.sites.view', $site);
+
+        $validated = $request->validated();
+        $aiService = AiService::query()->findOrFail($validated['ai_service_id']);
+
+        Gate::authorize('app.ai-services.generate', $aiService);
+
+        $result = $preprocess->handle(
+            $site,
+            $aiService,
+            $validated['from'],
+            $validated['to'],
+        );
+
+        return response()->json([
+            'ok' => $result['ok'],
+            'message' => $result['message'],
+            'retryable' => (bool) ($result['retryable'] ?? false),
+            'period' => $result['period'],
+            'model' => $result['model'],
+            'usage' => $result['usage'],
+            'items' => $result['items'],
+        ]);
+    }
+
+    public function applyPreprocess(
+        ApplySiteAiReportPreprocessRequest $request,
+        Site $site,
+        ApplySiteAiReportPreprocessItems $apply,
+    ): JsonResponse {
+        Gate::authorize('app.sites.view', $site);
+
+        $validated = $request->validated();
+        $result = $apply->handle(
+            $site,
+            $validated['from'],
+            $validated['to'],
+            $validated['items'],
+        );
+
+        return response()->json([
+            'ok' => $result['ok'],
+            'message' => $result['message'],
+            'results' => $result['results'],
+        ]);
     }
 }

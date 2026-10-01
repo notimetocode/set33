@@ -34,6 +34,7 @@ class SitePageSpeedLabSnapshot extends Model
         'tbt_ms',
         'speed_index_ms',
         'payload',
+        'include_details_in_report',
     ];
 
     /**
@@ -55,6 +56,7 @@ class SitePageSpeedLabSnapshot extends Model
             'tbt_ms' => 'integer',
             'speed_index_ms' => 'integer',
             'payload' => 'array',
+            'include_details_in_report' => 'boolean',
         ];
     }
 

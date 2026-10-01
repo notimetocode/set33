@@ -796,6 +796,7 @@
                                             <th>{{ t('sites.show.col.message') }}</th>
                                             <th>{{ t('sites.show.col.author') }}</th>
                                             <th>{{ t('sites.show.col.date') }}</th>
+                                            <th class="text-end">{{ t('sites.show.col.actions') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -812,6 +813,27 @@
                                             <td class="page-app-sites__commit-message">{{ commitSubject(row.message) }}</td>
                                             <td>{{ row.author_name || '—' }}</td>
                                             <td>{{ formatDateTime(row.author_date) }}</td>
+                                            <td class="text-end text-nowrap">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-outline-secondary btn-sm"
+                                                    :disabled="busy || commitFilesBusyId === row.id"
+                                                    @click="onCommitFilesAction(row)"
+                                                >
+                                                    <span
+                                                        v-if="commitFilesBusyId === row.id"
+                                                        class="spinner-border spinner-border-sm me-1"
+                                                        aria-hidden="true"
+                                                    />
+                                                    {{
+                                                        commitFilesBusyId === row.id
+                                                            ? t('sites.show.github.fetchingChanges')
+                                                            : row.has_files
+                                                                ? t('sites.show.github.viewChanges')
+                                                                : t('sites.show.github.fetchChanges')
+                                                    }}
+                                                </button>
+                                            </td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1775,7 +1797,7 @@
                                             type="date"
                                             class="form-control"
                                             :max="period.to || periodMax"
-                                            :disabled="busy || aiReportGenerating"
+                                            :disabled="busy || aiReportGenerating || aiReportPreprocessing"
                                             @change="onPeriodChange"
                                         >
                                     </div>
@@ -1788,7 +1810,7 @@
                                             class="form-control"
                                             :min="period.from"
                                             :max="periodMax"
-                                            :disabled="busy || aiReportGenerating"
+                                            :disabled="busy || aiReportGenerating || aiReportPreprocessing"
                                             @change="onPeriodChange"
                                         >
                                     </div>
@@ -1821,7 +1843,7 @@
                                             id="ai-report-service"
                                             v-model="aiReportServiceId"
                                             class="form-select"
-                                            :disabled="busy || aiReportGenerating || !aiServices.length"
+                                            :disabled="busy || aiReportGenerating || aiReportPreprocessing || !aiServices.length"
                                         >
                                             <option value="">
                                                 {{ aiServices.length ? t('sites.show.aiReport.chooseService') : t('sites.show.aiReport.noServices') }}
@@ -1866,7 +1888,7 @@
                                                 v-model="aiReportUseSystemPrompt"
                                                 class="form-check-input"
                                                 type="checkbox"
-                                                :disabled="busy || aiReportGenerating"
+                                                :disabled="busy || aiReportGenerating || aiReportPreprocessing"
                                             >
                                             <label
                                                 class="form-check-label"
@@ -1893,7 +1915,7 @@
                                                 class="form-control"
                                                 rows="8"
                                                 :placeholder="t('sites.show.aiReport.customPromptPlaceholder')"
-                                                :disabled="busy || aiReportGenerating"
+                                                :disabled="busy || aiReportGenerating || aiReportPreprocessing"
                                             />
                                             <p class="form-text mb-0">
                                                 {{ t('sites.show.aiReport.customPromptHint') }}
@@ -1902,6 +1924,20 @@
                                     </div>
 
                                     <div class="page-app-sites__ai-report-actions mb-3">
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-secondary"
+                                            :disabled="!canPreprocessAiReport"
+                                            @click="onPreprocessAiReport"
+                                        >
+                                            <AppLoader
+                                                v-if="aiReportPreprocessing"
+                                                size="sm"
+                                            />
+                                            <span>
+                                                {{ aiReportPreprocessButtonLabel }}
+                                            </span>
+                                        </button>
                                         <button
                                             type="button"
                                             class="btn btn-primary"
@@ -1917,6 +1953,10 @@
                                             </span>
                                         </button>
                                     </div>
+
+                                    <p class="form-text mb-3">
+                                        {{ t('sites.show.aiReport.preprocess.hint') }}
+                                    </p>
 
                                     <div
                                         v-if="aiReportError"
@@ -2459,6 +2499,232 @@
                 </button>
             </template>
         </AppModal>
+
+        <AppModal
+            v-model:open="aiReportPreprocessModalOpen"
+            :title="t('sites.show.aiReport.preprocess.title')"
+            :message="t('sites.show.aiReport.preprocess.message')"
+            size="md"
+            align="start"
+            :show-confirm="false"
+            :close-on-backdrop="!aiReportPreprocessFetching"
+        >
+            <div class="page-app-sites__ai-report-preprocess">
+                <div
+                    v-if="aiReportPreprocessError"
+                    class="alert alert-danger py-2"
+                >
+                    {{ aiReportPreprocessError }}
+                </div>
+
+                <div
+                    v-else-if="!aiReportPreprocessItems.length"
+                    class="text-muted"
+                >
+                    {{ t('sites.show.aiReport.preprocess.empty') }}
+                </div>
+
+                <template v-else>
+                    <div class="page-app-sites__ai-report-preprocess-toolbar mb-2">
+                        <label class="form-check mb-0">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                :checked="aiReportPreprocessAllSelected"
+                                :disabled="aiReportPreprocessFetching"
+                                @change="onToggleAllPreprocessItems"
+                            >
+                            <span class="form-check-label">
+                                {{ t('sites.show.aiReport.preprocess.selectAll') }}
+                            </span>
+                        </label>
+                        <span class="text-muted small">
+                            {{ t('sites.show.aiReport.preprocess.selectedCount', { count: aiReportPreprocessSelectedCount }) }}
+                        </span>
+                    </div>
+
+                    <div
+                        v-for="group in aiReportPreprocessGroups"
+                        :key="group.type"
+                        class="page-app-sites__ai-report-preprocess-group"
+                    >
+                        <h3 class="page-app-sites__ai-report-preprocess-group-title">
+                            {{ preprocessTypeLabel(group.type) }}
+                        </h3>
+                        <ul class="page-app-sites__ai-report-preprocess-list list-unstyled mb-0">
+                            <li
+                                v-for="item in group.items"
+                                :key="item.key"
+                                class="page-app-sites__ai-report-preprocess-item"
+                            >
+                                <label class="form-check mb-0">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        :checked="aiReportPreprocessSelectedKeys.includes(item.key)"
+                                        :disabled="aiReportPreprocessFetching"
+                                        @change="onTogglePreprocessItem(item.key)"
+                                    >
+                                    <span class="form-check-label">
+                                        <span class="page-app-sites__ai-report-preprocess-item-title">
+                                            <span>{{ item.title || item.url || item.key }}</span>
+                                        </span>
+                                        <span
+                                            v-if="item.reason"
+                                            class="page-app-sites__ai-report-preprocess-item-reason text-muted small"
+                                        >
+                                            {{ t('sites.show.aiReport.preprocess.reason') }}: {{ item.reason }}
+                                        </span>
+                                    </span>
+                                </label>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <p
+                        v-if="aiReportPreprocessFetching"
+                        class="text-muted small mb-0 mt-3"
+                    >
+                        {{ t('sites.show.aiReport.preprocess.fetching') }}
+                    </p>
+                </template>
+            </div>
+
+            <template #actions>
+                <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    :disabled="aiReportPreprocessFetching"
+                    @click="aiReportPreprocessModalOpen = false"
+                >
+                    {{ t('sites.show.aiReport.preprocess.cancel') }}
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    :disabled="!canConfirmAiReportPreprocess"
+                    @click="onConfirmAiReportPreprocess"
+                >
+                    <AppLoader
+                        v-if="aiReportPreprocessFetching"
+                        size="sm"
+                    />
+                    <span>
+                        {{
+                            aiReportPreprocessFetching
+                                ? t('sites.show.aiReport.preprocess.fetching')
+                                : t('sites.show.aiReport.preprocess.confirm')
+                        }}
+                    </span>
+                </button>
+            </template>
+        </AppModal>
+
+        <AppModal
+            v-model:open="commitFilesModalOpen"
+            :title="commitFilesModalTitle"
+            size="lg"
+            align="start"
+            :show-confirm="true"
+            :confirm-label="t('common.close')"
+        >
+            <AppLoader
+                v-if="commitFilesLoading"
+                block
+                :label="t('sites.show.github.fetchingChanges')"
+            />
+            <div
+                v-else-if="commitFilesError"
+                class="alert alert-danger py-2 mb-0"
+            >
+                {{ commitFilesError }}
+            </div>
+            <div
+                v-else-if="commitFilesDetail"
+                class="page-app-sites__commit-files"
+            >
+                <p
+                    v-if="commitFilesDetail.stats"
+                    class="text-muted small mb-2"
+                >
+                    {{
+                        t('sites.show.github.changesStats', {
+                            additions: commitFilesDetail.stats.additions,
+                            deletions: commitFilesDetail.stats.deletions,
+                            total: commitFilesDetail.stats.total,
+                        })
+                    }}
+                </p>
+                <p
+                    v-if="commitFilesDetail.files_incomplete"
+                    class="alert alert-warning py-2 small"
+                >
+                    {{ t('sites.show.github.changesIncomplete') }}
+                </p>
+                <div
+                    v-if="!(commitFilesDetail.files || []).length"
+                    class="text-muted"
+                >
+                    {{ t('sites.show.github.changesEmpty') }}
+                </div>
+                <div
+                    v-else
+                    class="table-responsive"
+                >
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('sites.show.github.colFile') }}</th>
+                                <th>{{ t('sites.show.github.colStatus') }}</th>
+                                <th class="text-end">{{ t('sites.show.github.colAdditions') }}</th>
+                                <th class="text-end">{{ t('sites.show.github.colDeletions') }}</th>
+                                <th />
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template
+                                v-for="file in commitFilesDetail.files"
+                                :key="`${file.filename}-${file.status}`"
+                            >
+                                <tr>
+                                    <td class="page-app-sites__commit-file-name">
+                                        <span>{{ file.filename }}</span>
+                                        <span
+                                            v-if="file.previous_filename"
+                                            class="text-muted d-block small"
+                                        >
+                                            ← {{ file.previous_filename }}
+                                        </span>
+                                    </td>
+                                    <td>{{ commitFileStatusLabel(file.status) }}</td>
+                                    <td class="text-end text-success">{{ file.additions }}</td>
+                                    <td class="text-end text-danger">{{ file.deletions }}</td>
+                                    <td class="text-end">
+                                        <button
+                                            v-if="file.patch"
+                                            type="button"
+                                            class="btn btn-link btn-sm px-0"
+                                            @click="toggleCommitFilePatch(file.filename)"
+                                        >
+                                            {{
+                                                expandedCommitPatches[file.filename]
+                                                    ? t('sites.show.github.hidePatch')
+                                                    : t('sites.show.github.showPatch')
+                                            }}
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr v-if="file.patch && expandedCommitPatches[file.filename]">
+                                    <td colspan="5">
+                                        <pre class="page-app-sites__commit-patch mb-0">{{ file.patch }}</pre>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </AppModal>
     </div>
 </template>
 
@@ -2476,7 +2742,9 @@ import { useI18n } from '../../../shared/i18n';
 import { listAiServices } from '../../api/aiServices';
 import {
     disconnectGithub,
+    fetchSiteGithubCommitFiles,
     getGithubConnection,
+    getSiteGithubCommitFiles,
     getSiteGithubCommits,
     listGithubBranches,
     listGithubRepositories,
@@ -2509,6 +2777,8 @@ import {
     listSiteAiReports,
     listSiteDocuments,
     listSiteEvents,
+    preprocessSiteAiReport,
+    applySiteAiReportPreprocess,
     refreshSiteWebData,
     startGoogleOAuth,
     syncSiteGoogleIntegration,
@@ -2563,6 +2833,12 @@ const gscSearchAppearances = ref([]);
 const gscSitemaps = ref([]);
 const gscUrlInspections = ref([]);
 const commitRows = ref([]);
+const commitFilesBusyId = ref(null);
+const commitFilesModalOpen = ref(false);
+const commitFilesLoading = ref(false);
+const commitFilesError = ref('');
+const commitFilesDetail = ref(null);
+const expandedCommitPatches = ref({});
 const pagespeedLabRows = ref([]);
 const pagespeedCruxRows = ref([]);
 const metricsCoverage = ref(null);
@@ -2757,7 +3033,15 @@ const aiReportGenerating = ref(false);
 const aiReportAttempt = ref(0);
 const aiReportLoading = ref(false);
 const aiReportError = ref('');
+const aiReportPreprocessing = ref(false);
+const aiReportPreprocessAttempt = ref(0);
+const aiReportPreprocessModalOpen = ref(false);
+const aiReportPreprocessItems = ref([]);
+const aiReportPreprocessSelectedKeys = ref([]);
+const aiReportPreprocessError = ref('');
+const aiReportPreprocessFetching = ref(false);
 const AI_REPORT_MAX_ATTEMPTS = 5;
+const AI_REPORT_PREPROCESS_MAX_ATTEMPTS = 2;
 const AI_REPORT_RETRY_DELAY_MS = 2500;
 const aiReportReply = ref('');
 const aiReportCharts = ref([]);
@@ -3177,8 +3461,21 @@ const canGenerateAiReport = computed(() => (
     && period.from <= period.to
     && !busy.value
     && !aiReportGenerating.value
+    && !aiReportPreprocessing.value
     && !aiServicesLoading.value
     && (aiReportUseSystemPrompt.value || Boolean(aiReportCustomPrompt.value.trim()))
+));
+
+const canPreprocessAiReport = computed(() => (
+    Boolean(aiReportServiceId.value)
+    && Boolean(period.from)
+    && Boolean(period.to)
+    && period.from <= period.to
+    && !busy.value
+    && !aiReportGenerating.value
+    && !aiReportPreprocessing.value
+    && !aiReportPreprocessFetching.value
+    && !aiServicesLoading.value
 ));
 
 const aiReportGenerateButtonLabel = computed(() => {
@@ -3192,6 +3489,57 @@ const aiReportGenerateButtonLabel = computed(() => {
 
     return t('sites.show.aiReport.generating');
 });
+
+const aiReportPreprocessButtonLabel = computed(() => {
+    if (!aiReportPreprocessing.value) {
+        return t('sites.show.aiReport.preprocess.button');
+    }
+
+    if (aiReportPreprocessAttempt.value > 1) {
+        return t('sites.show.aiReport.attempt', {
+            current: aiReportPreprocessAttempt.value,
+            max: AI_REPORT_PREPROCESS_MAX_ATTEMPTS,
+        });
+    }
+
+    return t('sites.show.aiReport.preprocess.processing');
+});
+
+const aiReportPreprocessSelectedCount = computed(() => aiReportPreprocessSelectedKeys.value.length);
+
+const aiReportPreprocessAllSelected = computed(() => (
+    aiReportPreprocessItems.value.length > 0
+    && aiReportPreprocessSelectedKeys.value.length === aiReportPreprocessItems.value.length
+));
+
+const aiReportPreprocessGroups = computed(() => {
+    const groups = [];
+    const indexByType = {};
+
+    for (const item of aiReportPreprocessItems.value) {
+        const type = item.type || 'unknown';
+        if (indexByType[type] === undefined) {
+            indexByType[type] = groups.length;
+            groups.push({ type, items: [] });
+        }
+        groups[indexByType[type]].items.push(item);
+    }
+
+    return groups;
+});
+
+const canConfirmAiReportPreprocess = computed(() => (
+    aiReportPreprocessItems.value.length > 0
+    && aiReportPreprocessSelectedKeys.value.length > 0
+    && !aiReportPreprocessFetching.value
+));
+
+function preprocessTypeLabel(type) {
+    const key = `sites.show.aiReport.preprocess.types.${type}`;
+    const label = t(key);
+
+    return label === key ? type : label;
+}
 
 const isAiReportOpen = computed(() => Boolean(selectedAiReportId.value));
 
@@ -3462,6 +3810,86 @@ function commitSubject(message) {
     }
 
     return String(message).split('\n')[0];
+}
+
+const commitFilesModalTitle = computed(() => {
+    const sha = commitFilesDetail.value?.short_sha || '';
+
+    return t('sites.show.github.changesModalTitle', { sha: sha || '…' });
+});
+
+function commitFileStatusLabel(status) {
+    const map = {
+        added: t('sites.show.github.statusAdded'),
+        removed: t('sites.show.github.statusRemoved'),
+        modified: t('sites.show.github.statusModified'),
+        renamed: t('sites.show.github.statusRenamed'),
+        copied: t('sites.show.github.statusCopied'),
+        changed: t('sites.show.github.statusChanged'),
+        unchanged: t('sites.show.github.statusUnchanged'),
+    };
+
+    return map[String(status)] || status || '—';
+}
+
+function toggleCommitFilePatch(filename) {
+    expandedCommitPatches.value = {
+        ...expandedCommitPatches.value,
+        [filename]: !expandedCommitPatches.value[filename],
+    };
+}
+
+function openCommitFilesModal(detail) {
+    commitFilesDetail.value = detail;
+    commitFilesError.value = '';
+    expandedCommitPatches.value = {};
+    commitFilesModalOpen.value = true;
+}
+
+async function onCommitFilesAction(row) {
+    if (!site.value || !row?.id || commitFilesBusyId.value) {
+        return;
+    }
+
+    commitFilesBusyId.value = row.id;
+    commitFilesError.value = '';
+
+    try {
+        if (row.has_files) {
+            commitFilesLoading.value = true;
+            commitFilesModalOpen.value = true;
+            commitFilesDetail.value = null;
+            const detail = await getSiteGithubCommitFiles(site.value.id, row.id);
+            openCommitFilesModal(detail);
+        } else {
+            const detail = await fetchSiteGithubCommitFiles(site.value.id, row.id);
+            const index = commitRows.value.findIndex((item) => item.id === row.id);
+            if (index !== -1) {
+                commitRows.value[index] = {
+                    ...commitRows.value[index],
+                    has_files: true,
+                    files_fetched_at: detail.files_fetched_at,
+                };
+            }
+            openCommitFilesModal(detail);
+        }
+    } catch (e) {
+        const message = e.response?.data?.message
+            || (row.has_files
+                ? t('sites.show.errors.loadCommitFiles')
+                : t('sites.show.errors.fetchCommitFiles'));
+
+        if (row.has_files) {
+            commitFilesDetail.value = null;
+            commitFilesError.value = message;
+            commitFilesModalOpen.value = true;
+        } else {
+            toast.show({ ok: false, message });
+        }
+    } finally {
+        commitFilesBusyId.value = null;
+        commitFilesLoading.value = false;
+    }
 }
 
 function preferConnectedMetricsTab() {
@@ -3989,6 +4417,163 @@ async function onGenerateAiReport() {
     } finally {
         aiReportGenerating.value = false;
         aiReportAttempt.value = 0;
+    }
+}
+
+function onTogglePreprocessItem(key) {
+    const selected = aiReportPreprocessSelectedKeys.value;
+
+    if (selected.includes(key)) {
+        aiReportPreprocessSelectedKeys.value = selected.filter((item) => item !== key);
+
+        return;
+    }
+
+    aiReportPreprocessSelectedKeys.value = [...selected, key];
+}
+
+function onToggleAllPreprocessItems(event) {
+    if (event.target.checked) {
+        aiReportPreprocessSelectedKeys.value = aiReportPreprocessItems.value.map((item) => item.key);
+
+        return;
+    }
+
+    aiReportPreprocessSelectedKeys.value = [];
+}
+
+async function onPreprocessAiReport() {
+    if (!canPreprocessAiReport.value || !site.value) {
+        return;
+    }
+
+    aiReportPreprocessing.value = true;
+    aiReportPreprocessAttempt.value = 0;
+    aiReportError.value = '';
+    aiReportPreprocessError.value = '';
+    aiReportPreprocessItems.value = [];
+    aiReportPreprocessSelectedKeys.value = [];
+
+    const payload = {
+        ai_service_id: Number(aiReportServiceId.value),
+        from: period.from,
+        to: period.to,
+    };
+
+    try {
+        for (let attempt = 1; attempt <= AI_REPORT_PREPROCESS_MAX_ATTEMPTS; attempt += 1) {
+            aiReportPreprocessAttempt.value = attempt;
+
+            try {
+                const result = await preprocessSiteAiReport(site.value.id, payload);
+
+                if (result.ok) {
+                    const items = Array.isArray(result.items) ? result.items : [];
+                    aiReportPreprocessItems.value = items;
+                    aiReportPreprocessSelectedKeys.value = items.map((item) => item.key);
+                    aiReportPreprocessModalOpen.value = true;
+
+                    return;
+                }
+
+                const canRetry = Boolean(result.retryable) && attempt < AI_REPORT_PREPROCESS_MAX_ATTEMPTS;
+
+                if (canRetry) {
+                    await new Promise((resolve) => {
+                        setTimeout(resolve, AI_REPORT_RETRY_DELAY_MS);
+                    });
+
+                    continue;
+                }
+
+                aiReportError.value = result.message || t('sites.show.errors.preprocessReport');
+
+                return;
+            } catch (e) {
+                const canRetry = attempt < AI_REPORT_PREPROCESS_MAX_ATTEMPTS
+                    && !e.response?.status;
+
+                if (canRetry) {
+                    await new Promise((resolve) => {
+                        setTimeout(resolve, AI_REPORT_RETRY_DELAY_MS);
+                    });
+
+                    continue;
+                }
+
+                aiReportError.value = e.response?.data?.message
+                    || e.response?.data?.errors?.ai_service_id?.[0]
+                    || t('sites.show.errors.preprocessReport');
+
+                return;
+            }
+        }
+    } finally {
+        aiReportPreprocessing.value = false;
+        aiReportPreprocessAttempt.value = 0;
+    }
+}
+
+async function onConfirmAiReportPreprocess() {
+    if (!canConfirmAiReportPreprocess.value || !site.value) {
+        return;
+    }
+
+    const selectedItems = aiReportPreprocessItems.value.filter((item) => (
+        aiReportPreprocessSelectedKeys.value.includes(item.key)
+    ));
+
+    if (!selectedItems.length) {
+        return;
+    }
+
+    aiReportPreprocessFetching.value = true;
+    aiReportPreprocessError.value = '';
+
+    try {
+        const result = await applySiteAiReportPreprocess(site.value.id, {
+            from: period.from,
+            to: period.to,
+            items: selectedItems.map((item) => ({
+                key: item.key,
+                type: item.type,
+                reason: item.reason || '',
+                commit_id: item.commit_id ?? null,
+                sha: item.sha ?? null,
+                url: item.url ?? null,
+                snapshot_id: item.snapshot_id ?? null,
+            })),
+        });
+
+        const failed = (result.results || []).filter((row) => !row.ok);
+
+        if (result.ok && failed.length === 0) {
+            aiReportPreprocessModalOpen.value = false;
+            toast.show({
+                ok: true,
+                message: t('sites.show.toast.preprocessFetched'),
+            });
+
+            return;
+        }
+
+        aiReportPreprocessError.value = result.message
+            || failed[0]?.message
+            || t('sites.show.aiReport.preprocess.fetchFailed');
+
+        toast.show({
+            ok: false,
+            message: aiReportPreprocessError.value,
+        });
+    } catch (e) {
+        aiReportPreprocessError.value = e.response?.data?.message
+            || t('sites.show.aiReport.preprocess.fetchFailed');
+        toast.show({
+            ok: false,
+            message: aiReportPreprocessError.value,
+        });
+    } finally {
+        aiReportPreprocessFetching.value = false;
     }
 }
 

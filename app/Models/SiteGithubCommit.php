@@ -26,6 +26,10 @@ class SiteGithubCommit extends Model
         'committer_name',
         'committer_email',
         'committer_date',
+        'files',
+        'stats',
+        'files_incomplete',
+        'files_fetched_at',
     ];
 
     /**
@@ -36,7 +40,16 @@ class SiteGithubCommit extends Model
         return [
             'author_date' => 'datetime',
             'committer_date' => 'datetime',
+            'files' => 'array',
+            'stats' => 'array',
+            'files_incomplete' => 'boolean',
+            'files_fetched_at' => 'datetime',
         ];
+    }
+
+    public function hasFiles(): bool
+    {
+        return $this->files_fetched_at !== null;
     }
 
     /**

@@ -204,6 +204,18 @@ export async function generateSiteAiReport(siteId, payload) {
     return data;
 }
 
+export async function preprocessSiteAiReport(siteId, payload) {
+    const { data } = await http.post(`/sites/${siteId}/ai-reports/preprocess`, payload);
+
+    return data;
+}
+
+export async function applySiteAiReportPreprocess(siteId, payload) {
+    const { data } = await http.post(`/sites/${siteId}/ai-reports/preprocess/apply`, payload);
+
+    return data;
+}
+
 export async function updateSiteAiReportSharing(siteId, reportId, payload) {
     const { data } = await http.put(`/sites/${siteId}/ai-reports/${reportId}/sharing`, payload);
 

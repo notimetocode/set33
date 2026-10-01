@@ -175,6 +175,7 @@ class SiteMetricsController extends Controller
             ->orderByDesc('id')
             ->get()
             ->map(fn ($row) => [
+                'id' => $row->id,
                 'sha' => $row->sha,
                 'short_sha' => substr($row->sha, 0, 7),
                 'message' => $row->message,
@@ -182,6 +183,8 @@ class SiteMetricsController extends Controller
                 'author_name' => $row->author_name,
                 'author_email' => $row->author_email,
                 'author_date' => $row->author_date?->toIso8601String(),
+                'has_files' => $row->hasFiles(),
+                'files_fetched_at' => $row->files_fetched_at?->toIso8601String(),
             ]);
 
         return response()->json(['data' => $rows]);

@@ -31,6 +31,7 @@ class SiteCruxSnapshot extends Model
         'fcp_p75_ms',
         'ttfb_p75_ms',
         'metrics',
+        'include_details_in_report',
         'fetched_at',
     ];
 
@@ -48,6 +49,7 @@ class SiteCruxSnapshot extends Model
             'fcp_p75_ms' => 'integer',
             'ttfb_p75_ms' => 'integer',
             'metrics' => 'array',
+            'include_details_in_report' => 'boolean',
             'fetched_at' => 'datetime',
         ];
     }

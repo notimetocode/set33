@@ -214,6 +214,64 @@ class GoogleApiClient
     }
 
     /**
+     * @return list<array{
+     *     page_path: string,
+     *     sessions: int,
+     *     screen_page_views: int,
+     *     total_users: int
+     * }>
+     */
+    public function fetchAnalyticsPages(
+        GoogleConnection $connection,
+        string $propertyId,
+        Carbon $startDate,
+        Carbon $endDate,
+        int $limit = 50,
+    ): array {
+        $client = $this->authenticatedClient($connection);
+        $analytics = new AnalyticsData($client);
+
+        $request = new RunReportRequest;
+        $request->setDateRanges([
+            new DateRange([
+                'startDate' => $startDate->toDateString(),
+                'endDate' => $endDate->toDateString(),
+            ]),
+        ]);
+        $request->setDimensions([
+            new Dimension(['name' => 'pagePath']),
+        ]);
+        $request->setMetrics([
+            new Metric(['name' => 'sessions']),
+            new Metric(['name' => 'screenPageViews']),
+            new Metric(['name' => 'totalUsers']),
+        ]);
+        $request->setLimit(max(1, min(200, $limit)));
+
+        $response = $analytics->properties->runReport($propertyId, $request);
+        $rows = [];
+
+        foreach ($response->getRows() ?? [] as $row) {
+            $dimensionValues = $row->getDimensionValues() ?? [];
+            $metricValues = $row->getMetricValues() ?? [];
+            $pagePath = (string) ($dimensionValues[0]?->getValue() ?? '');
+
+            if ($pagePath === '') {
+                continue;
+            }
+
+            $rows[] = [
+                'page_path' => mb_substr($pagePath, 0, 500),
+                'sessions' => (int) ($metricValues[0]?->getValue() ?? 0),
+                'screen_page_views' => (int) ($metricValues[1]?->getValue() ?? 0),
+                'total_users' => (int) ($metricValues[2]?->getValue() ?? 0),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
      * @param  list<string>  $apiMetricNames
      * @param  list<string>  $fieldOrder
      * @return array<string, array<string, int|float>>

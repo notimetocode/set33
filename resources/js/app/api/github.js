@@ -69,3 +69,15 @@ export async function getSiteGithubCommits(siteId, params) {
 
     return data.data ?? [];
 }
+
+export async function getSiteGithubCommitFiles(siteId, commitId) {
+    const { data } = await http.get(`/sites/${siteId}/github-commits/${commitId}/files`);
+
+    return data.data ?? data;
+}
+
+export async function fetchSiteGithubCommitFiles(siteId, commitId) {
+    const { data } = await http.post(`/sites/${siteId}/github-commits/${commitId}/files`);
+
+    return data.data ?? data;
+}

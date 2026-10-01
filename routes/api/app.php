@@ -14,6 +14,7 @@ use App\Http\Controllers\App\SiteAiReportSharingController;
 use App\Http\Controllers\App\SiteController;
 use App\Http\Controllers\App\SiteDocumentController;
 use App\Http\Controllers\App\SiteEventController;
+use App\Http\Controllers\App\SiteGithubCommitController;
 use App\Http\Controllers\App\SiteGithubIntegrationController;
 use App\Http\Controllers\App\SiteGoogleIntegrationController;
 use App\Http\Controllers\App\SiteMetricsController;
@@ -105,6 +106,13 @@ Route::middleware(['auth:sanctum', 'ability:app', 'app.locale'])->group(function
     Route::post('/sites/{site}/github-integration/sync', [SiteGithubIntegrationController::class, 'sync'])
         ->middleware('throttle:github-commits-sync')
         ->name('app.sites.github-integration.sync');
+    Route::get('/sites/{site}/github-commits/{githubCommit}/files', [SiteGithubCommitController::class, 'showFiles'])
+        ->scopeBindings()
+        ->name('app.sites.github-commits.files.show');
+    Route::post('/sites/{site}/github-commits/{githubCommit}/files', [SiteGithubCommitController::class, 'fetchFiles'])
+        ->middleware('throttle:github-api')
+        ->scopeBindings()
+        ->name('app.sites.github-commits.files.fetch');
 
     Route::get('/sites/{site}/pagespeed-integration', [SitePageSpeedIntegrationController::class, 'show'])
         ->name('app.sites.pagespeed-integration.show');
@@ -153,6 +161,12 @@ Route::middleware(['auth:sanctum', 'ability:app', 'app.locale'])->group(function
     Route::post('/sites/{site}/ai-reports', [SiteAiReportController::class, 'store'])
         ->middleware('throttle:ai-service-generate')
         ->name('app.sites.ai-reports.store');
+    Route::post('/sites/{site}/ai-reports/preprocess', [SiteAiReportController::class, 'preprocess'])
+        ->middleware('throttle:ai-service-generate')
+        ->name('app.sites.ai-reports.preprocess');
+    Route::post('/sites/{site}/ai-reports/preprocess/apply', [SiteAiReportController::class, 'applyPreprocess'])
+        ->middleware('throttle:ai-service-generate')
+        ->name('app.sites.ai-reports.preprocess.apply');
     Route::put('/sites/{site}/ai-reports/{ai_report}/sharing', [SiteAiReportSharingController::class, 'update'])
         ->name('app.sites.ai-reports.sharing.update');
 });

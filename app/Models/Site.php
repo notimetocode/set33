@@ -135,6 +135,22 @@ class Site extends Model
     }
 
     /**
+     * @return HasMany<SiteAnalyticsPage, $this>
+     */
+    public function analyticsPages(): HasMany
+    {
+        return $this->hasMany(SiteAnalyticsPage::class);
+    }
+
+    /**
+     * @return HasMany<SitePageSnapshot, $this>
+     */
+    public function pageSnapshots(): HasMany
+    {
+        return $this->hasMany(SitePageSnapshot::class);
+    }
+
+    /**
      * @return HasMany<SiteGithubCommit, $this>
      */
     public function githubCommits(): HasMany

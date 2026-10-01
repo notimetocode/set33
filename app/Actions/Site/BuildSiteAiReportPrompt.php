@@ -9,6 +9,12 @@ class BuildSiteAiReportPrompt
 {
     private const MAX_COMMITS_IN_PROMPT = 80;
 
+    private const MAX_COMMITS_WITH_FILES_IN_PROMPT = 25;
+
+    private const MAX_FILES_PER_COMMIT_IN_PROMPT = 40;
+
+    private const MAX_PATCH_CHARS_IN_PROMPT = 1200;
+
     private const MAX_EVENTS_IN_PROMPT = 50;
 
     private const MAX_DOCUMENTS_IN_PROMPT = 10;
@@ -36,6 +42,8 @@ class BuildSiteAiReportPrompt
      *     crux?: list<array<string, mixed>>
      * }  $pageSpeed
      * @param  list<array<string, mixed>>  $documents
+     * @param  list<array<string, mixed>>  $analyticsPages
+     * @param  list<array<string, mixed>>  $pageSnapshots
      * @param  string|null  $customInstructions  When set, replaces the built-in system instructions.
      */
     public function handle(
@@ -50,6 +58,8 @@ class BuildSiteAiReportPrompt
         array $pageSpeed = [],
         array $documents = [],
         ?string $customInstructions = null,
+        array $analyticsPages = [],
+        array $pageSnapshots = [],
     ): string {
         $instructions = filled($customInstructions)
             ? trim($customInstructions)
@@ -59,7 +69,9 @@ class BuildSiteAiReportPrompt
             $instructions,
             $this->siteContext($site, $from, $to),
             $this->websiteDataSection($site),
+            $this->pageSnapshotsSection($pageSnapshots),
             $this->analyticsSection($analytics),
+            $this->analyticsPagesSection($analyticsPages),
             $this->searchConsoleSection($searchConsole, $searchConsoleDimensions),
             $this->pageSpeedSection($pageSpeed),
             $this->commitsSection($commits),
@@ -81,7 +93,7 @@ class BuildSiteAiReportPrompt
 3. Разбери топ-запросы и топ-страницы: что даёт клики, где высокий CTR или слабая позиция при больших показах; учти разрезы по устройствам и странам.
 4. Учти типы отображения в поиске, sitemaps и URL Inspection: ошибки индексации, проблемы обхода, расхождения canonical.
 5. Оцени скорость и Core Web Vitals (PageSpeed lab и Chrome UX Report field data): LCP, INP, CLS, TTFB и связанные метрики; свяжи с SEO и UX, если данные есть.
-6. Сопоставь изменения метрик с активностью разработки (коммиты GitHub), если такие данные есть: возможные корреляции деплоев/изменений с ростом или падением показателей.
+6. Сопоставь изменения метрик с активностью разработки (коммиты GitHub), если такие данные есть: возможные корреляции деплоев/изменений с ростом или падением показателей. Если у коммита есть список файлов/diff — опирайся на конкретные пути и характер правок.
 7. Учти ручные события периода (упоминания в СМИ, публикации, акции, инциденты и т.п.): оцени их возможное влияние на трафик и видимость.
 8. Учти снимок сайта (title, description, Open Graph, canonical, lang, robots.txt): оцени базовое SEO главной страницы и ограничения обхода; сопоставь с данными Search Console и URL Inspection, если они есть.
 9. Учти приложенные Markdown-документы сайта (брендбук, ТЗ, семантика, контент-гайд и т.п.): используй их как контекст о продукте, аудитории и ограничениях; не выдумывай факты вне документов и метрик.
@@ -306,7 +318,7 @@ PROMPT;
             $parts[] = "### Lab (Lighthouse)\n"
                 .'Поля: url, strategy, fetched_at, performance_score, accessibility_score, '
                 .'best_practices_score, seo_score, lcp_ms, inp_ms, cls, '
-                ."fcp_ms, ttfb_ms, tbt_ms, speed_index_ms.\n"
+                ."fcp_ms, ttfb_ms, tbt_ms, speed_index_ms, details?.\n"
                 ."```json\n"
                 .$this->encodeJson($lab)
                 ."\n```";
@@ -317,7 +329,7 @@ PROMPT;
         if ($crux !== []) {
             $parts[] = "### Chrome UX Report (field data)\n"
                 .'Поля: scope (origin|url), url, form_factor, overall_category, collection_period_start, '
-                ."collection_period_end, lcp_p75_ms, inp_p75_ms, cls_p75, fcp_p75_ms, ttfb_p75_ms, fetched_at.\n"
+                ."collection_period_end, lcp_p75_ms, inp_p75_ms, cls_p75, fcp_p75_ms, ttfb_p75_ms, fetched_at, details?.\n"
                 ."```json\n"
                 .$this->encodeJson($crux)
                 ."\n```";
@@ -326,6 +338,38 @@ PROMPT;
         }
 
         return implode("\n\n", $parts);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     */
+    private function analyticsPagesSection(array $rows): string
+    {
+        if ($rows === []) {
+            return "## GA page breakdown\nДанные за период отсутствуют.";
+        }
+
+        return "## GA page breakdown\n"
+            ."Поля: page_path, rank, sessions, screen_page_views, total_users.\n"
+            ."```json\n"
+            .$this->encodeJson(array_slice($rows, 0, 50))
+            ."\n```";
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     */
+    private function pageSnapshotsSection(array $rows): string
+    {
+        if ($rows === []) {
+            return "## Снимки внутренних страниц\nДанные отсутствуют.";
+        }
+
+        return "## Снимки внутренних страниц\n"
+            ."Поля: url, final_url, page_title, meta_description, canonical_url, og_title, og_description, html_lang, fetched_at.\n"
+            ."```json\n"
+            .$this->encodeJson(array_slice($rows, 0, 20))
+            ."\n```";
     }
 
     /**
@@ -359,18 +403,61 @@ PROMPT;
             ? "Показаны {$this->formatCount(count($included))} из {$this->formatCount($total)} коммитов (самые свежие).\n"
             : '';
 
-        $simplified = array_map(function (array $row): array {
-            return [
+        $filesIncluded = 0;
+        $simplified = [];
+
+        foreach ($included as $row) {
+            $item = [
                 'sha' => $row['short_sha'] ?? (isset($row['sha']) ? substr((string) $row['sha'], 0, 7) : null),
                 'message' => $this->firstLine((string) ($row['message'] ?? '')),
                 'author' => $row['author_name'] ?? null,
                 'date' => $row['author_date'] ?? null,
             ];
-        }, $included);
+
+            $files = is_array($row['files'] ?? null) ? $row['files'] : null;
+            if ($files !== null && $filesIncluded < self::MAX_COMMITS_WITH_FILES_IN_PROMPT) {
+                $filesIncluded++;
+                $stats = is_array($row['stats'] ?? null) ? $row['stats'] : null;
+                if ($stats !== null) {
+                    $item['stats'] = [
+                        'additions' => (int) ($stats['additions'] ?? 0),
+                        'deletions' => (int) ($stats['deletions'] ?? 0),
+                        'total' => (int) ($stats['total'] ?? 0),
+                    ];
+                }
+
+                $item['files_incomplete'] = (bool) ($row['files_incomplete'] ?? false);
+                $item['files'] = array_map(function (array $file): array {
+                    $entry = [
+                        'filename' => $file['filename'] ?? null,
+                        'status' => $file['status'] ?? null,
+                        'additions' => (int) ($file['additions'] ?? 0),
+                        'deletions' => (int) ($file['deletions'] ?? 0),
+                    ];
+
+                    if (isset($file['previous_filename']) && is_string($file['previous_filename']) && $file['previous_filename'] !== '') {
+                        $entry['previous_filename'] = $file['previous_filename'];
+                    }
+
+                    $patch = isset($file['patch']) && is_string($file['patch']) ? $file['patch'] : null;
+                    if ($patch !== null && $patch !== '') {
+                        $entry['patch'] = $this->truncate($patch, self::MAX_PATCH_CHARS_IN_PROMPT);
+                    }
+
+                    return $entry;
+                }, array_slice($files, 0, self::MAX_FILES_PER_COMMIT_IN_PROMPT));
+            }
+
+            $simplified[] = $item;
+        }
+
+        $fieldsNote = $filesIncluded > 0
+            ? 'Поля: sha, message, author, date; при наличии выгрузки: stats, files (filename, status, additions, deletions, previous_filename?, patch?).'
+            : 'Поля: sha, message, author, date.';
 
         return "## Коммиты GitHub\n"
             .$note
-            ."Поля: sha, message, author, date.\n"
+            .$fieldsNote."\n"
             ."```json\n"
             .$this->encodeJson($simplified)
             ."\n```";
