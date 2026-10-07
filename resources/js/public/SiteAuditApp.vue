@@ -18,9 +18,98 @@ const props = defineProps({
 
 const t = (key) => props.i18n[key] ?? key;
 
+const RESPONSE_TIME_MAX_MS = 2000;
+const RESPONSE_TIME_GREEN_MS = 600;
+const RESPONSE_TIME_EXCELLENT_MS = 300;
+const RESPONSE_TIME_BAD_MS = 1200;
+
+/** Practical SERP target for <title> (~50–60 chars desktop; 30–60 is the common OK band). */
+const TITLE_LENGTH_MIN = 30;
+const TITLE_LENGTH_MAX = 60;
+
+/** Practical SERP target for meta description (~150–160 desktop; 120–160 survives mobile too). */
+const DESCRIPTION_LENGTH_MIN = 120;
+const DESCRIPTION_LENGTH_MAX = 160;
+
 const status = ref('idle');
 const errorMessage = ref('');
 const report = ref(null);
+
+/**
+ * @param {number} ms
+ * @returns {{
+ *   ms: number,
+ *   percent: number,
+ *   greenPercent: number,
+ *   yellowPercent: number,
+ *   rating: 'excellent'|'good'|'bad'|'very_bad',
+ *   label: string,
+ *   hint: string,
+ *   ok: boolean,
+ * }}
+ */
+function buildResponseTimeBar(ms) {
+    const value = Math.max(0, Math.round(ms));
+    let rating = 'very_bad';
+
+    if (value <= RESPONSE_TIME_EXCELLENT_MS) {
+        rating = 'excellent';
+    } else if (value <= RESPONSE_TIME_GREEN_MS) {
+        rating = 'good';
+    } else if (value <= RESPONSE_TIME_BAD_MS) {
+        rating = 'bad';
+    }
+
+    return {
+        ms: value,
+        percent: Math.min(100, (value / RESPONSE_TIME_MAX_MS) * 100),
+        greenPercent: (RESPONSE_TIME_GREEN_MS / RESPONSE_TIME_MAX_MS) * 100,
+        yellowPercent: (RESPONSE_TIME_BAD_MS / RESPONSE_TIME_MAX_MS) * 100,
+        rating,
+        label: t(`response_time_${rating}`),
+        hint: t(`response_time_${rating}_hint`),
+        ok: value <= RESPONSE_TIME_GREEN_MS,
+    };
+}
+
+/**
+ * @param {'title'|'description'} field
+ * @param {number} length
+ * @returns {{
+ *   length: number,
+ *   rating: 'good'|'bad',
+ *   label: string,
+ *   meta: string,
+ *   hint: string,
+ *   ok: boolean,
+ * }}
+ */
+function buildMetaLengthRating(field, length) {
+    const value = Math.max(0, Math.round(length));
+    const min = field === 'title' ? TITLE_LENGTH_MIN : DESCRIPTION_LENGTH_MIN;
+    const max = field === 'title' ? TITLE_LENGTH_MAX : DESCRIPTION_LENGTH_MAX;
+    const range = `${min}–${max}`;
+    const inRange = value >= min && value <= max;
+    let hintKey = `${field}_length_good_hint`;
+
+    if (!inRange) {
+        hintKey = value < min
+            ? `${field}_length_short_hint`
+            : `${field}_length_long_hint`;
+    }
+
+    const chars = (t('content_chars') || '').replace(':count', String(value));
+    const recommended = (t('length_recommended') || '').replace(':range', range);
+
+    return {
+        length: value,
+        rating: inRange ? 'good' : 'bad',
+        label: t(inRange ? 'length_rating_good' : 'length_rating_bad'),
+        meta: `${chars} · ${recommended}`,
+        hint: t(hintKey),
+        ok: inRange,
+    };
+}
 
 function toDisplayDomain(value) {
     const raw = String(value || '').trim();
@@ -144,10 +233,14 @@ const checkItems = computed(() => {
             items: [
                 {
                     label: t('label_response_time'),
-                    ok: typeof data.response_time_ms === 'number',
+                    ok: typeof data.response_time_ms === 'number'
+                        && data.response_time_ms <= RESPONSE_TIME_GREEN_MS,
                     value: typeof data.response_time_ms === 'number'
-                        ? `${data.response_time_ms} ${t('ms')}`
+                        ? null
                         : '—',
+                    responseTime: typeof data.response_time_ms === 'number'
+                        ? buildResponseTimeBar(data.response_time_ms)
+                        : null,
                 },
                 {
                     label: t('label_http_status'),
@@ -227,24 +320,30 @@ const checkItems = computed(() => {
             items: [
                 {
                     label: t('label_page_title'),
-                    ok: Boolean(titleInfo.text) && titleInfo.count === 1,
+                    ok: Boolean(titleInfo.text)
+                        && titleInfo.count === 1
+                        && (titleInfo.length || 0) >= TITLE_LENGTH_MIN
+                        && (titleInfo.length || 0) <= TITLE_LENGTH_MAX,
                     value: titleInfo.text || flag(false),
-                    detail: titleInfo.text
-                        ? fill(t('content_length_tags'), {
-                            length: titleInfo.length || 0,
-                            count: titleInfo.count || 0,
-                        })
+                    lengthRating: titleInfo.text
+                        ? buildMetaLengthRating('title', titleInfo.length || 0)
+                        : null,
+                    detail: titleInfo.text && (titleInfo.count || 0) !== 1
+                        ? fill(t('content_tags_found'), { count: titleInfo.count || 0 })
                         : null,
                 },
                 {
                     label: t('label_page_description'),
-                    ok: Boolean(descriptionInfo.text) && descriptionInfo.count === 1,
+                    ok: Boolean(descriptionInfo.text)
+                        && descriptionInfo.count === 1
+                        && (descriptionInfo.length || 0) >= DESCRIPTION_LENGTH_MIN
+                        && (descriptionInfo.length || 0) <= DESCRIPTION_LENGTH_MAX,
                     value: descriptionInfo.text || flag(false),
-                    detail: descriptionInfo.text
-                        ? fill(t('content_length_tags'), {
-                            length: descriptionInfo.length || 0,
-                            count: descriptionInfo.count || 0,
-                        })
+                    lengthRating: descriptionInfo.text
+                        ? buildMetaLengthRating('description', descriptionInfo.length || 0)
+                        : null,
+                    detail: descriptionInfo.text && (descriptionInfo.count || 0) !== 1
+                        ? fill(t('content_tags_found'), { count: descriptionInfo.count || 0 })
                         : null,
                 },
                 {
@@ -606,10 +705,77 @@ onMounted(() => {
                                         <span class="page-site-audit__row-title">{{ item.label }}</span>
                                     </div>
                                     <div class="page-site-audit__row-content">
+                                        <div
+                                            v-if="item.responseTime"
+                                            class="page-site-audit__rt"
+                                            :data-rating="item.responseTime.rating"
+                                        >
+                                            <p class="page-site-audit__rt-summary">
+                                                <span
+                                                    class="page-site-audit__rt-label"
+                                                    :class="`page-site-audit__rt-label--${item.responseTime.rating}`"
+                                                >{{ item.responseTime.label }}</span>
+                                                <span class="page-site-audit__rt-ms">
+                                                    {{ item.responseTime.ms }} {{ t('ms') }}
+                                                </span>
+                                            </p>
+                                            <div
+                                                class="page-site-audit__rt-bar"
+                                                role="img"
+                                                :aria-label="`${item.responseTime.label}: ${item.responseTime.ms} ${t('ms')}`"
+                                            >
+                                                <div class="page-site-audit__rt-track">
+                                                    <div
+                                                        class="page-site-audit__rt-green"
+                                                        :style="{ width: `${item.responseTime.greenPercent}%` }"
+                                                    ></div>
+                                                    <div
+                                                        class="page-site-audit__rt-yellow"
+                                                        :style="{
+                                                            left: `${item.responseTime.greenPercent}%`,
+                                                            width: `${item.responseTime.yellowPercent - item.responseTime.greenPercent}%`,
+                                                        }"
+                                                    ></div>
+                                                    <div
+                                                        class="page-site-audit__rt-marker"
+                                                        :style="{ left: `${item.responseTime.percent}%` }"
+                                                    >
+                                                        <span class="page-site-audit__rt-marker-dot"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="page-site-audit__rt-scale" aria-hidden="true">
+                                                    <span>0</span>
+                                                    <span
+                                                        class="page-site-audit__rt-scale-mark page-site-audit__rt-scale-mark--green"
+                                                        :style="{ left: `${item.responseTime.greenPercent}%` }"
+                                                    >600</span>
+                                                    <span
+                                                        class="page-site-audit__rt-scale-mark page-site-audit__rt-scale-mark--yellow"
+                                                        :style="{ left: `${item.responseTime.yellowPercent}%` }"
+                                                    >1200</span>
+                                                    <span>2000 {{ t('ms') }}</span>
+                                                </div>
+                                            </div>
+                                            <p class="page-site-audit__rt-hint">{{ item.responseTime.hint }}</p>
+                                        </div>
                                         <p
                                             v-if="item.value"
                                             class="page-site-audit__row-value"
                                         >{{ item.value }}</p>
+                                        <div
+                                            v-if="item.lengthRating"
+                                            class="page-site-audit__length"
+                                            :data-rating="item.lengthRating.rating"
+                                        >
+                                            <p class="page-site-audit__length-summary">
+                                                <span
+                                                    class="page-site-audit__length-label"
+                                                    :class="`page-site-audit__length-label--${item.lengthRating.rating}`"
+                                                >{{ item.lengthRating.label }}</span>
+                                                <span class="page-site-audit__length-meta">{{ item.lengthRating.meta }}</span>
+                                            </p>
+                                            <p class="page-site-audit__length-hint">{{ item.lengthRating.hint }}</p>
+                                        </div>
                                         <p
                                             v-if="item.detail"
                                             class="page-site-audit__row-detail"
