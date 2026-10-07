@@ -72,6 +72,12 @@
         "title": "AI-сервисы"
     },
     "auth": {
+        "google": {
+            "continue": "Продолжить с Google",
+            "failed": "Не удалось войти через Google",
+            "or": "или",
+            "redirecting": "Перенаправление в Google…"
+        },
         "login": {
             "failed": "Не удалось войти",
             "noAccount": "Нет аккаунта?",

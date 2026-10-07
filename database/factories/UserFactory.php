@@ -55,4 +55,13 @@ class UserFactory extends Factory
             'role' => UserRole::Admin,
         ]);
     }
+
+    public function viaGoogle(?string $googleId = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'google_id' => $googleId ?? fake()->unique()->numerify('#####################'),
+            'password' => null,
+            'email_verified_at' => now(),
+        ]);
+    }
 }

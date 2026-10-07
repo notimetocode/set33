@@ -20,6 +20,7 @@
                     class="form-control"
                     required
                     autocomplete="username"
+                    :disabled="exchanging"
                 >
             </div>
 
@@ -32,12 +33,15 @@
                     class="form-control"
                     required
                     autocomplete="current-password"
+                    :disabled="exchanging"
                 >
             </div>
 
-            <button class="btn btn-primary w-100" type="submit" :disabled="loading">
+            <button class="btn btn-primary w-100" type="submit" :disabled="loading || exchanging">
                 {{ loading ? t('auth.login.submitting') : t('auth.login.submit') }}
             </button>
+
+            <GoogleAuthButton :disabled="loading || exchanging" @error="onGoogleError" />
 
             <p class="page-app-login__switch text-muted mb-0">
                 {{ t('auth.login.noAccount') }}
@@ -48,17 +52,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { login } from '../api/auth';
+import { onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { exchangeGoogleLogin, login } from '../api/auth';
+import GoogleAuthButton from '../components/GoogleAuthButton.vue';
 import { useI18n } from '../../shared/i18n';
 
 const router = useRouter();
+const route = useRoute();
 const { t, setLocale } = useI18n();
 const email = ref('user@example.com');
 const password = ref('password');
 const error = ref('');
 const loading = ref(false);
+const exchanging = ref(false);
+
+function onGoogleError(message) {
+    error.value = message;
+}
+
+async function finishAuth(user) {
+    if (user?.locale) {
+        setLocale(user.locale);
+    }
+
+    await router.replace({ name: 'sites.index' });
+}
 
 async function submit() {
     loading.value = true;
@@ -66,12 +85,7 @@ async function submit() {
 
     try {
         const { user } = await login(email.value, password.value);
-
-        if (user?.locale) {
-            setLocale(user.locale);
-        }
-
-        await router.push({ name: 'sites.index' });
+        await finishAuth(user);
     } catch (e) {
         error.value = e.response?.data?.message
             || e.response?.data?.errors?.email?.[0]
@@ -80,4 +94,36 @@ async function submit() {
         loading.value = false;
     }
 }
+
+onMounted(async () => {
+    if (route.query.google === 'error') {
+        error.value = typeof route.query.message === 'string' && route.query.message
+            ? route.query.message
+            : t('auth.google.failed');
+        await router.replace({ name: 'login', query: {} });
+
+        return;
+    }
+
+    const code = typeof route.query.google_code === 'string' ? route.query.google_code : '';
+
+    if (! code) {
+        return;
+    }
+
+    exchanging.value = true;
+    error.value = '';
+
+    try {
+        const { user } = await exchangeGoogleLogin(code);
+        await finishAuth(user);
+    } catch (e) {
+        error.value = e.response?.data?.message
+            || e.response?.data?.errors?.code?.[0]
+            || t('auth.google.failed');
+        await router.replace({ name: 'login', query: {} });
+    } finally {
+        exchanging.value = false;
+    }
+});
 </script>

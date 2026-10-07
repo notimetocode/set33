@@ -5,6 +5,7 @@ namespace App\Actions\Google;
 use App\Enums\GoogleConnectionStatus;
 use App\Models\GoogleConnection;
 use App\Models\User;
+use App\Support\GoogleOAuthState;
 use Google\Client as GoogleClient;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -53,19 +54,15 @@ class CompleteGoogleOAuth
      */
     public function decodeState(string $state): array
     {
-        try {
-            /** @var array{user_id?: mixed, return_site_id?: mixed, nonce?: mixed, expires_at?: mixed} $payload */
-            $payload = decrypt($state);
-        } catch (Throwable) {
+        $payload = GoogleOAuthState::decrypt($state);
+        GoogleOAuthState::assertNotExpired($payload);
+
+        if (($payload['intent'] ?? null) === 'login') {
             throw new RuntimeException('Недействительный параметр state.');
         }
 
-        if (! isset($payload['user_id'], $payload['expires_at'], $payload['nonce'])) {
+        if (! isset($payload['user_id'])) {
             throw new RuntimeException('Недействительный параметр state.');
-        }
-
-        if ((int) $payload['expires_at'] < now()->timestamp) {
-            throw new RuntimeException('Срок действия ссылки авторизации истёк.');
         }
 
         return [

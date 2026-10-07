@@ -70,6 +70,8 @@
                 {{ loading ? t('auth.register.submitting') : t('auth.register.submit') }}
             </button>
 
+            <GoogleAuthButton :disabled="loading" @error="onGoogleError" />
+
             <p class="page-app-register__switch text-muted mb-0">
                 {{ t('auth.register.haveAccount') }}
                 <router-link :to="{ name: 'login' }">{{ t('auth.register.loginLink') }}</router-link>
@@ -82,6 +84,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { register } from '../api/auth';
+import GoogleAuthButton from '../components/GoogleAuthButton.vue';
 import { ensureStoredLocale, useI18n } from '../../shared/i18n';
 
 const router = useRouter();
@@ -92,6 +95,10 @@ const password = ref('');
 const passwordConfirmation = ref('');
 const error = ref('');
 const loading = ref(false);
+
+function onGoogleError(message) {
+    error.value = message;
+}
 
 async function submit() {
     loading.value = true;

@@ -15,7 +15,7 @@ class AttemptLogin
     {
         $user = User::query()->where('email', $email)->first();
 
-        if (! $user || ! Hash::check($password, $user->password)) {
+        if (! $user || ! filled($user->password) || ! Hash::check($password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => [__('auth.failed')],
             ]);

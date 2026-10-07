@@ -7,6 +7,7 @@ use App\Http\Controllers\App\SpaController as AppSpaController;
 use App\Http\Controllers\PublicSite\HomeController;
 use App\Http\Controllers\PublicSite\PrivacyPolicyController;
 use App\Http\Controllers\PublicSite\SharedAiReportController;
+use App\Http\Controllers\PublicSite\SiteAuditPageController;
 use App\Http\Controllers\PublicSite\TermsOfServiceController;
 use App\Support\Localization;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,7 @@ $registerPublicRoutes = function (bool $named): void {
     $home = Route::get('/', HomeController::class);
     $privacy = Route::get('/privacy', PrivacyPolicyController::class);
     $terms = Route::get('/terms', TermsOfServiceController::class);
+    $siteAudit = Route::get('/check', SiteAuditPageController::class);
     $reportShow = Route::get('/r/{token}', [SharedAiReportController::class, 'show'])
         ->where('token', '[A-Za-z0-9]{20,64}');
     $reportUnlock = Route::post('/r/{token}/unlock', [SharedAiReportController::class, 'unlock'])
@@ -25,6 +27,7 @@ $registerPublicRoutes = function (bool $named): void {
         $home->name('public.home');
         $privacy->name('public.privacy');
         $terms->name('public.terms');
+        $siteAudit->name('public.site-audit.show');
         $reportShow->name('public.ai-reports.show');
         $reportUnlock->name('public.ai-reports.unlock');
     }

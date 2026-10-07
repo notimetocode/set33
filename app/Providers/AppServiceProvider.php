@@ -60,6 +60,14 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by((string) ($request->user()?->id ?: $request->ip()));
         });
 
+        RateLimiter::for('google-login-start', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
+
+        RateLimiter::for('google-login-exchange', function (Request $request) {
+            return Limit::perMinute(10)->by($request->ip());
+        });
+
         RateLimiter::for('google-metrics-sync', function (Request $request) {
             return Limit::perMinute(5)->by((string) ($request->user()?->id ?: $request->ip()));
         });
@@ -84,6 +92,10 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by(Str::transliterate(
                 Str::lower($request->route('token') ?? '').'|'.$request->ip()
             ));
+        });
+
+        RateLimiter::for('site-audit', function (Request $request) {
+            return Limit::perMinute(8)->by((string) $request->ip());
         });
 
         Gate::define('app.profile.view', [AppProfilePolicy::class, 'view']);

@@ -15,19 +15,34 @@
                 <p class="page-home__lead">
                     {{ __('public.home.hero_lead') }}
                 </p>
-                <div class="page-home__cta">
-                    <a href="#how-it-works" class="btn btn-secondary btn-lg">
-                        {{ __('public.home.cta_how') }}
-                    </a>
-                    <a
-                        href="{{ url('/app/register') }}"
-                        class="btn btn-primary btn-lg"
-                        data-public-auth-cta="register"
-                        data-public-auth-keep
-                        data-label-register="{{ __('public.home.cta_try') }}"
-                        data-label-authed="{{ __('public.nav.cabinet') }}"
-                    >{{ __('public.home.cta_try') }}</a>
-                </div>
+                <form
+                    class="page-home__audit-card"
+                    action="{{ localized_route('public.site-audit.show') }}"
+                    method="get"
+                >
+                    <label class="page-home__audit-caption" for="home-site-audit-url">
+                        {{ __('public.home.audit_caption') }}
+                    </label>
+                    <div class="page-home__audit-row">
+                        <input
+                            id="home-site-audit-url"
+                            class="form-control form-control-lg page-home__audit-input"
+                            type="text"
+                            name="url"
+                            required
+                            maxlength="2048"
+                            autocomplete="url"
+                            inputmode="url"
+                            placeholder="{{ __('public.home.audit_placeholder') }}"
+                        >
+                        <button
+                            type="submit"
+                            class="btn btn-primary btn-lg page-home__audit-submit"
+                        >
+                            {{ __('public.home.audit_submit') }}
+                        </button>
+                    </div>
+                </form>
             </div>
         </section>
 

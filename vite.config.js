@@ -12,6 +12,7 @@ export default defineConfig({
                 'resources/scss/admin.scss',
                 'resources/js/public/app.js',
                 'resources/js/public/shared-ai-report.js',
+                'resources/js/public/site-audit.js',
                 'resources/js/app/app.js',
                 'resources/js/admin/app.js',
             ],

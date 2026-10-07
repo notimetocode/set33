@@ -72,6 +72,12 @@
         "title": "AI services"
     },
     "auth": {
+        "google": {
+            "continue": "Continue with Google",
+            "failed": "Unable to sign in with Google",
+            "or": "or",
+            "redirecting": "Redirecting to Google…"
+        },
         "login": {
             "failed": "Unable to sign in",
             "noAccount": "Don't have an account?",

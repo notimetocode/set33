@@ -54,6 +54,11 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/oauth/google/callback'),
+        'login_scopes' => [
+            'openid',
+            'email',
+            'profile',
+        ],
         'scopes' => [
             'openid',
             'email',

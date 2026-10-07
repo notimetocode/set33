@@ -22,6 +22,19 @@ export async function register(name, email, password, passwordConfirmation, loca
     return data;
 }
 
+export async function startGoogleLogin(locale) {
+    const { data } = await http.post('/auth/google/start', { locale });
+
+    return data;
+}
+
+export async function exchangeGoogleLogin(code) {
+    const { data } = await http.post('/auth/google/exchange', { code });
+    storeToken('/api/app', data.token);
+
+    return data;
+}
+
 export async function logout() {
     try {
         await http.post('/auth/logout');

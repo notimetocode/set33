@@ -153,6 +153,7 @@ class Localization
             $path === '/' || $path === '' => 'public.home',
             $path === '/privacy' => 'public.privacy',
             $path === '/terms' => 'public.terms',
+            $path === '/check' => 'public.site-audit.show',
             (bool) preg_match('#^/r/[A-Za-z0-9]{20,64}$#', $path) => 'public.ai-reports.show',
             default => null,
         };

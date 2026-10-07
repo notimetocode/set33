@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\App\AiServiceController;
+use App\Http\Controllers\App\Auth\ExchangeGoogleLoginController;
 use App\Http\Controllers\App\Auth\LoginController;
 use App\Http\Controllers\App\Auth\LogoutController;
 use App\Http\Controllers\App\Auth\MeController;
 use App\Http\Controllers\App\Auth\RegisterController;
+use App\Http\Controllers\App\Auth\StartGoogleLoginController;
 use App\Http\Controllers\App\GithubConnectionController;
 use App\Http\Controllers\App\GithubRepositoryController;
 use App\Http\Controllers\App\GoogleConnectionController;
@@ -30,6 +32,14 @@ Route::middleware('app.locale')->group(function (): void {
     Route::post('/auth/register', RegisterController::class)
         ->middleware('throttle:register')
         ->name('app.auth.register');
+
+    Route::post('/auth/google/start', StartGoogleLoginController::class)
+        ->middleware('throttle:google-login-start')
+        ->name('app.auth.google.start');
+
+    Route::post('/auth/google/exchange', ExchangeGoogleLoginController::class)
+        ->middleware('throttle:google-login-exchange')
+        ->name('app.auth.google.exchange');
 });
 
 Route::middleware(['auth:sanctum', 'ability:app', 'app.locale'])->group(function (): void {
