@@ -27,6 +27,10 @@ class SetLocale
 
         app()->setLocale($locale);
 
+        // Locale is only a URL prefix — drop it so controllers receive
+        // subsequent route params (e.g. {token}) by position correctly.
+        $request->route()?->forgetParameter('locale');
+
         return $next($request);
     }
 }
