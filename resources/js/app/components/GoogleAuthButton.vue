@@ -1,6 +1,5 @@
 <template>
     <div class="auth-google">
-        <div class="auth-divider">{{ t('auth.google.or') }}</div>
         <button
             class="auth-google-button"
             type="button"
@@ -15,6 +14,7 @@
             </svg>
             <span>{{ loading ? t('auth.google.redirecting') : t('auth.google.continue') }}</span>
         </button>
+        <div class="auth-divider">{{ t('auth.google.or') }}</div>
     </div>
 </template>
 

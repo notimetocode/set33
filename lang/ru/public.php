@@ -21,6 +21,9 @@ return [
         'label' => 'Язык',
         'choose' => 'Выбор языка',
     ],
+    'footer' => [
+        'about' => 'AI-отчёты по SEO сайта на основе Google Analytics, Search Console, GitHub и других сервисов — понятные выводы по трафику, поиску и релизам.',
+    ],
     'home' => [
         'title' => ':app — AI-отчёты по SEO сайта',
         'meta_description' => 'AI-отчёты по сайту на основе Google Analytics, Search Console, GitHub и других сервисов. Подключите источники — получайте понятные выводы по трафику, поиску и релизам.',
@@ -28,7 +31,8 @@ return [
         'hero_lead' => 'ИИ-отчёты на основе Google Analytics, Search Console, Chrome UX Report, GitHub и др. Выводы по трафику, поиску, динамике и релизам без ручной сводки.',
         'cta_how' => 'Как это работает',
         'cta_try' => 'Попробовать',
-        'audit_caption' => 'Провести предварительный SEO-анализ сайта · Без регистрации',
+        'audit_caption' => 'Провести предварительный SEO-анализ сайта ·',
+        'audit_no_registration' => 'Без регистрации',
         'audit_label' => 'Домен сайта',
         'audit_placeholder' => 'Введите домен для анализа',
         'audit_submit' => 'Проверить',
@@ -113,6 +117,8 @@ return [
         'retry' => 'Повторить',
         'back_home' => 'На главную',
         'cta_register' => 'Получить полный AI-отчёт',
+        'locked_teaser' => 'Зарегистрируйтесь бесплатно, чтобы увидеть отчёт целиком',
+        'locked_cta' => 'Зарегистрироваться',
         'footer_label' => 'Что дальше',
         'footer_title' => 'Превратите этот снимок в полный AI SEO-отчёт',
         'footer_lead' => 'Подключите Google Analytics, Search Console, Chrome UX Report, GitHub и документы сайта — и получите понятные выводы по трафику, поиску и релизам, с рекомендациями под ваш продукт.',

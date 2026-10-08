@@ -20,7 +20,7 @@ class CollectSiteWebDataJob implements ShouldQueue
 
     public int $tries = 3;
 
-    public int $timeout = 60;
+    public int $timeout = 120;
 
     /** @var list<int> */
     public array $backoff = [15, 60, 180];

@@ -21,6 +21,9 @@ return [
         'label' => 'Language',
         'choose' => 'Choose language',
     ],
+    'footer' => [
+        'about' => 'AI SEO reports for your site based on Google Analytics, Search Console, GitHub, and more — clear insights on traffic, search, and releases.',
+    ],
     'home' => [
         'title' => ':app — AI SEO reports for your site',
         'meta_description' => 'AI reports for your site based on Google Analytics, Search Console, GitHub, and more. Connect sources and get clear insights on traffic, search, and releases.',
@@ -28,7 +31,8 @@ return [
         'hero_lead' => 'AI reports powered by Google Analytics, Search Console, Chrome UX Report, GitHub, and more. Insights on traffic, search, trends, and releases — without manual spreadsheets.',
         'cta_how' => 'How it works',
         'cta_try' => 'Try it',
-        'audit_caption' => 'Run a preliminary SEO analysis of your site · No registration',
+        'audit_caption' => 'Run a preliminary SEO analysis of your site ·',
+        'audit_no_registration' => 'No registration',
         'audit_label' => 'Website domain',
         'audit_placeholder' => 'Enter a domain to analyze',
         'audit_submit' => 'Check',
@@ -113,6 +117,8 @@ return [
         'retry' => 'Try again',
         'back_home' => 'Back to home',
         'cta_register' => 'Get a full AI report',
+        'locked_teaser' => 'Register for free to see the full report',
+        'locked_cta' => 'Sign up',
         'footer_label' => 'Next step',
         'footer_title' => 'Turn this snapshot into a full AI SEO report',
         'footer_lead' => 'Connect Google Analytics, Search Console, Chrome UX Report, GitHub, and site documents — then get clear conclusions on traffic, search, and releases, with recommendations tailored to your product.',

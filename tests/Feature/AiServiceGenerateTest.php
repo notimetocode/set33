@@ -233,4 +233,75 @@ class AiServiceGenerateTest extends TestCase
             ->assertJsonPath('ok', true)
             ->assertJsonPath('reply', 'Глобальный ответ');
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function groqChatResponse(string $text = 'Привет!'): array
+    {
+        return [
+            'choices' => [
+                [
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => $text,
+                    ],
+                    'finish_reason' => 'stop',
+                ],
+            ],
+            'usage' => [
+                'prompt_tokens' => 10,
+                'completion_tokens' => 5,
+                'total_tokens' => 15,
+            ],
+        ];
+    }
+
+    public function test_user_can_generate_content_with_groq_service(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.groq.com/openai/v1/chat/completions' => Http::response(
+                $this->groqChatResponse('Ответ Groq'),
+            ),
+        ]);
+
+        $user = $this->actingAsAppUser();
+        $service = AiService::factory()->groq()->for($user)->create([
+            'api_key' => 'valid-groq-key',
+            'settings' => [
+                'model' => 'openai/gpt-oss-120b',
+                'system_instruction' => 'Отвечай кратко',
+                'generation_config' => [
+                    'temperature' => 0.5,
+                    'top_p' => 0.9,
+                    'max_output_tokens' => 1024,
+                    'stop_sequences' => [],
+                    'presence_penalty' => null,
+                    'frequency_penalty' => null,
+                ],
+            ],
+        ]);
+
+        $this->postJson("/api/app/ai-services/{$service->id}/generate", [
+            'prompt' => 'Скажи привет',
+        ])
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('reply', 'Ответ Groq')
+            ->assertJsonPath('model', 'openai/gpt-oss-120b')
+            ->assertJsonPath('usage.prompt_tokens', 10)
+            ->assertJsonPath('usage.candidates_tokens', 5)
+            ->assertJsonPath('usage.total_tokens', 15);
+
+        Http::assertSent(function (Request $request): bool {
+            return $request->hasHeader('Authorization', 'Bearer valid-groq-key')
+                && str_contains($request->url(), '/chat/completions')
+                && ($request['model'] ?? null) === 'openai/gpt-oss-120b'
+                && ($request['messages'][0]['role'] ?? null) === 'system'
+                && ($request['messages'][1]['content'] ?? null) === 'Скажи привет'
+                && (float) ($request['temperature'] ?? -1) === 0.5
+                && (int) ($request['max_tokens'] ?? 0) === 1024;
+        });
+    }
 }

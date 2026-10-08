@@ -9,20 +9,19 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 
-class AiServiceSeeder extends Seeder
+class GroqAiServiceSeeder extends Seeder
 {
     private const ADMIN_EMAIL = 'admin@example.com';
 
     /**
-     * Глобальные Gemini-сервисы для локальной разработки / демо.
-     * Порядок: новые Flash → текущий дефолт проекта.
+     * Глобальные Groq-сервисы для локальной разработки / демо.
      *
      * @var list<string>
      */
     private const MODELS = [
-        'gemini-3.8-flash',
-        'gemini-3.7-flash',
-        'gemini-3.6-flash',
+        'openai/gpt-oss-120b',
+        'openai/gpt-oss-20b',
+        'qwen/qwen3.8-27b',
     ];
 
     public function run(): void
@@ -35,15 +34,15 @@ class AiServiceSeeder extends Seeder
             );
         }
 
-        $apiKey = config('services.gemini.seed_api_key');
+        $apiKey = config('services.groq.seed_api_key');
 
         if (! filled($apiKey)) {
             throw new RuntimeException(
-                'Не задан GEMINI_SEED_API_KEY. Добавьте ключ в .env для сида AI-сервиса.',
+                'Не задан GROQ_SEED_API_KEY. Добавьте ключ в .env для сида AI-сервиса.',
             );
         }
 
-        $type = AiServiceType::Gemini;
+        $type = AiServiceType::Groq;
 
         AiService::query()
             ->where('is_global', false)
@@ -51,12 +50,23 @@ class AiServiceSeeder extends Seeder
             ->whereHas('user', fn ($query) => $query->where('email', 'user@example.com'))
             ->delete();
 
+        $expectedNames = array_map(
+            fn (string $model): string => $type->serviceName($model),
+            self::MODELS,
+        );
+
+        AiService::query()
+            ->where('is_global', true)
+            ->where('type', $type)
+            ->whereNotIn('name', $expectedNames)
+            ->delete();
+
         foreach (self::MODELS as $model) {
-            $this->seedGlobalGemini($admin, $type, $model, $apiKey);
+            $this->seedGlobalGroq($admin, $type, $model, $apiKey);
         }
     }
 
-    private function seedGlobalGemini(User $admin, AiServiceType $type, string $model, string $apiKey): void
+    private function seedGlobalGroq(User $admin, AiServiceType $type, string $model, string $apiKey): void
     {
         $name = $type->serviceName($model);
 
@@ -75,21 +85,14 @@ class AiServiceSeeder extends Seeder
                     'generation_config' => [
                         'temperature' => 1,
                         'top_p' => 0.95,
-                        'top_k' => 40,
                         'max_output_tokens' => 8192,
-                        'candidate_count' => 1,
                         'stop_sequences' => [],
-                        'seed' => null,
                         'presence_penalty' => null,
                         'frequency_penalty' => null,
-                        'response_mime_type' => 'text/plain',
-                        'thinking_config' => [
-                            'thinking_budget' => 0,
-                        ],
                     ],
                 ],
                 'status' => AiServiceStatus::Ok,
-                'status_message' => 'Подключение к Gemini работает.',
+                'status_message' => 'Подключение к Groq работает.',
                 'status_checked_at' => now(),
             ],
         );

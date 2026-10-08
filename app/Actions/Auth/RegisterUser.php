@@ -10,12 +10,13 @@ use Illuminate\Support\Facades\Event;
 
 class RegisterUser
 {
+    private const DEFAULT_NAME = 'Пользователь';
+
     /**
-     * @param  array{name: string, email: string, password: string, locale?: string}  $data
+     * @param  array{email: string, password: string, locale?: string}  $data
      */
     public function handle(array $data): User
     {
-        $name = trim($data['name']);
         $locale = $data['locale'] ?? Localization::defaultLocale();
 
         if (! Localization::isSupported($locale)) {
@@ -23,8 +24,8 @@ class RegisterUser
         }
 
         $user = User::query()->create([
-            'name' => $name,
-            'first_name' => $name,
+            'name' => self::DEFAULT_NAME,
+            'first_name' => self::DEFAULT_NAME,
             'email' => $data['email'],
             'password' => $data['password'],
             'role' => UserRole::User,

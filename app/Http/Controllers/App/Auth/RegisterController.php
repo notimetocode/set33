@@ -17,7 +17,6 @@ class RegisterController extends Controller
         IssueApiToken $issueApiToken,
     ): JsonResponse {
         $user = $registerUser->handle([
-            'name' => $request->string('name')->toString(),
             'email' => $request->string('email')->toString(),
             'password' => $request->string('password')->toString(),
             'locale' => $request->validated('locale') ?? app()->getLocale(),

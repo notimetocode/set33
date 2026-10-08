@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
+import { getToken } from '../shared/api/http';
 
 const props = defineProps({
     initialUrl: {
@@ -17,6 +18,8 @@ const props = defineProps({
 });
 
 const t = (key) => props.i18n[key] ?? key;
+
+const isAuthed = ref(Boolean(getToken('/api/app')));
 
 const RESPONSE_TIME_MAX_MS = 2000;
 const RESPONSE_TIME_GREEN_MS = 600;
@@ -317,6 +320,7 @@ const checkItems = computed(() => {
         {
             section: t('section_content'),
             icon: 'content',
+            locked: !isAuthed.value,
             items: [
                 {
                     label: t('label_page_title'),
@@ -435,6 +439,7 @@ const checkItems = computed(() => {
         {
             section: t('section_metadata'),
             icon: 'metadata',
+            locked: !isAuthed.value,
             items: [
                 {
                     label: t('label_viewport'),
@@ -615,6 +620,7 @@ onMounted(() => {
                             v-for="group in checkItems"
                             :key="group.section"
                             class="page-site-audit__panel page-site-audit__section"
+                            :class="{ 'page-site-audit__section--locked': group.locked }"
                         >
                             <h2 class="page-site-audit__section-title">
                                 <span class="page-site-audit__section-icon" aria-hidden="true">
@@ -660,7 +666,22 @@ onMounted(() => {
                                 </span>
                                 <span>{{ group.section }}</span>
                             </h2>
-                            <ul class="page-site-audit__list">
+                            <div class="page-site-audit__section-body">
+                                <div
+                                    v-if="group.locked"
+                                    class="page-site-audit__lock"
+                                >
+                                    <p class="page-site-audit__lock-text">{{ t('locked_teaser') }}</p>
+                                    <a
+                                        :href="t('register_url')"
+                                        class="btn btn-primary page-site-audit__lock-cta"
+                                        data-public-auth-cta="register"
+                                    >{{ t('locked_cta') }}</a>
+                                </div>
+                                <ul
+                                    class="page-site-audit__list"
+                                    :aria-hidden="group.locked ? 'true' : undefined"
+                                >
                                 <li
                                     v-for="item in group.items"
                                     :key="item.label"
@@ -870,29 +891,121 @@ onMounted(() => {
                                     </div>
                                 </li>
                             </ul>
+                            </div>
                         </section>
                     </div>
 
                     <footer class="page-site-audit__panel page-site-audit__next">
                         <div class="page-site-audit__next-glow" aria-hidden="true"></div>
-                        <div class="page-site-audit__next-inner">
-                            <p class="page-site-audit__next-eyebrow">{{ t('footer_label') }}</p>
-                            <h2 class="page-site-audit__next-title">{{ t('footer_title') }}</h2>
-                            <p class="page-site-audit__next-lead">{{ t('footer_lead') }}</p>
-                            <ul class="page-site-audit__next-points">
-                                <li>{{ t('footer_point_1') }}</li>
-                                <li>{{ t('footer_point_2') }}</li>
-                                <li>{{ t('footer_point_3') }}</li>
-                            </ul>
-                            <div class="page-site-audit__actions">
-                                <a
-                                    :href="t('register_url')"
-                                    class="btn btn-primary btn-lg page-site-audit__next-cta"
-                                    data-public-auth-cta="register"
-                                    data-public-auth-keep
-                                    :data-label-register="t('cta_register')"
-                                    :data-label-authed="t('cta_register')"
-                                >{{ t('cta_register') }}</a>
+                        <div class="page-site-audit__next-layout">
+                            <div class="page-site-audit__next-inner">
+                                <p class="page-site-audit__next-eyebrow">{{ t('footer_label') }}</p>
+                                <h2 class="page-site-audit__next-title">{{ t('footer_title') }}</h2>
+                                <p class="page-site-audit__next-lead">{{ t('footer_lead') }}</p>
+                                <ul class="page-site-audit__next-points">
+                                    <li>{{ t('footer_point_1') }}</li>
+                                    <li>{{ t('footer_point_2') }}</li>
+                                    <li>{{ t('footer_point_3') }}</li>
+                                </ul>
+                                <div class="page-site-audit__actions">
+                                    <a
+                                        :href="t('register_url')"
+                                        class="btn btn-primary btn-lg page-site-audit__next-cta"
+                                        data-public-auth-cta="register"
+                                        data-public-auth-keep
+                                        :data-label-register="t('cta_register')"
+                                        :data-label-authed="t('cta_register')"
+                                    >{{ t('cta_register') }}</a>
+                                </div>
+                            </div>
+
+                            <div class="page-site-audit__next-visual" aria-hidden="true">
+                                <div class="page-home__flow">
+                                    <div class="page-home__flow-in">
+                                        <div class="page-home__flow-sources">
+                                            <span class="page-home__flow-source">
+                                                <img
+                                                    src="/images/integrations/google-analytics.svg"
+                                                    alt=""
+                                                    width="22"
+                                                    height="22"
+                                                    decoding="async"
+                                                >
+                                            </span>
+                                            <span class="page-home__flow-source">
+                                                <img
+                                                    src="/images/integrations/google-search-console.svg"
+                                                    alt=""
+                                                    width="22"
+                                                    height="22"
+                                                    decoding="async"
+                                                >
+                                            </span>
+                                            <span class="page-home__flow-source">
+                                                <img
+                                                    src="/images/integrations/github.svg"
+                                                    alt=""
+                                                    width="22"
+                                                    height="22"
+                                                    decoding="async"
+                                                >
+                                            </span>
+                                            <span class="page-home__flow-source">
+                                                <img
+                                                    src="/images/integrations/pagespeed.svg"
+                                                    alt=""
+                                                    width="22"
+                                                    height="22"
+                                                    decoding="async"
+                                                >
+                                            </span>
+                                        </div>
+
+                                        <svg
+                                            class="page-home__flow-fan"
+                                            viewBox="0 0 120 100"
+                                            preserveAspectRatio="none"
+                                            focusable="false"
+                                        >
+                                            <path class="page-home__flow-fan-line" d="M0 10.5 H48 L120 50"/>
+                                            <path class="page-home__flow-fan-line" d="M0 36.8 H48 L120 50"/>
+                                            <path class="page-home__flow-fan-line" d="M0 63.2 H48 L120 50"/>
+                                            <path class="page-home__flow-fan-line" d="M0 89.5 H48 L120 50"/>
+                                            <path class="page-home__flow-fan-pulse" d="M0 10.5 H48 L120 50" pathLength="100"/>
+                                            <path class="page-home__flow-fan-pulse" d="M0 36.8 H48 L120 50" pathLength="100"/>
+                                            <path class="page-home__flow-fan-pulse" d="M0 63.2 H48 L120 50" pathLength="100"/>
+                                            <path class="page-home__flow-fan-pulse" d="M0 89.5 H48 L120 50" pathLength="100"/>
+                                        </svg>
+                                    </div>
+
+                                    <div class="page-home__flow-hub">
+                                        <span class="page-home__flow-hub-ring"></span>
+                                        <span class="page-home__flow-hub-ring"></span>
+                                        <span class="page-home__flow-hub-core">
+                                            <span class="page-home__flow-chip">
+                                                <span class="page-home__flow-chip-body">AI</span>
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    <div class="page-home__flow-rail page-home__flow-rail--out">
+                                        <span class="page-home__flow-rail-line"></span>
+                                        <span class="page-home__flow-rail-pulse"></span>
+                                    </div>
+
+                                    <div class="page-home__flow-result">
+                                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" aria-hidden="true">
+                                            <path
+                                                d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"
+                                                stroke="currentColor"
+                                                stroke-width="1.5"
+                                                stroke-linejoin="round"
+                                            />
+                                            <path d="M14 3v5h5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                                            <path d="M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                        </svg>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </footer>

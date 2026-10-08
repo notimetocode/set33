@@ -56,4 +56,25 @@ class AiServiceFactory extends Factory
             'is_global' => true,
         ]);
     }
+
+    public function groq(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => AiServiceType::Groq,
+            'name' => 'Groq · openai/gpt-oss-120b',
+            'api_key' => 'test-groq-api-key-'.fake()->uuid(),
+            'settings' => [
+                'model' => 'openai/gpt-oss-120b',
+                'system_instruction' => null,
+                'generation_config' => [
+                    'temperature' => 1.0,
+                    'top_p' => 0.95,
+                    'max_output_tokens' => 8192,
+                    'stop_sequences' => [],
+                    'presence_penalty' => null,
+                    'frequency_penalty' => null,
+                ],
+            ],
+        ]);
+    }
 }

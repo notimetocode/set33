@@ -9,9 +9,8 @@ export async function login(email, password) {
     return data;
 }
 
-export async function register(name, email, password, passwordConfirmation, locale) {
+export async function register(email, password, passwordConfirmation, locale) {
     const { data } = await http.post('/auth/register', {
-        name,
         email,
         password,
         password_confirmation: passwordConfirmation,

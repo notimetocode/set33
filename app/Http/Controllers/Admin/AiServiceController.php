@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\AiService\CheckAiService;
 use App\Actions\AiService\CreateAiService;
 use App\Actions\AiService\DeleteAiService;
-use App\Actions\AiService\ListGeminiModels;
+use App\Actions\AiService\ListAiServiceModels;
 use App\Actions\AiService\UpdateAiService;
 use App\Enums\AiServiceType;
 use App\Http\Controllers\Controller;
@@ -96,10 +96,13 @@ class AiServiceController extends Controller
             'gemini' => [
                 'preferred_models' => array_values(config('services.gemini.preferred_models', [])),
             ],
+            'groq' => [
+                'preferred_models' => array_values(config('services.groq.preferred_models', [])),
+            ],
         ]);
     }
 
-    public function models(ListAiServiceModelsRequest $request, ListGeminiModels $list): JsonResponse
+    public function models(ListAiServiceModelsRequest $request, ListAiServiceModels $list): JsonResponse
     {
         Gate::authorize('admin.ai-services.viewAny');
 
@@ -112,8 +115,10 @@ class AiServiceController extends Controller
             $apiKey = $service->api_key;
         }
 
+        $type = AiServiceType::from($validated['type']);
+
         return response()->json([
-            'data' => $list->handle((string) $apiKey),
+            'data' => $list->handle($type, (string) $apiKey),
         ]);
     }
 }

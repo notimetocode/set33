@@ -5,7 +5,7 @@
                 <span class="logo">
                     <img class="logo__mark" src="/images/logo.svg" alt="Set33" width="96" height="39">
                 </span>
-                Панель администратора
+                <span class="page-admin-login__title">Панель администратора</span>
             </div>
             <p class="page-admin-login__label">// Только для администраторов</p>
 

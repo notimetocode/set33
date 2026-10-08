@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\App;
 
+use App\Actions\Site\BuildSiteAiReportPrompt;
 use App\Models\SiteAiReport;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -26,7 +27,7 @@ class SiteAiReportResource extends JsonResource
             'use_system_prompt' => (bool) $this->use_system_prompt,
             'prompt' => $this->when(
                 ! $request->routeIs('app.sites.ai-reports.index'),
-                $this->prompt,
+                $this->instructionsPrompt(),
             ),
             'tool' => [
                 'ai_service_id' => $this->ai_service_id,
@@ -51,5 +52,21 @@ class SiteAiReportResource extends JsonResource
                 $this->charts ?? [],
             ),
         ];
+    }
+
+    /**
+     * Instructions used for the report (system or custom), without site data payload.
+     */
+    private function instructionsPrompt(): ?string
+    {
+        if (filled($this->prompt)) {
+            return $this->prompt;
+        }
+
+        if ($this->use_system_prompt) {
+            return app(BuildSiteAiReportPrompt::class)->defaultInstructions();
+        }
+
+        return null;
     }
 }

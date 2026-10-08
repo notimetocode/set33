@@ -23,6 +23,8 @@ class BuildSiteAiReportPrompt
 
     private const MAX_ROBOTS_TXT_CHARS = 8000;
 
+    private const MAX_SITE_AUDIT_CHARS = 20000;
+
     /**
      * @param  list<array<string, mixed>>  $analytics
      * @param  list<array<string, mixed>>  $searchConsole
@@ -63,7 +65,7 @@ class BuildSiteAiReportPrompt
     ): string {
         $instructions = filled($customInstructions)
             ? trim($customInstructions)
-            : $this->instructions();
+            : $this->defaultInstructions();
 
         $sections = [
             $instructions,
@@ -82,12 +84,17 @@ class BuildSiteAiReportPrompt
         return implode("\n\n", $sections);
     }
 
-    private function instructions(): string
+    /**
+     * System instructions only (without site metrics/context payload).
+     */
+    public function defaultInstructions(): string
     {
         return <<<'PROMPT'
 Проанализируй приведённые ниже данные сайта и сформируй SEO-отчёт на русском языке.
 
-Задачи анализа:
+Главный принцип объёма: глубина раскрытия пропорциональна важности находок, а не списку заголовков. Не выравнивай разделы по длине. Если по теме нет аномалий и рисков — хватит 1–2 предложений. Если есть сильные инсайты, корреляции или спорные гипотезы — раскрывай их подробно (числа, даты, URL, файлы коммитов, сравнения периодов), даже если соседние разделы короткие. Не растягивай «всё в порядке» ради заполнения структуры и не сжимай важные выводы ради баланса.
+
+Задачи анализа (делай по факту данных; пустые источники не раздувай):
 1. Найди закономерности, тренды и аномалии в метриках за указанный период.
 2. Оцени динамику органического трафика (Google Analytics: organic_*) и поисковой видимости (Search Console: клики, показы, CTR, средняя позиция).
 3. Разбери топ-запросы и топ-страницы: что даёт клики, где высокий CTR или слабая позиция при больших показах; учти разрезы по устройствам и странам.
@@ -95,24 +102,35 @@ class BuildSiteAiReportPrompt
 5. Оцени скорость и Core Web Vitals (PageSpeed lab и Chrome UX Report field data): LCP, INP, CLS, TTFB и связанные метрики; свяжи с SEO и UX, если данные есть.
 6. Сопоставь изменения метрик с активностью разработки (коммиты GitHub), если такие данные есть: возможные корреляции деплоев/изменений с ростом или падением показателей. Если у коммита есть список файлов/diff — опирайся на конкретные пути и характер правок.
 7. Учти ручные события периода (упоминания в СМИ, публикации, акции, инциденты и т.п.): оцени их возможное влияние на трафик и видимость.
-8. Учти снимок сайта (title, description, Open Graph, canonical, lang, robots.txt): оцени базовое SEO главной страницы и ограничения обхода; сопоставь с данными Search Console и URL Inspection, если они есть.
+8. Учти снимок сайта (title, description, Open Graph, canonical, lang, robots.txt) и технический аудит главной (HTTP-статус, SSL, www/https-редиректы, sitemap, meta robots, аналитика, заголовки, Schema.org, ссылки, тошнота текста): оцени базовое SEO и техническое здоровье; сопоставь с данными Search Console и URL Inspection, если они есть.
 9. Учти приложенные Markdown-документы сайта (брендбук, ТЗ, семантика, контент-гайд и т.п.): используй их как контекст о продукте, аудитории и ограничениях; не выдумывай факты вне документов и метрик.
 10. Выдели сильные стороны, риски и конкретные гипотезы для улучшения SEO.
-11. Если какого-то источника данных нет или он пуст — явно укажи это и не выдумывай цифры.
+11. Если какого-то источника данных нет или он пуст — явно укажи это кратко и не выдумывай цифры.
 
-Структура отчёта (используй Markdown):
+Каркас отчёта (Markdown). Обязательные разделы всегда присутствуют; остальные — только если по теме есть данные и/или значимые выводы. Порядок сохраняй, когда раздел включаешь.
+
+Обязательные:
 ## Краткое резюме
+## Рекомендации
+## Что проверить дополнительно
+
+Опциональные (включай при наличии смысла; внутри — объём по важности находок):
 ## Динамика и закономерности
 ## Органический трафик и видимость
 ## Запросы, страницы, устройства и страны
-## Метаданные и robots.txt главной страницы
+## Метаданные, аудит и robots.txt главной страницы
 ## Индексация и техническое SEO
 ## Скорость и Core Web Vitals
 ## Связь с разработкой
 ## События и внешние факторы
 ## Контекст из документов
-## Рекомендации
-## Что проверить дополнительно
+
+Правила по разделам:
+- «Краткое резюме» — 3–6 предложений: главные выводы периода и самый важный следующий шаг; без пересказа всех разделов.
+- В опциональном разделе без аномалий: одна короткая фиксация («существенных проблем не видно») + при необходимости 1 факт-якорь; без чеклиста «всё ок» по каждому полю.
+- В опциональном разделе с сильными находками: разбирай досканально — механизмы, доказательства из данных, альтернативные объяснения, уверенность гипотезы, что проверить дальше.
+- «Рекомендации» и «Что проверить дополнительно» — приоритизированный список; больше пунктов и деталей там, где выше потенциальный эффект, а не по одному пункту на каждый источник данных.
+- Не дублируй один и тот же вывод в нескольких разделах: детали — в тематическом разделе, в резюме и рекомендациях — только отсылка/приоритет.
 
 Графики в тексте:
 - Там, где динамика или сравнение лучше видны на графике, вставь плейсхолдер вида {{chart:id}} на отдельной строке (id: латиница, цифры и подчёркивание, например organic_trend).
@@ -165,19 +183,34 @@ PROMPT;
             ? $this->truncate((string) $site->robots_txt, self::MAX_ROBOTS_TXT_CHARS)
             : null;
 
-        if ($meta === [] && $robotsTxt === null) {
+        $audit = is_array($site->site_audit) ? $this->siteAuditForPrompt($site->site_audit) : null;
+
+        if ($meta === [] && $robotsTxt === null && $audit === null) {
             return "## Снимок сайта (главная страница)\nДанные ещё не собраны.";
         }
 
         $parts = [
             '## Снимок сайта (главная страница)',
-            'Ниже — метаданные и robots.txt, собранные с главной страницы сайта. Используй их для оценки базового SEO и правил обхода.',
+            'Ниже — метаданные, технический аудит и robots.txt, собранные с главной страницы сайта. Используй их для оценки базового SEO, технического здоровья и правил обхода.',
         ];
 
         if ($meta !== []) {
             $parts[] = "### Метаданные\n"
                 ."```json\n"
                 .$this->encodeValue($meta)
+                ."\n```";
+        }
+
+        if ($audit !== null) {
+            $encoded = $this->truncate(
+                $this->encodeValue($audit),
+                self::MAX_SITE_AUDIT_CHARS,
+            );
+            $parts[] = "### Технический аудит сайта\n"
+                .'Поля: http_status, response_time_ms, ssl, https_redirect, www_redirect, not_found_page, '
+                ."meta_robots, sitemap, viewport, charset, analytics, content (headings, links, schema.org, nausea).\n"
+                ."```json\n"
+                .$encoded
                 ."\n```";
         }
 
@@ -188,6 +221,41 @@ PROMPT;
         }
 
         return implode("\n\n", $parts);
+    }
+
+    /**
+     * @param  array<string, mixed>  $audit
+     * @return array<string, mixed>
+     */
+    private function siteAuditForPrompt(array $audit): array
+    {
+        // robots.txt body is provided in a dedicated section; drop duplicate meta fields already listed above.
+        if (isset($audit['robots_txt']) && is_array($audit['robots_txt'])) {
+            unset($audit['robots_txt']['content']);
+        }
+
+        unset(
+            $audit['title'],
+            $audit['meta_description'],
+            $audit['meta_keywords'],
+            $audit['og_title'],
+            $audit['og_description'],
+            $audit['og_image_url'],
+            $audit['canonical_url'],
+            $audit['html_lang'],
+        );
+
+        if (isset($audit['content']) && is_array($audit['content'])) {
+            if (isset($audit['content']['headings']['items']) && is_array($audit['content']['headings']['items'])) {
+                $audit['content']['headings']['items'] = array_slice($audit['content']['headings']['items'], 0, 30);
+            }
+
+            if (isset($audit['content']['schema_org']['items']) && is_array($audit['content']['schema_org']['items'])) {
+                $audit['content']['schema_org']['items'] = array_slice($audit['content']['schema_org']['items'], 0, 15);
+            }
+        }
+
+        return $audit;
     }
 
     /**

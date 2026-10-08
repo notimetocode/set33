@@ -151,4 +151,57 @@ class AiServiceCheckTest extends TestCase
         $this->postJson("/api/app/ai-services/{$service->id}/check")
             ->assertForbidden();
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function groqChatResponse(string $text = 'OK'): array
+    {
+        return [
+            'choices' => [
+                [
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => $text,
+                    ],
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ];
+    }
+
+    public function test_user_can_check_own_groq_ai_service_successfully(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.groq.com/openai/v1/chat/completions' => Http::response(
+                $this->groqChatResponse('OK'),
+            ),
+        ]);
+
+        $user = $this->actingAsAppUser();
+        $service = AiService::factory()->groq()->for($user)->create([
+            'api_key' => 'valid-groq-key',
+            'status' => AiServiceStatus::Unchecked,
+        ]);
+
+        $this->postJson("/api/app/ai-services/{$service->id}/check")
+            ->assertOk()
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('title', 'Проверка успешна')
+            ->assertJsonPath('reply', 'OK')
+            ->assertJsonPath('data.status', 'ok')
+            ->assertJsonPath('data.status_message', 'Подключение к Groq работает.');
+
+        Http::assertSent(function (Request $request): bool {
+            return $request->hasHeader('Authorization', 'Bearer valid-groq-key')
+                && str_contains($request->url(), '/chat/completions')
+                && ($request['model'] ?? null) === 'openai/gpt-oss-120b'
+                && ($request['messages'][0]['content'] ?? null) === 'Ответь одним словом: OK';
+        });
+
+        $service->refresh();
+        $this->assertSame(AiServiceStatus::Ok, $service->status);
+        $this->assertNotNull($service->status_checked_at);
+    }
 }

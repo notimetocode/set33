@@ -4,11 +4,8 @@ namespace App\Actions\Site;
 
 use App\Enums\SiteWebDataStatus;
 use App\Models\Site;
-use DOMDocument;
-use DOMElement;
-use DOMXPath;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
+use App\Services\SiteAudit\WebsiteAnalyzer;
+use App\Services\SiteAudit\WebsiteAuditReport;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,11 +15,11 @@ class CollectSiteWebData
 {
     private const USER_AGENT = 'Set33SiteBot/1.0 (+https://set33.com)';
 
-    private const MAX_HTML_BYTES = 1_500_000;
-
     private const MAX_FAVICON_BYTES = 512_000;
 
-    private const MAX_ROBOTS_BYTES = 512_000;
+    public function __construct(
+        private WebsiteAnalyzer $analyzer,
+    ) {}
 
     public function handle(Site $site): Site
     {
@@ -32,10 +29,25 @@ class CollectSiteWebData
         ])->save();
 
         try {
-            $homepage = $this->fetchHomepage($site->url);
-            $meta = $this->parseHomepageHtml($homepage['body'], $homepage['final_url']);
-            $favicon = $this->storeFavicon($site, $meta['favicon_candidates'], $homepage['final_url']);
-            $robotsTxt = $this->fetchRobotsTxt($homepage['final_url']);
+            $report = $this->analyzer->analyze($site->url);
+            $audit = $report->toArray();
+
+            if ($report->status !== 'ready') {
+                $site->forceFill([
+                    'web_data_status' => SiteWebDataStatus::Failed,
+                    'site_audit' => $audit,
+                    'web_data_error' => Str::limit($report->error ?? 'Website audit failed', 2000),
+                    'web_data_fetched_at' => now(),
+                ])->save();
+
+                return $site->refresh();
+            }
+
+            $favicon = $this->storeFavicon(
+                $site,
+                $this->faviconCandidates($report),
+                $report->finalUrl ?? $site->url,
+            );
 
             if (filled($site->favicon_path) && $site->favicon_path !== ($favicon['path'] ?? null)) {
                 Storage::disk('public')->delete($site->favicon_path);
@@ -43,17 +55,18 @@ class CollectSiteWebData
 
             $site->forceFill([
                 'web_data_status' => SiteWebDataStatus::Ready,
-                'page_title' => $meta['page_title'],
-                'meta_description' => $meta['meta_description'],
-                'meta_keywords' => $meta['meta_keywords'],
-                'og_title' => $meta['og_title'],
-                'og_description' => $meta['og_description'],
-                'og_image_url' => $meta['og_image_url'],
-                'canonical_url' => $meta['canonical_url'],
-                'html_lang' => $meta['html_lang'],
+                'page_title' => $report->title,
+                'meta_description' => $report->metaDescription,
+                'meta_keywords' => $report->metaKeywords,
+                'og_title' => $report->ogTitle ?? $report->title,
+                'og_description' => $report->ogDescription,
+                'og_image_url' => $report->ogImageUrl,
+                'canonical_url' => $report->canonicalUrl,
+                'html_lang' => $report->htmlLang,
                 'favicon_path' => $favicon['path'] ?? null,
                 'favicon_source_url' => $favicon['source_url'] ?? null,
-                'robots_txt' => $robotsTxt,
+                'robots_txt' => $report->robotsTxt['content'] ?? null,
+                'site_audit' => $audit,
                 'web_data_fetched_at' => now(),
                 'web_data_error' => null,
             ])->save();
@@ -69,204 +82,22 @@ class CollectSiteWebData
     }
 
     /**
-     * @return array{body: string, final_url: string}
-     */
-    private function fetchHomepage(string $url): array
-    {
-        $response = Http::withHeaders([
-            'Accept' => 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
-            'User-Agent' => self::USER_AGENT,
-        ])
-            ->withOptions(['allow_redirects' => ['max' => 5]])
-            ->connectTimeout(5)
-            ->timeout(12)
-            ->retry([200, 500], 0, function (Throwable $exception): bool {
-                return $exception instanceof ConnectionException
-                    || ($exception instanceof RequestException
-                        && ($exception->response->serverError() || $exception->response->status() === 429));
-            })
-            ->get($url);
-
-        if (! $response->successful()) {
-            $response->throw();
-        }
-
-        $body = $response->body();
-
-        if (strlen($body) > self::MAX_HTML_BYTES) {
-            $body = substr($body, 0, self::MAX_HTML_BYTES);
-        }
-
-        return [
-            'body' => $body,
-            'final_url' => (string) ($response->effectiveUri() ?? $url),
-        ];
-    }
-
-    /**
-     * @return array{
-     *     page_title: ?string,
-     *     meta_description: ?string,
-     *     meta_keywords: ?string,
-     *     og_title: ?string,
-     *     og_description: ?string,
-     *     og_image_url: ?string,
-     *     canonical_url: ?string,
-     *     html_lang: ?string,
-     *     favicon_candidates: list<string>
-     * }
-     */
-    private function parseHomepageHtml(string $html, string $baseUrl): array
-    {
-        $document = new DOMDocument;
-        $previous = libxml_use_internal_errors(true);
-        $document->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_NONET);
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
-
-        $xpath = new DOMXPath($document);
-
-        $titleNode = $xpath->query('//title')->item(0);
-        $pageTitle = $this->normalizeText($titleNode?->textContent);
-
-        return [
-            'page_title' => $pageTitle,
-            'meta_description' => $this->metaContent($xpath, ['description', 'Description']),
-            'meta_keywords' => $this->metaContent($xpath, ['keywords', 'Keywords']),
-            'og_title' => $this->metaProperty($xpath, ['og:title']) ?? $pageTitle,
-            'og_description' => $this->metaProperty($xpath, ['og:description']),
-            'og_image_url' => $this->absolutizeUrl(
-                $this->metaProperty($xpath, ['og:image', 'og:image:url']),
-                $baseUrl,
-            ),
-            'canonical_url' => $this->absolutizeUrl(
-                $this->linkHref($xpath, ['canonical']),
-                $baseUrl,
-            ),
-            'html_lang' => $this->normalizeText(
-                $document->documentElement?->getAttribute('lang') ?: null,
-                32,
-            ),
-            'favicon_candidates' => $this->faviconCandidates($xpath, $baseUrl),
-        ];
-    }
-
-    /**
-     * @param  list<string>  $names
-     */
-    private function metaContent(DOMXPath $xpath, array $names): ?string
-    {
-        foreach ($names as $name) {
-            $nodes = $xpath->query(sprintf(
-                '//meta[translate(@name, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")=%s]/@content',
-                $this->xpathLiteral(Str::lower($name)),
-            ));
-
-            $value = $this->normalizeText($nodes?->item(0)?->nodeValue, 2000);
-
-            if ($value !== null) {
-                return $value;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  list<string>  $properties
-     */
-    private function metaProperty(DOMXPath $xpath, array $properties): ?string
-    {
-        foreach ($properties as $property) {
-            $nodes = $xpath->query(sprintf(
-                '//meta[translate(@property, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")=%s]/@content',
-                $this->xpathLiteral(Str::lower($property)),
-            ));
-
-            $value = $this->normalizeText($nodes?->item(0)?->nodeValue, 2000);
-
-            if ($value !== null) {
-                return $value;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param  list<string>  $rels
-     */
-    private function linkHref(DOMXPath $xpath, array $rels): ?string
-    {
-        foreach ($rels as $rel) {
-            $nodes = $xpath->query('//link[@rel]');
-
-            if ($nodes === false) {
-                continue;
-            }
-
-            foreach ($nodes as $node) {
-                if (! $node instanceof DOMElement) {
-                    continue;
-                }
-
-                $relTokens = preg_split('/\s+/', Str::lower(trim($node->getAttribute('rel')))) ?: [];
-
-                if (! in_array(Str::lower($rel), $relTokens, true)) {
-                    continue;
-                }
-
-                $href = $this->normalizeText($node->getAttribute('href'), 2048);
-
-                if ($href !== null) {
-                    return $href;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * @return list<string>
      */
-    private function faviconCandidates(DOMXPath $xpath, string $baseUrl): array
+    private function faviconCandidates(WebsiteAuditReport $report): array
     {
         $candidates = [];
-        $nodes = $xpath->query('//link[@rel]');
 
-        if ($nodes !== false) {
-            foreach ($nodes as $node) {
-                if (! $node instanceof DOMElement) {
-                    continue;
-                }
-
-                $rel = Str::lower(trim($node->getAttribute('rel')));
-                $relTokens = preg_split('/\s+/', $rel) ?: [];
-                $isIcon = in_array('icon', $relTokens, true)
-                    || in_array('apple-touch-icon', $relTokens, true)
-                    || in_array('apple-touch-icon-precomposed', $relTokens, true)
-                    || str_contains($rel, 'icon');
-
-                if (! $isIcon) {
-                    continue;
-                }
-
-                $href = $this->absolutizeUrl(
-                    $this->normalizeText($node->getAttribute('href'), 2048),
-                    $baseUrl,
-                );
-
-                if ($href !== null) {
-                    $candidates[] = $href;
-                }
+        foreach ($report->icons['urls'] ?? [] as $url) {
+            if (is_string($url) && $url !== '') {
+                $candidates[] = $url;
             }
         }
 
-        $fallback = $this->absolutizeUrl('/favicon.ico', $baseUrl);
+        $origin = $this->originUrl($report->finalUrl ?? $report->requestedUrl);
 
-        if ($fallback !== null) {
-            $candidates[] = $fallback;
+        if ($origin !== null) {
+            $candidates[] = $origin.'/favicon.ico';
         }
 
         return array_values(array_unique($candidates));
@@ -332,50 +163,6 @@ class CollectSiteWebData
         return null;
     }
 
-    private function fetchRobotsTxt(string $baseUrl): ?string
-    {
-        $robotsUrl = $this->originUrl($baseUrl);
-
-        if ($robotsUrl === null) {
-            return null;
-        }
-
-        $robotsUrl .= '/robots.txt';
-
-        try {
-            $response = Http::withHeaders([
-                'Accept' => 'text/plain,*/*;q=0.8',
-                'User-Agent' => self::USER_AGENT,
-            ])
-                ->connectTimeout(3)
-                ->timeout(8)
-                ->get($robotsUrl);
-
-            if (! $response->successful()) {
-                return null;
-            }
-
-            $body = $response->body();
-
-            if ($body === '' || strlen($body) > self::MAX_ROBOTS_BYTES) {
-                return null;
-            }
-
-            $contentType = Str::lower((string) $response->header('Content-Type'));
-
-            if ($contentType !== '' && ! str_contains($contentType, 'text/') && ! str_contains($contentType, 'json')) {
-                // Some hosts still serve robots.txt as octet-stream; allow plain-looking bodies.
-                if (! Str::contains($body, ['User-agent', 'user-agent', 'Sitemap', 'Disallow'], ignoreCase: true)) {
-                    return null;
-                }
-            }
-
-            return Str::limit($body, self::MAX_ROBOTS_BYTES, '');
-        } catch (Throwable) {
-            return null;
-        }
-    }
-
     private function faviconExtension(?string $contentType, string $url, string $body): ?string
     {
         $type = Str::lower((string) $contentType);
@@ -428,7 +215,6 @@ class CollectSiteWebData
             return 'svg';
         }
 
-        // ICO files often start with reserved zeros; accept as fallback.
         return 'ico';
     }
 
@@ -468,10 +254,6 @@ class CollectSiteWebData
             ? $basePath
             : Str::beforeLast($basePath, '/').'/';
 
-        if ($directory === '/') {
-            $directory = '/';
-        }
-
         return $origin.$directory.$url;
     }
 
@@ -500,29 +282,5 @@ class CollectSiteWebData
         }
 
         return Str::limit($value, $max, '');
-    }
-
-    private function xpathLiteral(string $value): string
-    {
-        if (! str_contains($value, "'")) {
-            return "'{$value}'";
-        }
-
-        if (! str_contains($value, '"')) {
-            return '"'.$value.'"';
-        }
-
-        $parts = explode("'", $value);
-        $concat = [];
-
-        foreach ($parts as $index => $part) {
-            $concat[] = "'{$part}'";
-
-            if ($index < count($parts) - 1) {
-                $concat[] = "\"'\"";
-            }
-        }
-
-        return 'concat('.implode(', ', $concat).')';
     }
 }

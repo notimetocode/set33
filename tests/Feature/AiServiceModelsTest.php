@@ -146,4 +146,47 @@ class AiServiceModelsTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['api_key', 'ai_service_id']);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function groqModelsResponse(): array
+    {
+        return [
+            'data' => [
+                [
+                    'id' => 'openai/gpt-oss-120b',
+                    'object' => 'model',
+                ],
+                [
+                    'id' => 'openai/gpt-oss-20b',
+                    'object' => 'model',
+                ],
+            ],
+        ];
+    }
+
+    public function test_user_can_list_groq_models_with_api_key(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'api.groq.com/openai/v1/models' => Http::response($this->groqModelsResponse()),
+        ]);
+
+        $this->actingAsAppUser();
+
+        $this->postJson('/api/app/ai-services/models', [
+            'type' => AiServiceType::Groq->value,
+            'api_key' => 'secret-groq-key',
+        ])
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.id', 'openai/gpt-oss-120b')
+            ->assertJsonPath('data.1.id', 'openai/gpt-oss-20b');
+
+        Http::assertSent(function (Request $request): bool {
+            return $request->hasHeader('Authorization', 'Bearer secret-groq-key')
+                && str_contains($request->url(), '/openai/v1/models');
+        });
+    }
 }

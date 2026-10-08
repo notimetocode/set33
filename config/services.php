@@ -43,10 +43,25 @@ return [
          * Keep in sync with Google's current recommendations for new API users.
          */
         'preferred_models' => [
+            'gemini-3.8-flash',
+            'gemini-3.7-flash',
             'gemini-3.6-flash',
             'gemini-3.5-flash',
             'gemini-3.1-flash-lite',
             'gemini-2.0-flash',
+        ],
+    ],
+
+    'groq' => [
+        'base_url' => env('GROQ_API_BASE_URL', 'https://api.groq.com/openai/v1'),
+        'seed_api_key' => env('GROQ_SEED_API_KEY'),
+        /*
+         * Preferred model IDs for new Groq connections (first available wins).
+         */
+        'preferred_models' => [
+            'openai/gpt-oss-120b',
+            'openai/gpt-oss-20b',
+            'qwen/qwen3.8-27b',
         ],
     ],
 

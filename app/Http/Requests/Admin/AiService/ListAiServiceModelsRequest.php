@@ -50,8 +50,11 @@ class ListAiServiceModelsRequest extends FormRequest
                 return;
             }
 
-            if ($this->input('type') !== AiServiceType::Gemini->value) {
-                $validator->errors()->add('type', 'Список моделей доступен только для Google Gemini.');
+            if (! in_array($this->input('type'), [
+                AiServiceType::Gemini->value,
+                AiServiceType::Groq->value,
+            ], true)) {
+                $validator->errors()->add('type', 'Список моделей для этого типа сервиса пока не поддерживается.');
             }
 
             $serviceId = $this->integer('ai_service_id');

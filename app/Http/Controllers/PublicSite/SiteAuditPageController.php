@@ -27,6 +27,8 @@ class SiteAuditPageController extends Controller
                     'retry' => __('public.site_audit.retry'),
                     'back_home' => __('public.site_audit.back_home'),
                     'cta_register' => __('public.site_audit.cta_register'),
+                    'locked_teaser' => __('public.site_audit.locked_teaser'),
+                    'locked_cta' => __('public.site_audit.locked_cta'),
                     'footer_label' => __('public.site_audit.footer_label'),
                     'footer_title' => __('public.site_audit.footer_title'),
                     'footer_lead' => __('public.site_audit.footer_lead'),

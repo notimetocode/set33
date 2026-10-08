@@ -18,7 +18,6 @@ class AuthRegisterTest extends TestCase
         Event::fake([Registered::class]);
 
         $response = $this->postJson('/api/app/auth/register', [
-            'name' => 'Иван',
             'email' => 'ivan@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -33,13 +32,13 @@ class AuthRegisterTest extends TestCase
             ])
             ->assertJsonPath('token_type', 'Bearer')
             ->assertJsonPath('user.email', 'ivan@example.com')
-            ->assertJsonPath('user.name', 'Иван')
+            ->assertJsonPath('user.name', 'Пользователь')
             ->assertJsonPath('user.role', UserRole::User->value);
 
         $this->assertDatabaseHas('users', [
             'email' => 'ivan@example.com',
-            'name' => 'Иван',
-            'first_name' => 'Иван',
+            'name' => 'Пользователь',
+            'first_name' => 'Пользователь',
             'role' => UserRole::User->value,
         ]);
 
@@ -58,7 +57,6 @@ class AuthRegisterTest extends TestCase
         User::factory()->create(['email' => 'taken@example.com']);
 
         $this->postJson('/api/app/auth/register', [
-            'name' => 'Иван',
             'email' => 'taken@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -70,7 +68,6 @@ class AuthRegisterTest extends TestCase
     public function test_register_requires_password_confirmation(): void
     {
         $this->postJson('/api/app/auth/register', [
-            'name' => 'Иван',
             'email' => 'ivan@example.com',
             'password' => 'password',
             'password_confirmation' => 'other-password',
@@ -82,7 +79,6 @@ class AuthRegisterTest extends TestCase
     public function test_register_always_creates_user_role(): void
     {
         $this->postJson('/api/app/auth/register', [
-            'name' => 'Админ',
             'email' => 'admin-wannabe@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -94,6 +90,24 @@ class AuthRegisterTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => 'admin-wannabe@example.com',
             'role' => UserRole::User->value,
+        ]);
+    }
+
+    public function test_register_ignores_client_supplied_name(): void
+    {
+        $this->postJson('/api/app/auth/register', [
+            'name' => 'Иван',
+            'email' => 'ivan@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('user.name', 'Пользователь');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'ivan@example.com',
+            'name' => 'Пользователь',
+            'first_name' => 'Пользователь',
         ]);
     }
 }

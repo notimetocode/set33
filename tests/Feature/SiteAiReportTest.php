@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Actions\Site\BuildSiteAiReportPrompt;
 use App\Enums\SearchConsoleDimension;
 use App\Enums\SiteWebDataStatus;
 use App\Models\AiService;
@@ -405,7 +406,6 @@ class SiteAiReportTest extends TestCase
             ->assertJsonPath('data.period.from', '2026-09-01')
             ->assertJsonPath('data.period.to', '2026-09-07')
             ->assertJsonPath('data.use_system_prompt', true)
-            ->assertJsonPath('data.prompt', null)
             ->assertJsonPath('data_counts.website', 1)
             ->assertJsonPath('data_counts.analytics', 1)
             ->assertJsonPath('data_counts.search_console', 1)
@@ -430,13 +430,18 @@ class SiteAiReportTest extends TestCase
             'period_from' => '2026-09-01',
             'period_to' => '2026-09-07',
             'use_system_prompt' => 1,
-            'prompt' => null,
         ]);
 
         $saved = SiteAiReport::query()->where('site_id', $site->id)->first();
         $this->assertNotNull($saved);
         $this->assertSame('organic_trend', $saved->charts[0]['id'] ?? null);
         $this->assertStringNotContainsString('charts-json', $saved->reply);
+        $this->assertSame(
+            app(BuildSiteAiReportPrompt::class)->defaultInstructions(),
+            $saved->prompt,
+        );
+        $this->assertStringNotContainsString('Demo Site', (string) $saved->prompt);
+        $this->assertStringNotContainsString('"organic_sessions"', (string) $saved->prompt);
 
         Http::assertSent(function (Request $request) {
             if (! str_contains($request->url(), ':generateContent')) {

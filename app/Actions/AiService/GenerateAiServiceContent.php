@@ -31,10 +31,29 @@ class GenerateAiServiceContent
             return $this->failure('API-ключ не задан.');
         }
 
-        if ($aiService->type !== AiServiceType::Gemini) {
-            return $this->failure('Генерация для этого типа сервиса пока не поддерживается.');
-        }
+        return match ($aiService->type) {
+            AiServiceType::Gemini => $this->generateGemini($aiService, $prompt),
+            AiServiceType::Groq => $this->generateGroq($aiService, $prompt),
+        };
+    }
 
+    /**
+     * @return array{
+     *     ok: bool,
+     *     reply: string|null,
+     *     message: string|null,
+     *     retryable: bool,
+     *     model: string|null,
+     *     usage: array{
+     *         prompt_tokens: int|null,
+     *         candidates_tokens: int|null,
+     *         total_tokens: int|null,
+     *         thoughts_tokens: int|null
+     *     }|null
+     * }
+     */
+    private function generateGemini(AiService $aiService, string $prompt): array
+    {
         $model = (string) ($aiService->settings['model'] ?? '');
 
         if ($model === '') {
@@ -43,7 +62,7 @@ class GenerateAiServiceContent
 
         $baseUrl = rtrim((string) config('services.gemini.base_url'), '/');
         $endpoint = '/v1beta/models/'.rawurlencode($model).':generateContent';
-        $payload = $this->buildPayload($aiService, $prompt);
+        $payload = $this->buildGeminiPayload($aiService, $prompt);
 
         try {
             $response = Http::baseUrl($baseUrl)
@@ -81,7 +100,7 @@ class GenerateAiServiceContent
         }
 
         $json = $response->json();
-        $reply = $this->extractReply($json);
+        $reply = $this->extractGeminiReply($json);
 
         if ($reply === null || $reply === '') {
             return $this->failure('Модель вернула пустой ответ. Попробуйте другой промпт.');
@@ -93,14 +112,92 @@ class GenerateAiServiceContent
             'message' => null,
             'retryable' => false,
             'model' => $model,
-            'usage' => $this->extractUsage($json),
+            'usage' => $this->extractGeminiUsage($json),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     ok: bool,
+     *     reply: string|null,
+     *     message: string|null,
+     *     retryable: bool,
+     *     model: string|null,
+     *     usage: array{
+     *         prompt_tokens: int|null,
+     *         candidates_tokens: int|null,
+     *         total_tokens: int|null,
+     *         thoughts_tokens: int|null
+     *     }|null
+     * }
+     */
+    private function generateGroq(AiService $aiService, string $prompt): array
+    {
+        $model = (string) ($aiService->settings['model'] ?? '');
+
+        if ($model === '') {
+            return $this->failure('Не указана модель Groq.');
+        }
+
+        $baseUrl = rtrim((string) config('services.groq.base_url'), '/');
+        $payload = $this->buildGroqPayload($aiService, $prompt);
+
+        try {
+            $response = Http::baseUrl($baseUrl)
+                ->withToken((string) $aiService->api_key)
+                ->acceptJson()
+                ->connectTimeout(3)
+                ->timeout(60)
+                ->retry(2, 200, fn ($exception): bool => $exception instanceof ConnectionException, false)
+                ->post('/chat/completions', $payload);
+        } catch (RequestException $exception) {
+            $json = $exception->response?->json();
+            $message = $this->extractApiError($json)
+                ?? 'Groq API вернул ошибку. Попробуйте позже.';
+
+            return $this->failure(
+                $message,
+                $this->isHighDemandError($json, $exception->response?->status()),
+            );
+        } catch (ConnectionException) {
+            return $this->failure(
+                'Не удалось связаться с Groq API. Проверьте соединение и попробуйте снова.',
+                true,
+            );
+        }
+
+        if (! $response->successful()) {
+            $json = $response->json();
+            $message = $this->extractApiError($json)
+                ?? 'Groq API вернул ошибку. Попробуйте позже.';
+
+            return $this->failure(
+                $message,
+                $this->isHighDemandError($json, $response->status()),
+            );
+        }
+
+        $json = $response->json();
+        $reply = $this->extractGroqReply($json);
+
+        if ($reply === null || $reply === '') {
+            return $this->failure('Модель вернула пустой ответ. Попробуйте другой промпт.');
+        }
+
+        return [
+            'ok' => true,
+            'reply' => $reply,
+            'message' => null,
+            'retryable' => false,
+            'model' => $model,
+            'usage' => $this->extractGroqUsage($json),
         ];
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function buildPayload(AiService $aiService, string $prompt): array
+    private function buildGeminiPayload(AiService $aiService, string $prompt): array
     {
         $payload = [
             'contents' => [
@@ -123,7 +220,7 @@ class GenerateAiServiceContent
             ];
         }
 
-        $generationConfig = $this->mapGenerationConfig(
+        $generationConfig = $this->mapGeminiGenerationConfig(
             is_array($aiService->settings['generation_config'] ?? null)
                 ? $aiService->settings['generation_config']
                 : [],
@@ -137,10 +234,70 @@ class GenerateAiServiceContent
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function buildGroqPayload(AiService $aiService, string $prompt): array
+    {
+        $messages = [];
+        $systemInstruction = $aiService->settings['system_instruction'] ?? null;
+
+        if (is_string($systemInstruction) && trim($systemInstruction) !== '') {
+            $messages[] = [
+                'role' => 'system',
+                'content' => $systemInstruction,
+            ];
+        }
+
+        $messages[] = [
+            'role' => 'user',
+            'content' => $prompt,
+        ];
+
+        $payload = [
+            'model' => (string) ($aiService->settings['model'] ?? ''),
+            'messages' => $messages,
+        ];
+
+        $config = is_array($aiService->settings['generation_config'] ?? null)
+            ? $aiService->settings['generation_config']
+            : [];
+
+        foreach ([
+            'temperature' => 'temperature',
+            'top_p' => 'top_p',
+            'presence_penalty' => 'presence_penalty',
+            'frequency_penalty' => 'frequency_penalty',
+        ] as $source => $target) {
+            if (! array_key_exists($source, $config) || $config[$source] === null || $config[$source] === '') {
+                continue;
+            }
+
+            $payload[$target] = $config[$source];
+        }
+
+        if (isset($config['max_output_tokens']) && $config['max_output_tokens'] !== null && $config['max_output_tokens'] !== '') {
+            $payload['max_tokens'] = (int) $config['max_output_tokens'];
+        }
+
+        if (isset($config['stop_sequences']) && is_array($config['stop_sequences']) && $config['stop_sequences'] !== []) {
+            $stops = array_values(array_filter(
+                $config['stop_sequences'],
+                fn (mixed $value): bool => is_string($value) && $value !== '',
+            ));
+
+            if ($stops !== []) {
+                $payload['stop'] = $stops;
+            }
+        }
+
+        return $payload;
+    }
+
+    /**
      * @param  array<string, mixed>  $config
      * @return array<string, mixed>
      */
-    private function mapGenerationConfig(array $config): array
+    private function mapGeminiGenerationConfig(array $config): array
     {
         $mapped = [];
 
@@ -220,7 +377,9 @@ class GenerateAiServiceContent
 
         return str_contains($message, 'high demand')
             || str_contains($message, 'resource exhausted')
-            || str_contains($message, 'resource_exhausted');
+            || str_contains($message, 'resource_exhausted')
+            || str_contains($message, 'rate limit')
+            || str_contains($message, 'too many requests');
     }
 
     private function extractApiError(mixed $payload): ?string
@@ -246,7 +405,7 @@ class GenerateAiServiceContent
      *     thoughts_tokens: int|null
      * }|null
      */
-    private function extractUsage(mixed $payload): ?array
+    private function extractGeminiUsage(mixed $payload): ?array
     {
         if (! is_array($payload)) {
             return null;
@@ -275,7 +434,43 @@ class GenerateAiServiceContent
         ];
     }
 
-    private function extractReply(mixed $payload): ?string
+    /**
+     * @return array{
+     *     prompt_tokens: int|null,
+     *     candidates_tokens: int|null,
+     *     total_tokens: int|null,
+     *     thoughts_tokens: int|null
+     * }|null
+     */
+    private function extractGroqUsage(mixed $payload): ?array
+    {
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        $usage = $payload['usage'] ?? null;
+
+        if (! is_array($usage)) {
+            return null;
+        }
+
+        $prompt = $usage['prompt_tokens'] ?? null;
+        $candidates = $usage['completion_tokens'] ?? null;
+        $total = $usage['total_tokens'] ?? null;
+
+        if ($prompt === null && $candidates === null && $total === null) {
+            return null;
+        }
+
+        return [
+            'prompt_tokens' => is_numeric($prompt) ? (int) $prompt : null,
+            'candidates_tokens' => is_numeric($candidates) ? (int) $candidates : null,
+            'total_tokens' => is_numeric($total) ? (int) $total : null,
+            'thoughts_tokens' => null,
+        ];
+    }
+
+    private function extractGeminiReply(mixed $payload): ?string
     {
         if (! is_array($payload)) {
             return null;
@@ -300,5 +495,20 @@ class GenerateAiServiceContent
         }
 
         return trim(implode("\n", $chunks));
+    }
+
+    private function extractGroqReply(mixed $payload): ?string
+    {
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        $content = data_get($payload, 'choices.0.message.content');
+
+        if (! is_string($content) || $content === '') {
+            return null;
+        }
+
+        return trim($content);
     }
 }

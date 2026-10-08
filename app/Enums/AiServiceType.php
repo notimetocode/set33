@@ -5,11 +5,13 @@ namespace App\Enums;
 enum AiServiceType: string
 {
     case Gemini = 'gemini';
+    case Groq = 'groq';
 
     public function label(): string
     {
         return match ($this) {
             self::Gemini => 'Google Gemini',
+            self::Groq => 'Groq',
         };
     }
 

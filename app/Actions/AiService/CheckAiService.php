@@ -29,15 +29,23 @@ class CheckAiService
             return $this->persist($aiService, AiServiceStatus::Error, 'API-ключ не задан.', null);
         }
 
-        if ($aiService->type !== AiServiceType::Gemini) {
-            return $this->persist(
-                $aiService,
-                AiServiceStatus::Error,
-                'Проверка для этого типа сервиса пока не поддерживается.',
-                null,
-            );
-        }
+        return match ($aiService->type) {
+            AiServiceType::Gemini => $this->checkGemini($aiService),
+            AiServiceType::Groq => $this->checkGroq($aiService),
+        };
+    }
 
+    /**
+     * @return array{
+     *     ok: bool,
+     *     title: string,
+     *     message: string,
+     *     reply: string|null,
+     *     service: AiService
+     * }
+     */
+    private function checkGemini(AiService $aiService): array
+    {
         $model = (string) ($aiService->settings['model'] ?? '');
 
         if ($model === '') {
@@ -97,7 +105,7 @@ class CheckAiService
             );
         }
 
-        $reply = $this->extractReply($response->json());
+        $reply = $this->extractGeminiReply($response->json());
 
         if ($reply === null || $reply === '') {
             return $this->persist(
@@ -112,6 +120,92 @@ class CheckAiService
             $aiService,
             AiServiceStatus::Ok,
             'Подключение к Gemini работает.',
+            $reply,
+        );
+    }
+
+    /**
+     * @return array{
+     *     ok: bool,
+     *     title: string,
+     *     message: string,
+     *     reply: string|null,
+     *     service: AiService
+     * }
+     */
+    private function checkGroq(AiService $aiService): array
+    {
+        $model = (string) ($aiService->settings['model'] ?? '');
+
+        if ($model === '') {
+            return $this->persist($aiService, AiServiceStatus::Error, 'Не указана модель Groq.', null);
+        }
+
+        $baseUrl = rtrim((string) config('services.groq.base_url'), '/');
+
+        try {
+            $response = Http::baseUrl($baseUrl)
+                ->withToken((string) $aiService->api_key)
+                ->acceptJson()
+                ->connectTimeout(3)
+                ->timeout(20)
+                ->retry(2, 200, fn ($exception): bool => $exception instanceof ConnectionException, false)
+                ->post('/chat/completions', [
+                    'model' => $model,
+                    'messages' => [
+                        [
+                            'role' => 'user',
+                            'content' => self::PROBE_PROMPT,
+                        ],
+                    ],
+                    'temperature' => 0,
+                    // Reasoning models (e.g. gpt-oss) spend tokens on "reasoning" before content.
+                    'max_tokens' => 128,
+                ]);
+        } catch (RequestException $exception) {
+            $apiMessage = $this->extractApiError($exception->response?->json());
+
+            return $this->persist(
+                $aiService,
+                AiServiceStatus::Error,
+                $apiMessage ?? 'Groq API вернул ошибку. Попробуйте позже.',
+                null,
+            );
+        } catch (ConnectionException) {
+            return $this->persist(
+                $aiService,
+                AiServiceStatus::Error,
+                'Не удалось связаться с Groq API. Проверьте соединение и попробуйте снова.',
+                null,
+            );
+        }
+
+        if (! $response->successful()) {
+            $apiMessage = $this->extractApiError($response->json());
+
+            return $this->persist(
+                $aiService,
+                AiServiceStatus::Error,
+                $apiMessage ?? 'Groq API вернул ошибку. Попробуйте позже.',
+                null,
+            );
+        }
+
+        $reply = $this->extractGroqReply($response->json());
+
+        if ($reply === null || $reply === '') {
+            return $this->persist(
+                $aiService,
+                AiServiceStatus::Error,
+                'Ключ принят, но ответ модели пуст. Проверьте настройки модели.',
+                null,
+            );
+        }
+
+        return $this->persist(
+            $aiService,
+            AiServiceStatus::Ok,
+            'Подключение к Groq работает.',
             $reply,
         );
     }
@@ -163,7 +257,7 @@ class CheckAiService
         return trim($message);
     }
 
-    private function extractReply(mixed $payload): ?string
+    private function extractGeminiReply(mixed $payload): ?string
     {
         if (! is_array($payload)) {
             return null;
@@ -188,5 +282,20 @@ class CheckAiService
         }
 
         return Str::limit(trim(implode(' ', $chunks)), 280);
+    }
+
+    private function extractGroqReply(mixed $payload): ?string
+    {
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        $content = data_get($payload, 'choices.0.message.content');
+
+        if (! is_string($content) || $content === '') {
+            return null;
+        }
+
+        return Str::limit(trim($content), 280);
     }
 }

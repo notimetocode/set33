@@ -32,6 +32,7 @@ class SiteResource extends JsonResource
             'favicon_url' => $this->faviconUrl(),
             'favicon_source_url' => $this->favicon_source_url,
             'robots_txt' => $this->robots_txt,
+            'site_audit' => $this->site_audit,
             'web_data_fetched_at' => $this->web_data_fetched_at?->toIso8601String(),
             'web_data_error' => $this->web_data_error,
             'google_integration' => $this->whenLoaded(

@@ -94,7 +94,7 @@
                                     <span class="page-app-ai-services__type-text">
                                         <span class="page-app-ai-services__type-name">{{ type.label }}</span>
                                         <span class="page-app-ai-services__type-desc">
-                                            {{ t('aiServices.form.typeHintGoogle') }}
+                                            {{ typeHint(type.value) }}
                                         </span>
                                     </span>
                                 </label>
@@ -117,7 +117,7 @@
                                 :class="{ 'is-invalid': fieldError('api_key') }"
                                 :required="!isEdit || !apiKeySet"
                                 autocomplete="off"
-                                :placeholder="isEdit && apiKeySet ? t('aiServices.form.apiKeyPlaceholderKeep') : t('aiServices.form.apiKeyPlaceholderNew')"
+                                :placeholder="apiKeyPlaceholder"
                             >
                             <div v-if="fieldError('api_key')" class="invalid-feedback">{{ fieldError('api_key') }}</div>
                             <div v-else-if="isEdit && apiKeySet" class="form-text">
@@ -171,7 +171,7 @@
 
                         <div v-if="modelsError" class="alert alert-warning py-2 mb-0">{{ modelsError }}</div>
 
-                        <template v-if="form.type === 'gemini'">
+                        <template v-if="form.type === 'gemini' || form.type === 'groq'">
                             <div class="page-app-ai-services__field">
                                 <label class="form-label" for="ai-service-model">{{ t('aiServices.form.model') }}</label>
                                 <select
@@ -247,7 +247,10 @@
                                         >
                                         <div class="form-text">0–1</div>
                                     </div>
-                                    <div class="page-app-ai-services__param">
+                                    <div
+                                        v-if="form.type === 'gemini'"
+                                        class="page-app-ai-services__param"
+                                    >
                                         <label class="form-label" for="ai-service-top-k">Top K</label>
                                         <input
                                             id="ai-service-top-k"
@@ -269,7 +272,10 @@
                                             step="1"
                                         >
                                     </div>
-                                    <div class="page-app-ai-services__param page-app-ai-services__param--wide">
+                                    <div
+                                        v-if="form.type === 'gemini'"
+                                        class="page-app-ai-services__param page-app-ai-services__param--wide"
+                                    >
                                         <label class="form-label" for="ai-service-thinking">Thinking budget</label>
                                         <input
                                             id="ai-service-thinking"
@@ -322,7 +328,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppLoader from '../../../shared/components/AppLoader.vue';
 import { FontAwesomeIcon } from '../../../shared/icons';
@@ -357,18 +363,49 @@ function defaultGeminiSettings() {
     };
 }
 
+function defaultGroqSettings() {
+    return {
+        model: '',
+        system_instruction: '',
+        generation_config: {
+            temperature: 1.0,
+            top_p: 0.95,
+            max_output_tokens: 8192,
+            stop_sequences: [],
+            presence_penalty: null,
+            frequency_penalty: null,
+        },
+    };
+}
+
+function defaultSettingsForType(type) {
+    return type === 'groq' ? defaultGroqSettings() : defaultGeminiSettings();
+}
+
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
 const isEdit = computed(() => Boolean(route.params.id));
-const types = ref([{ value: 'gemini', label: 'Google Gemini' }]);
-const preferredModels = ref([
-    'gemini-3.6-flash',
-    'gemini-3.5-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-2.0-flash',
+const types = ref([
+    { value: 'gemini', label: 'Google Gemini' },
+    { value: 'groq', label: 'Groq' },
 ]);
+const preferredModelsByType = ref({
+    gemini: [
+        'gemini-3.8-flash',
+        'gemini-3.7-flash',
+        'gemini-3.6-flash',
+        'gemini-3.5-flash',
+        'gemini-3.1-flash-lite',
+        'gemini-2.0-flash',
+    ],
+    groq: [
+        'openai/gpt-oss-120b',
+        'openai/gpt-oss-20b',
+        'qwen/qwen3.8-27b',
+    ],
+});
 const loading = ref(true);
 const loadError = ref('');
 const formError = ref('');
@@ -392,6 +429,20 @@ const typeLabel = computed(() => {
     return match?.label ?? form.type;
 });
 
+const preferredModels = computed(() => preferredModelsByType.value[form.type] ?? []);
+
+const apiKeyPlaceholder = computed(() => {
+    if (isEdit.value && apiKeySet.value) {
+        return t('aiServices.form.apiKeyPlaceholderKeep');
+    }
+
+    if (form.type === 'groq') {
+        return t('aiServices.form.apiKeyPlaceholderNewGroq');
+    }
+
+    return t('aiServices.form.apiKeyPlaceholderNew');
+});
+
 const modelOptions = computed(() => {
     const options = [...models.value];
     const current = form.settings.model;
@@ -402,6 +453,14 @@ const modelOptions = computed(() => {
 
     return options;
 });
+
+function typeHint(type) {
+    if (type === 'groq') {
+        return t('aiServices.form.typeHintGroq');
+    }
+
+    return t('aiServices.form.typeHintGoogle');
+}
 
 function fieldError(key) {
     const messages = fieldErrors.value[key];
@@ -434,16 +493,19 @@ function applyService(service) {
     form.api_key = '';
     apiKeySet.value = Boolean(service.api_key_set);
 
-    const defaults = defaultGeminiSettings();
+    const defaults = defaultSettingsForType(form.type);
     const incoming = service.settings ?? {};
     const generation = {
         ...defaults.generation_config,
         ...(incoming.generation_config ?? {}),
-        thinking_config: {
+    };
+
+    if (form.type === 'gemini') {
+        generation.thinking_config = {
             ...defaults.generation_config.thinking_config,
             ...(incoming.generation_config?.thinking_config ?? {}),
-        },
-    };
+        };
+    }
 
     form.settings = {
         ...defaults,
@@ -452,6 +514,19 @@ function applyService(service) {
         generation_config: generation,
     };
 }
+
+watch(
+    () => form.type,
+    (type) => {
+        if (isEdit.value || step.value !== 1) {
+            return;
+        }
+
+        form.settings = defaultSettingsForType(type);
+        models.value = [];
+        modelsError.value = '';
+    },
+);
 
 function buildPayload() {
     const settings = {
@@ -601,7 +676,10 @@ onMounted(async () => {
                 types.value = meta.types;
             }
             if (meta.gemini?.preferred_models?.length) {
-                preferredModels.value = meta.gemini.preferred_models;
+                preferredModelsByType.value.gemini = meta.gemini.preferred_models;
+            }
+            if (meta.groq?.preferred_models?.length) {
+                preferredModelsByType.value.groq = meta.groq.preferred_models;
             }
         } catch (e) {
             // meta optional

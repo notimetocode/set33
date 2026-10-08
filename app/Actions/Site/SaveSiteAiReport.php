@@ -61,7 +61,7 @@ class SaveSiteAiReport
             'period_from' => $result['period']['from'],
             'period_to' => $result['period']['to'],
             'use_system_prompt' => $useSystemPrompt,
-            'prompt' => $useSystemPrompt ? null : ($result['prompt'] ?? null),
+            'prompt' => $result['prompt'] ?? null,
             'reply' => $result['reply'],
             'charts' => $result['charts'] ?? [],
             'usage' => $result['usage'],

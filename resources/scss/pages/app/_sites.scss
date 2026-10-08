@@ -191,11 +191,16 @@
   }
 
   &__panel {
+    position: relative;
     padding: 1.2rem 1.25rem;
     border: 1px solid var(--border);
     border-radius: $border-radius-lg;
     background: #fff;
     box-shadow: none;
+  }
+
+  &__process-host {
+    position: relative;
   }
 
   &__panel-head {
@@ -607,6 +612,21 @@
     font-size: 0.8125rem;
     line-height: 1.45;
     color: #243028;
+
+    &--modal {
+      max-height: min(28rem, 55vh);
+      padding: 0.85rem 1rem;
+      border: 1px solid #e6ece8;
+      border-radius: 0.5rem;
+      background: #f7faf8;
+    }
+  }
+
+  &__ai-report-prompt-kind {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #3d4a43;
   }
 
   &__metrics-tabs,
@@ -830,7 +850,8 @@
     gap: 0.5rem;
   }
 
-  &__ai-report-share-btn {
+  &__ai-report-share-btn,
+  &__ai-report-prompt-btn {
     flex-shrink: 0;
     gap: 0.4rem;
     font-weight: 600;

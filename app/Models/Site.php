@@ -34,6 +34,7 @@ class Site extends Model
         return [
             'web_data_status' => SiteWebDataStatus::class,
             'web_data_fetched_at' => 'datetime',
+            'site_audit' => 'array',
         ];
     }
 

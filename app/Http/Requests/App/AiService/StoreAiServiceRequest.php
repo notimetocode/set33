@@ -30,10 +30,10 @@ class StoreAiServiceRequest extends FormRequest
      */
     private function settingsRules(): array
     {
-        if ($this->input('type') !== AiServiceType::Gemini->value) {
-            return [];
-        }
-
-        return GeminiSettingsRules::rules();
+        return match ($this->input('type')) {
+            AiServiceType::Gemini->value => GeminiSettingsRules::rules(),
+            AiServiceType::Groq->value => GroqSettingsRules::rules(),
+            default => [],
+        };
     }
 }

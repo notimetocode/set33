@@ -20,6 +20,10 @@
     color: $body-color;
   }
 
+  &__audit-caption-accent {
+    color: var(--brand);
+  }
+
   &__audit-row {
     display: flex;
     flex-direction: column;

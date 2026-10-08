@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             AppUserSeeder::class,
             AiServiceSeeder::class,
+            GroqAiServiceSeeder::class,
         ]);
     }
 }

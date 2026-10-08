@@ -22,6 +22,7 @@
                 >
                     <label class="page-home__audit-caption" for="home-site-audit-url">
                         {{ __('public.home.audit_caption') }}
+                        <span class="page-home__audit-caption-accent">{{ __('public.home.audit_no_registration') }}</span>
                     </label>
                     <div class="page-home__audit-row">
                         <input

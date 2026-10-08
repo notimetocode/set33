@@ -229,6 +229,9 @@
                         decoding="async"
                     >
                 </a>
+                <p class="layout-public__footer-about">
+                    {{ __('public.footer.about') }}
+                </p>
                 <p class="layout-public__footer-copy">
                     &copy; {{ date('Y') }} {{ config('app.name') }}
                 </p>

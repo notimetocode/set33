@@ -11,6 +11,8 @@
 
             <div v-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
+            <GoogleAuthButton :disabled="loading || exchanging" @error="onGoogleError" />
+
             <div class="mb-3">
                 <label class="form-label" for="email">{{ t('common.email') }}</label>
                 <input
@@ -40,8 +42,6 @@
             <button class="btn btn-primary w-100" type="submit" :disabled="loading || exchanging">
                 {{ loading ? t('auth.login.submitting') : t('auth.login.submit') }}
             </button>
-
-            <GoogleAuthButton :disabled="loading || exchanging" @error="onGoogleError" />
 
             <p class="page-app-login__switch text-muted mb-0">
                 {{ t('auth.login.noAccount') }}

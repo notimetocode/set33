@@ -143,6 +143,14 @@ class AdminAiServiceTest extends TestCase
             ->assertJsonFragment([
                 'value' => 'gemini',
                 'label' => 'Google Gemini',
+            ])
+            ->assertJsonFragment([
+                'value' => 'groq',
+                'label' => 'Groq',
+            ])
+            ->assertJsonStructure([
+                'gemini' => ['preferred_models'],
+                'groq' => ['preferred_models'],
             ]);
     }
 }

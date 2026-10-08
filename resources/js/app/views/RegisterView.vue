@@ -11,17 +11,7 @@
 
             <div v-if="error" class="alert alert-danger py-2">{{ error }}</div>
 
-            <div class="mb-3">
-                <label class="form-label" for="name">{{ t('common.name') }}</label>
-                <input
-                    id="name"
-                    v-model="name"
-                    type="text"
-                    class="form-control"
-                    required
-                    autocomplete="name"
-                >
-            </div>
+            <GoogleAuthButton :disabled="loading" @error="onGoogleError" />
 
             <div class="mb-3">
                 <label class="form-label" for="email">{{ t('common.email') }}</label>
@@ -70,8 +60,6 @@
                 {{ loading ? t('auth.register.submitting') : t('auth.register.submit') }}
             </button>
 
-            <GoogleAuthButton :disabled="loading" @error="onGoogleError" />
-
             <p class="page-app-register__switch text-muted mb-0">
                 {{ t('auth.register.haveAccount') }}
                 <router-link :to="{ name: 'login' }">{{ t('auth.register.loginLink') }}</router-link>
@@ -89,7 +77,6 @@ import { ensureStoredLocale, useI18n } from '../../shared/i18n';
 
 const router = useRouter();
 const { t, locale } = useI18n();
-const name = ref('');
 const email = ref('');
 const password = ref('');
 const passwordConfirmation = ref('');
@@ -106,7 +93,6 @@ async function submit() {
 
     try {
         const { user } = await register(
-            name.value,
             email.value,
             password.value,
             passwordConfirmation.value,
@@ -122,7 +108,6 @@ async function submit() {
         error.value = e.response?.data?.message
             || e.response?.data?.errors?.email?.[0]
             || e.response?.data?.errors?.password?.[0]
-            || e.response?.data?.errors?.name?.[0]
             || t('auth.register.failed');
     } finally {
         loading.value = false;

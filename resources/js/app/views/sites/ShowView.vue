@@ -199,6 +199,8 @@
                             </div>
                         </dl>
 
+                        <SiteWebsiteAudit :audit="site.site_audit" />
+
                         <div class="page-app-sites__website-robots">
                             <h3 class="page-app-sites__website-robots-title">
                                 {{ t('sites.show.website.robotsTitle') }}
@@ -228,9 +230,15 @@
             <div
                 v-show="activeSiteView === 'data'"
                 id="site-view-pane-data"
+                class="page-app-sites__process-host"
                 role="tabpanel"
                 aria-labelledby="site-view-tab-data"
             >
+                <AppBlockProcessOverlay
+                    :active="syncProcessActive"
+                    :title="t('sites.process.sync.title')"
+                    :message="syncProcessMessage"
+                />
                 <section
                     v-if="gaConnected || gscConnected || githubConnected || pagespeedConnected"
                     class="page-app-sites__panel page-app-sites__period mb-4"
@@ -1592,6 +1600,18 @@
                         >
                             <button
                                 type="button"
+                                class="btn btn-outline-secondary btn-sm page-app-sites__ai-report-prompt-btn"
+                                :disabled="aiReportLoading || !aiReportPrompt"
+                                @click="aiReportPromptOpen = true"
+                            >
+                                <FontAwesomeIcon
+                                    :icon="['fas', 'file-lines']"
+                                    aria-hidden="true"
+                                />
+                                <span>{{ t('sites.show.aiReport.showPrompt') }}</span>
+                            </button>
+                            <button
+                                type="button"
                                 class="btn btn-outline-primary btn-sm page-app-sites__ai-report-share-btn"
                                 :disabled="aiReportLoading || !selectedAiReportId || aiReportSharingSaving"
                                 @click="openAiReportSharingModal"
@@ -1640,15 +1660,6 @@
                                     >
                                         {{ aiReportModel }}
                                     </span>
-                                </div>
-                                <div
-                                    v-if="aiReportPrompt"
-                                    class="page-app-sites__ai-report-saved-prompt mb-3"
-                                >
-                                    <h4 class="page-app-sites__ai-report-saved-prompt-title">
-                                        {{ t('sites.show.aiReport.savedPrompt') }}
-                                    </h4>
-                                    <pre class="page-app-sites__ai-report-saved-prompt-body">{{ aiReportPrompt }}</pre>
                                 </div>
                                 <div class="page-app-sites__ai-report-reply-body">
                                     <AppAiReportBody
@@ -1781,9 +1792,15 @@
                             <div
                                 v-show="activeAiReportTab === 'new'"
                                 id="ai-report-pane-new"
+                                class="page-app-sites__process-host"
                                 role="tabpanel"
                                 :aria-labelledby="showAiReportTabs ? 'ai-report-tab-new' : undefined"
                             >
+                                <AppBlockProcessOverlay
+                                    :active="aiReportProcessActive"
+                                    :title="t('sites.process.aiReport.title')"
+                                    :message="aiReportProcessMessage"
+                                />
                                 <p class="text-muted small mb-3">
                                     {{ t('sites.show.aiReport.newHint', { dataTab: t('sites.show.tabs.data'), eventsTab: t('sites.show.tabs.events') }) }}
                                 </p>
@@ -2384,6 +2401,25 @@
         </AppModal>
 
         <AppModal
+            v-model:open="aiReportPromptOpen"
+            :title="t('sites.show.aiReport.promptModal.title')"
+            align="start"
+            size="lg"
+            :confirm-label="t('common.close')"
+        >
+            <p class="text-muted small mb-2">
+                {{ t('sites.show.aiReport.promptModal.hint') }}
+            </p>
+            <p
+                v-if="aiReportPromptKindLabel"
+                class="page-app-sites__ai-report-prompt-kind mb-3"
+            >
+                {{ aiReportPromptKindLabel }}
+            </p>
+            <pre class="page-app-sites__ai-report-saved-prompt-body page-app-sites__ai-report-saved-prompt-body--modal">{{ aiReportPrompt }}</pre>
+        </AppModal>
+
+        <AppModal
             v-model:open="aiReportSharingOpen"
             :title="t('sites.show.sharing.title')"
             align="start"
@@ -2732,7 +2768,9 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import SiteIntegrationCard from '../../components/SiteIntegrationCard.vue';
+import SiteWebsiteAudit from '../../components/SiteWebsiteAudit.vue';
 import AppAiReportBody from '../../../shared/components/AppAiReportBody.vue';
+import AppBlockProcessOverlay from '../../../shared/components/AppBlockProcessOverlay.vue';
 import AppLoader from '../../../shared/components/AppLoader.vue';
 import AppMetricsCoverageTimeline from '../../../shared/components/AppMetricsCoverageTimeline.vue';
 import AppModal from '../../../shared/components/AppModal.vue';
@@ -2861,6 +2899,9 @@ const documentsLoaded = ref(false);
 const documentSaving = ref(false);
 const deletingDocumentId = ref(null);
 const busy = ref(false);
+const syncProcessActive = ref(false);
+const syncProcessMessage = ref('');
+const aiReportProcessActive = ref(false);
 const error = ref('');
 const listsError = ref('');
 const githubReposError = ref('');
@@ -2897,7 +2938,8 @@ const hasWebsiteData = computed(() => {
         || Boolean(site.value.page_title)
         || Boolean(site.value.meta_description)
         || Boolean(site.value.favicon_url)
-        || Boolean(site.value.robots_txt);
+        || Boolean(site.value.robots_txt)
+        || Boolean(site.value.site_audit);
 });
 
 const websiteMetaRows = computed(() => {
@@ -3026,6 +3068,8 @@ const aiReportServiceId = ref('');
 const aiReportUseSystemPrompt = ref(true);
 const aiReportCustomPrompt = ref('');
 const aiReportPrompt = ref('');
+const aiReportPromptIsSystem = ref(true);
+const aiReportPromptOpen = ref(false);
 
 const globalAiServices = computed(() => aiServices.value.filter((service) => service.is_global));
 const ownAiServices = computed(() => aiServices.value.filter((service) => !service.is_global));
@@ -3484,10 +3528,28 @@ const aiReportGenerateButtonLabel = computed(() => {
     }
 
     if (aiReportAttempt.value > 1) {
-        return t('sites.show.aiReport.attempt', { current: aiReportAttempt.value, max: AI_REPORT_MAX_ATTEMPTS });
+        return t('sites.show.aiReport.takingLonger');
     }
 
     return t('sites.show.aiReport.generating');
+});
+
+const aiReportProcessMessage = computed(() => {
+    if (aiReportAttempt.value > 1) {
+        return t('sites.process.aiReport.takingLonger');
+    }
+
+    return t('sites.process.aiReport.generating');
+});
+
+const aiReportPromptKindLabel = computed(() => {
+    if (!aiReportPrompt.value) {
+        return '';
+    }
+
+    return aiReportPromptIsSystem.value
+        ? t('sites.show.aiReport.promptModal.systemBadge')
+        : t('sites.show.aiReport.promptModal.customBadge');
 });
 
 const aiReportPreprocessButtonLabel = computed(() => {
@@ -3496,10 +3558,7 @@ const aiReportPreprocessButtonLabel = computed(() => {
     }
 
     if (aiReportPreprocessAttempt.value > 1) {
-        return t('sites.show.aiReport.attempt', {
-            current: aiReportPreprocessAttempt.value,
-            max: AI_REPORT_PREPROCESS_MAX_ATTEMPTS,
-        });
+        return t('sites.show.aiReport.takingLonger');
     }
 
     return t('sites.show.aiReport.preprocess.processing');
@@ -3998,6 +4057,8 @@ function clearAiReportView() {
     aiReportMeta.value = '';
     aiReportUsage.value = null;
     aiReportPrompt.value = '';
+    aiReportPromptIsSystem.value = true;
+    aiReportPromptOpen.value = false;
     resetAiReportSharing();
 }
 
@@ -4189,9 +4250,8 @@ function applyAiReport(report) {
     aiReportModel.value = report?.tool?.label || report?.tool?.model || '';
     aiReportMeta.value = formatDataCounts(report?.data_counts);
     aiReportUsage.value = report?.usage ?? null;
-    aiReportPrompt.value = report?.use_system_prompt === false && report?.prompt
-        ? report.prompt
-        : '';
+    aiReportPromptIsSystem.value = report?.use_system_prompt !== false;
+    aiReportPrompt.value = report?.prompt || '';
     applyAiReportSharing(report?.sharing);
 
     if (report?.period?.from) {
@@ -4343,6 +4403,7 @@ async function onGenerateAiReport() {
     }
 
     aiReportGenerating.value = true;
+    aiReportProcessActive.value = true;
     aiReportAttempt.value = 0;
     aiReportError.value = '';
     clearAiReportView();
@@ -4416,6 +4477,7 @@ async function onGenerateAiReport() {
         }
     } finally {
         aiReportGenerating.value = false;
+        aiReportProcessActive.value = false;
         aiReportAttempt.value = 0;
     }
 }
@@ -5505,6 +5567,8 @@ async function onSyncPeriod() {
     }
 
     busy.value = true;
+    syncProcessActive.value = true;
+    syncProcessMessage.value = '';
 
     const basePayload = {
         from: period.from,
@@ -5515,6 +5579,8 @@ async function onSyncPeriod() {
 
     try {
         if ((gaConnected.value || gscConnected.value) && selectedGoogleSyncMetrics.value.length) {
+            syncProcessMessage.value = t('sites.process.sync.google');
+
             try {
                 const result = await syncSiteGoogleIntegration(site.value.id, {
                     ...basePayload,
@@ -5534,6 +5600,8 @@ async function onSyncPeriod() {
         }
 
         if (githubConnected.value && selectedGithubSyncMetrics.value.length) {
+            syncProcessMessage.value = t('sites.process.sync.github');
+
             try {
                 const result = await syncSiteGithubIntegration(site.value.id, {
                     ...basePayload,
@@ -5552,6 +5620,8 @@ async function onSyncPeriod() {
         }
 
         if (pagespeedConnected.value && selectedPageSpeedSyncMetrics.value.length) {
+            syncProcessMessage.value = t('sites.process.sync.pagespeed');
+
             try {
                 const result = await syncSitePageSpeedIntegration(site.value.id, {
                     metrics: selectedPageSpeedSyncMetrics.value,
@@ -5568,6 +5638,7 @@ async function onSyncPeriod() {
             }
         }
 
+        syncProcessMessage.value = t('sites.process.sync.refreshMetrics');
         await loadMetricsCoverage();
         applyCoveragePeriodDefaults();
         await loadMetrics();
@@ -5590,6 +5661,8 @@ async function onSyncPeriod() {
         }
     } finally {
         busy.value = false;
+        syncProcessActive.value = false;
+        syncProcessMessage.value = '';
     }
 }
 

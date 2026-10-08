@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin\AiService;
 
 use App\Enums\AiServiceType;
 use App\Http\Requests\App\AiService\GeminiSettingsRules;
+use App\Http\Requests\App\AiService\GroqSettingsRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,10 +32,10 @@ class UpdateAiServiceRequest extends FormRequest
      */
     private function settingsRules(): array
     {
-        if ($this->input('type') !== AiServiceType::Gemini->value) {
-            return [];
-        }
-
-        return GeminiSettingsRules::rules();
+        return match ($this->input('type')) {
+            AiServiceType::Gemini->value => GeminiSettingsRules::rules(),
+            AiServiceType::Groq->value => GroqSettingsRules::rules(),
+            default => [],
+        };
     }
 }

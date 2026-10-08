@@ -22,6 +22,12 @@
             class="page-app-sites__panel"
             @submit.prevent="onSubmit"
         >
+            <AppBlockProcessOverlay
+                :active="createProcessActive"
+                :title="t('sites.process.create.title')"
+                :message="t('sites.process.create.message')"
+            />
+
             <div v-if="formError" class="alert alert-danger py-2 mb-3">{{ formError }}</div>
 
             <div class="mb-3">
@@ -35,6 +41,7 @@
                     required
                     maxlength="255"
                     autocomplete="organization"
+                    :disabled="saving"
                 >
                 <div v-if="fieldError('name')" class="invalid-feedback">{{ fieldError('name') }}</div>
             </div>
@@ -50,6 +57,7 @@
                     required
                     maxlength="2048"
                     placeholder="https://example.com"
+                    :disabled="saving"
                 >
                 <div v-if="fieldError('url')" class="invalid-feedback">{{ fieldError('url') }}</div>
             </div>
@@ -70,6 +78,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import AppBlockProcessOverlay from '../../../shared/components/AppBlockProcessOverlay.vue';
 import AppLoader from '../../../shared/components/AppLoader.vue';
 import { createSite, getSite, updateSite } from '../../api/sites';
 import { useI18n } from '../../../shared/i18n';
@@ -81,6 +90,7 @@ const { t } = useI18n();
 const isEdit = computed(() => route.name === 'sites.edit');
 const loading = ref(false);
 const saving = ref(false);
+const createProcessActive = ref(false);
 const loadError = ref('');
 const formError = ref('');
 const fieldErrors = ref({});
@@ -123,6 +133,7 @@ async function onSubmit() {
     saving.value = true;
     formError.value = '';
     fieldErrors.value = {};
+    createProcessActive.value = !isEdit.value;
 
     const payload = {
         name: form.name.trim(),
@@ -146,6 +157,7 @@ async function onSubmit() {
         }
     } finally {
         saving.value = false;
+        createProcessActive.value = false;
     }
 }
 

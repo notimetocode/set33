@@ -1,0 +1,50 @@
+.site-website-audit {
+  margin: 0 0 1.35rem;
+  padding-top: 0.25rem;
+
+  &__title {
+    margin: 0 0 1rem;
+    font-size: 0.8125rem;
+    font-weight: 650;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--muted, #{$muted});
+  }
+
+  &__section {
+    margin-bottom: 1.15rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__section-title {
+    margin: 0 0 0.65rem;
+    font-size: 0.95rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    color: var(--body-color, #{$body-color});
+  }
+
+  &__rows {
+    margin-bottom: 0;
+  }
+
+  &__badge {
+    display: inline-block;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-right: 0.45rem;
+    border-radius: 50%;
+    vertical-align: 0.1em;
+
+    &.is-ok {
+      background: var(--brand, #{$primary});
+    }
+
+    &.is-bad {
+      background: #c2410c;
+    }
+  }
+}

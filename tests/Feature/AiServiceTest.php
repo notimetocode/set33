@@ -173,7 +173,51 @@ class AiServiceTest extends TestCase
             ->assertJsonFragment([
                 'value' => 'gemini',
                 'label' => 'Google Gemini',
+            ])
+            ->assertJsonFragment([
+                'value' => 'groq',
+                'label' => 'Groq',
+            ])
+            ->assertJsonStructure([
+                'gemini' => ['preferred_models'],
+                'groq' => ['preferred_models'],
             ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function groqPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'type' => AiServiceType::Groq->value,
+            'api_key' => 'secret-groq-key-123',
+            'settings' => [
+                'model' => 'openai/gpt-oss-120b',
+                'system_instruction' => 'Отвечай кратко',
+                'generation_config' => [
+                    'temperature' => 0.7,
+                    'top_p' => 0.9,
+                    'max_output_tokens' => 2048,
+                    'stop_sequences' => [],
+                    'presence_penalty' => null,
+                    'frequency_penalty' => null,
+                ],
+            ],
+        ], $overrides);
+    }
+
+    public function test_user_can_create_groq_ai_service(): void
+    {
+        $this->actingAsAppUser();
+
+        $this->postJson('/api/app/ai-services', $this->groqPayload())
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'Groq · openai/gpt-oss-120b')
+            ->assertJsonPath('data.type', 'groq')
+            ->assertJsonPath('data.settings.model', 'openai/gpt-oss-120b')
+            ->assertJsonPath('data.api_key_set', true)
+            ->assertJsonMissingPath('data.api_key');
     }
 
     public function test_user_sees_global_services_in_index(): void

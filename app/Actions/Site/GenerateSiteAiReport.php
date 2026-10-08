@@ -96,7 +96,9 @@ class GenerateSiteAiReport
             'page_snapshots' => count($pageSnapshots),
         ];
 
-        $savedPrompt = $useSystemPrompt ? null : (filled($customPrompt) ? trim($customPrompt) : null);
+        $savedPrompt = $useSystemPrompt
+            ? $this->buildPrompt->defaultInstructions()
+            : (filled($customPrompt) ? trim($customPrompt) : null);
 
         if ($dataCounts['analytics'] === 0
             && $dataCounts['search_console'] === 0
@@ -589,6 +591,7 @@ class GenerateSiteAiReport
             || filled($site->canonical_url)
             || filled($site->html_lang)
             || filled($site->favicon_path)
-            || filled($site->robots_txt);
+            || filled($site->robots_txt)
+            || filled($site->site_audit);
     }
 }
