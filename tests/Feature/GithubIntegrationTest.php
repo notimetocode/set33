@@ -286,6 +286,35 @@ class GithubIntegrationTest extends TestCase
             ->assertJsonPath('data.1.name', 'develop');
     }
 
+    public function test_branches_explain_organization_oauth_app_restrictions(): void
+    {
+        Http::preventStrayRequests();
+
+        config([
+            'services.github.api_base_url' => 'https://api.github.com',
+        ]);
+
+        $user = $this->actingAsAppUser();
+        GithubConnection::factory()->for($user)->withoutExpiry()->create([
+            'access_token' => 'gho_test_token',
+        ]);
+
+        Http::fake([
+            'api.github.com/repos/ilavista/digitalbusiness_base/branches*' => Http::response([
+                'message' => 'Although you appear to have the correct authorization credentials, the `ilavista` organization has enabled OAuth App access restrictions, meaning that data access to third-parties is limited. For more information on these restrictions, including how to enable this app, visit https://docs.github.com/articles/restricting-access-to-your-organization-s-data/',
+                'documentation_url' => 'https://docs.github.com/rest/branches/branches#list-branches',
+                'status' => '403',
+            ], 403),
+        ]);
+
+        $this->getJson('/api/app/github/repositories/ilavista/digitalbusiness_base/branches')
+            ->assertStatus(422)
+            ->assertJsonPath(
+                'message',
+                'Организация «ilavista» ограничила доступ OAuth-приложений. Владелец организации должен разрешить это приложение в настройках GitHub (Settings → Third-party access → OAuth App policy), затем повторите выбор репозитория.',
+            );
+    }
+
     public function test_user_can_disconnect_github(): void
     {
         Http::preventStrayRequests();

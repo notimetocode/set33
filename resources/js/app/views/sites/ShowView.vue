@@ -1976,6 +1976,27 @@
                                     </p>
 
                                     <div
+                                        v-if="aiReportCommitReview"
+                                        class="alert alert-success py-2 mb-0"
+                                    >
+                                        {{ t('sites.show.aiReport.preprocess.commitReview.readyHint') }}
+                                        <button
+                                            type="button"
+                                            class="btn btn-link btn-sm p-0 align-baseline ms-1"
+                                            @click="aiReportCommitReviewModalOpen = true"
+                                        >
+                                            {{ t('sites.show.aiReport.preprocess.commitReview.title') }}
+                                        </button>
+                                    </div>
+
+                                    <div
+                                        v-else-if="aiReportCommitReviewError"
+                                        class="alert alert-warning py-2 mb-0"
+                                    >
+                                        {{ aiReportCommitReviewError }}
+                                    </div>
+
+                                    <div
                                         v-if="aiReportError"
                                         class="alert alert-danger py-2 mb-0"
                                     >
@@ -2657,6 +2678,50 @@
         </AppModal>
 
         <AppModal
+            v-model:open="aiReportCommitReviewModalOpen"
+            :title="t('sites.show.aiReport.preprocess.commitReview.title')"
+            size="lg"
+            align="start"
+            :show-confirm="false"
+            :close-on-backdrop="!aiReportCommitReviewing"
+        >
+            <div class="page-app-sites__ai-report-commit-review">
+                <div
+                    v-if="aiReportCommitReviewError && !aiReportCommitReview"
+                    class="alert alert-danger py-2"
+                >
+                    {{ aiReportCommitReviewError }}
+                </div>
+
+                <div
+                    v-else-if="aiReportCommitReviewing"
+                    class="text-muted"
+                >
+                    <AppLoader size="sm" />
+                    <span class="ms-2">{{ t('sites.show.aiReport.preprocess.commitReview.reviewing') }}</span>
+                </div>
+
+                <template v-else-if="aiReportCommitReview">
+                    <p class="text-muted small mb-3">
+                        {{ t('sites.show.aiReport.preprocess.commitReview.readyHint') }}
+                    </p>
+                    <AppAiReportBody :source="aiReportCommitReview" />
+                </template>
+            </div>
+
+            <template #actions>
+                <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    :disabled="aiReportCommitReviewing"
+                    @click="aiReportCommitReviewModalOpen = false"
+                >
+                    {{ t('sites.show.aiReport.preprocess.commitReview.close') }}
+                </button>
+            </template>
+        </AppModal>
+
+        <AppModal
             v-model:open="commitFilesModalOpen"
             :title="commitFilesModalTitle"
             size="lg"
@@ -2817,6 +2882,7 @@ import {
     listSiteEvents,
     preprocessSiteAiReport,
     applySiteAiReportPreprocess,
+    reviewSiteAiReportCommits,
     refreshSiteWebData,
     startGoogleOAuth,
     syncSiteGoogleIntegration,
@@ -3084,6 +3150,11 @@ const aiReportPreprocessItems = ref([]);
 const aiReportPreprocessSelectedKeys = ref([]);
 const aiReportPreprocessError = ref('');
 const aiReportPreprocessFetching = ref(false);
+const aiReportCommitReview = ref('');
+const aiReportCommitReviewModalOpen = ref(false);
+const aiReportCommitReviewing = ref(false);
+const aiReportCommitReviewError = ref('');
+const aiReportCommitReviewAttempt = ref(0);
 const AI_REPORT_MAX_ATTEMPTS = 5;
 const AI_REPORT_PREPROCESS_MAX_ATTEMPTS = 2;
 const AI_REPORT_RETRY_DELAY_MS = 2500;
@@ -3506,6 +3577,7 @@ const canGenerateAiReport = computed(() => (
     && !busy.value
     && !aiReportGenerating.value
     && !aiReportPreprocessing.value
+    && !aiReportCommitReviewing.value
     && !aiServicesLoading.value
     && (aiReportUseSystemPrompt.value || Boolean(aiReportCustomPrompt.value.trim()))
 ));
@@ -3519,6 +3591,7 @@ const canPreprocessAiReport = computed(() => (
     && !aiReportGenerating.value
     && !aiReportPreprocessing.value
     && !aiReportPreprocessFetching.value
+    && !aiReportCommitReviewing.value
     && !aiServicesLoading.value
 ));
 
@@ -4420,6 +4493,10 @@ async function onGenerateAiReport() {
         payload.prompt = aiReportCustomPrompt.value.trim();
     }
 
+    if (aiReportCommitReview.value.trim()) {
+        payload.commit_review = aiReportCommitReview.value.trim();
+    }
+
     try {
         for (let attempt = 1; attempt <= AI_REPORT_MAX_ATTEMPTS; attempt += 1) {
             aiReportAttempt.value = attempt;
@@ -4515,6 +4592,9 @@ async function onPreprocessAiReport() {
     aiReportPreprocessError.value = '';
     aiReportPreprocessItems.value = [];
     aiReportPreprocessSelectedKeys.value = [];
+    aiReportCommitReview.value = '';
+    aiReportCommitReviewError.value = '';
+    aiReportCommitReviewModalOpen.value = false;
 
     const payload = {
         ai_service_id: Number(aiReportServiceId.value),
@@ -4591,6 +4671,7 @@ async function onConfirmAiReportPreprocess() {
 
     aiReportPreprocessFetching.value = true;
     aiReportPreprocessError.value = '';
+    aiReportCommitReviewError.value = '';
 
     try {
         const result = await applySiteAiReportPreprocess(site.value.id, {
@@ -4607,7 +4688,18 @@ async function onConfirmAiReportPreprocess() {
             })),
         });
 
-        const failed = (result.results || []).filter((row) => !row.ok);
+        const results = Array.isArray(result.results) ? result.results : [];
+        const failed = results.filter((row) => !row.ok);
+        const okKeys = new Set(results.filter((row) => row.ok).map((row) => row.key));
+        const commitTypes = new Set(['github_commit_files', 'github_commit_files_complete']);
+        const successfulCommitIds = [
+            ...new Set(
+                selectedItems
+                    .filter((item) => commitTypes.has(item.type) && okKeys.has(item.key) && item.commit_id)
+                    .map((item) => Number(item.commit_id))
+                    .filter((id) => Number.isFinite(id) && id > 0),
+            ),
+        ];
 
         if (result.ok && failed.length === 0) {
             aiReportPreprocessModalOpen.value = false;
@@ -4615,18 +4707,21 @@ async function onConfirmAiReportPreprocess() {
                 ok: true,
                 message: t('sites.show.toast.preprocessFetched'),
             });
+        } else {
+            aiReportPreprocessError.value = result.message
+                || failed[0]?.message
+                || t('sites.show.aiReport.preprocess.fetchFailed');
 
-            return;
+            toast.show({
+                ok: false,
+                message: aiReportPreprocessError.value,
+            });
         }
 
-        aiReportPreprocessError.value = result.message
-            || failed[0]?.message
-            || t('sites.show.aiReport.preprocess.fetchFailed');
-
-        toast.show({
-            ok: false,
-            message: aiReportPreprocessError.value,
-        });
+        if (successfulCommitIds.length > 0) {
+            aiReportPreprocessModalOpen.value = false;
+            await runAiReportCommitReview(successfulCommitIds);
+        }
     } catch (e) {
         aiReportPreprocessError.value = e.response?.data?.message
             || t('sites.show.aiReport.preprocess.fetchFailed');
@@ -4636,6 +4731,76 @@ async function onConfirmAiReportPreprocess() {
         });
     } finally {
         aiReportPreprocessFetching.value = false;
+    }
+}
+
+async function runAiReportCommitReview(commitIds) {
+    if (!site.value || !commitIds.length) {
+        return;
+    }
+
+    aiReportCommitReviewing.value = true;
+    aiReportCommitReviewAttempt.value = 0;
+    aiReportCommitReviewError.value = '';
+    aiReportCommitReview.value = '';
+    aiReportCommitReviewModalOpen.value = true;
+
+    const payload = {
+        ai_service_id: Number(aiReportServiceId.value),
+        from: period.from,
+        to: period.to,
+        commit_ids: commitIds,
+    };
+
+    try {
+        for (let attempt = 1; attempt <= AI_REPORT_PREPROCESS_MAX_ATTEMPTS; attempt += 1) {
+            aiReportCommitReviewAttempt.value = attempt;
+
+            try {
+                const result = await reviewSiteAiReportCommits(site.value.id, payload);
+
+                if (result.ok && result.reply) {
+                    aiReportCommitReview.value = result.reply;
+
+                    return;
+                }
+
+                const canRetry = Boolean(result.retryable) && attempt < AI_REPORT_PREPROCESS_MAX_ATTEMPTS;
+
+                if (canRetry) {
+                    await new Promise((resolve) => {
+                        setTimeout(resolve, AI_REPORT_RETRY_DELAY_MS);
+                    });
+
+                    continue;
+                }
+
+                aiReportCommitReviewError.value = result.message
+                    || t('sites.show.aiReport.preprocess.commitReview.error');
+
+                return;
+            } catch (e) {
+                const canRetry = attempt < AI_REPORT_PREPROCESS_MAX_ATTEMPTS
+                    && !e.response?.status;
+
+                if (canRetry) {
+                    await new Promise((resolve) => {
+                        setTimeout(resolve, AI_REPORT_RETRY_DELAY_MS);
+                    });
+
+                    continue;
+                }
+
+                aiReportCommitReviewError.value = e.response?.data?.message
+                    || e.response?.data?.errors?.commit_ids?.[0]
+                    || t('sites.show.aiReport.preprocess.commitReview.error');
+
+                return;
+            }
+        }
+    } finally {
+        aiReportCommitReviewing.value = false;
+        aiReportCommitReviewAttempt.value = 0;
     }
 }
 

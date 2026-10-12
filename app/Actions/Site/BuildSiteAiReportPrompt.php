@@ -47,6 +47,7 @@ class BuildSiteAiReportPrompt
      * @param  list<array<string, mixed>>  $analyticsPages
      * @param  list<array<string, mixed>>  $pageSnapshots
      * @param  string|null  $customInstructions  When set, replaces the built-in system instructions.
+     * @param  string|null  $commitReview  Preliminary AI review of commits vs Search Console.
      */
     public function handle(
         Site $site,
@@ -62,6 +63,7 @@ class BuildSiteAiReportPrompt
         ?string $customInstructions = null,
         array $analyticsPages = [],
         array $pageSnapshots = [],
+        ?string $commitReview = null,
     ): string {
         $instructions = filled($customInstructions)
             ? trim($customInstructions)
@@ -70,6 +72,7 @@ class BuildSiteAiReportPrompt
         $sections = [
             $instructions,
             $this->siteContext($site, $from, $to),
+            $this->commitReviewSection($commitReview),
             $this->websiteDataSection($site),
             $this->pageSnapshotsSection($pageSnapshots),
             $this->analyticsSection($analytics),
@@ -81,7 +84,19 @@ class BuildSiteAiReportPrompt
             $this->documentsSection($documents),
         ];
 
-        return implode("\n\n", $sections);
+        return implode("\n\n", array_values(array_filter($sections, fn (string $section): bool => $section !== '')));
+    }
+
+    public function commitReviewSection(?string $commitReview): string
+    {
+        if (! filled($commitReview)) {
+            return '';
+        }
+
+        return "## Предварительное ревью коммитов (Search Console)\n"
+            .'Ниже — входной анализ связи diffs коммитов с сильными изменениями Search Console. '
+            ."Используй его как гипотезы для отчёта: проверяй по метрикам, углубляй или опровергай, не копируй целиком без связи с данными.\n\n"
+            .trim($commitReview);
     }
 
     /**

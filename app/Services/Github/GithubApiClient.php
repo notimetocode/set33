@@ -6,6 +6,7 @@ use App\Enums\GithubConnectionStatus;
 use App\Models\GithubConnection;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -35,7 +36,7 @@ class GithubApiClient
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException($this->errorMessage($response->status(), 'Не удалось получить список репозиториев GitHub.'));
+            throw new RuntimeException($this->errorMessage($response, 'Не удалось получить список репозиториев GitHub.'));
         }
 
         /** @var list<array<string, mixed>> $repos */
@@ -78,7 +79,7 @@ class GithubApiClient
         }
 
         if (! $response->successful()) {
-            throw new RuntimeException($this->errorMessage($response->status(), 'Не удалось получить список веток репозитория.'));
+            throw new RuntimeException($this->errorMessage($response, 'Не удалось получить список веток репозитория.'));
         }
 
         /** @var list<array<string, mixed>> $branches */
@@ -128,7 +129,7 @@ class GithubApiClient
         }
 
         if (! $response->successful()) {
-            throw new RuntimeException($this->errorMessage($response->status(), 'Не удалось получить коммиты репозитория.'));
+            throw new RuntimeException($this->errorMessage($response, 'Не удалось получить коммиты репозитория.'));
         }
 
         /** @var list<array<string, mixed>> $commits */
@@ -228,7 +229,7 @@ class GithubApiClient
         }
 
         if (! $response->successful()) {
-            throw new RuntimeException($this->errorMessage($response->status(), 'Не удалось получить изменения коммита.'));
+            throw new RuntimeException($this->errorMessage($response, 'Не удалось получить изменения коммита.'));
         }
 
         /** @var array<string, mixed> $payload */
@@ -419,13 +420,47 @@ class GithubApiClient
         ])->save();
     }
 
-    private function errorMessage(int $status, string $fallback): string
+    private function errorMessage(Response $response, string $fallback): string
     {
+        $status = $response->status();
+        $githubMessage = (string) ($response->json('message') ?? '');
+
+        if ($status === 403 && str_contains($githubMessage, 'OAuth App access restrictions')) {
+            $organization = $this->organizationFromRestrictionMessage($githubMessage);
+
+            if ($organization !== null) {
+                return "Организация «{$organization}» ограничила доступ OAuth-приложений. "
+                    .'Владелец организации должен разрешить это приложение в настройках GitHub '
+                    .'(Settings → Third-party access → OAuth App policy), затем повторите выбор репозитория.';
+            }
+
+            return 'Организация ограничила доступ OAuth-приложений к своим данным. '
+                .'Владелец организации должен разрешить это приложение в настройках GitHub, '
+                .'затем повторите выбор репозитория.';
+        }
+
+        if ($status === 403 && filled($response->header('X-GitHub-SSO'))) {
+            return 'Для доступа к репозиторию организации нужна авторизация SSO в GitHub. '
+                .'Откройте GitHub, авторизуйте токен для SSO и повторите попытку.';
+        }
+
         return match ($status) {
-            401, 403 => 'Нет доступа к GitHub. Подключите аккаунт заново.',
+            401 => 'Нет доступа к GitHub. Подключите аккаунт заново.',
+            403 => 'Недостаточно прав для доступа к этому ресурсу GitHub.',
             404 => 'Ресурс GitHub не найден.',
             429 => 'Превышен лимит запросов GitHub. Попробуйте позже.',
             default => $fallback,
         };
+    }
+
+    private function organizationFromRestrictionMessage(string $message): ?string
+    {
+        if (preg_match('/the `([^`]+)` organization has enabled OAuth App access restrictions/i', $message, $matches) !== 1) {
+            return null;
+        }
+
+        $organization = trim($matches[1]);
+
+        return $organization !== '' ? $organization : null;
     }
 }

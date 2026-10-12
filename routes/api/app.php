@@ -177,6 +177,9 @@ Route::middleware(['auth:sanctum', 'ability:app', 'app.locale'])->group(function
     Route::post('/sites/{site}/ai-reports/preprocess/apply', [SiteAiReportController::class, 'applyPreprocess'])
         ->middleware('throttle:ai-service-generate')
         ->name('app.sites.ai-reports.preprocess.apply');
+    Route::post('/sites/{site}/ai-reports/preprocess/review-commits', [SiteAiReportController::class, 'reviewCommits'])
+        ->middleware('throttle:ai-service-generate')
+        ->name('app.sites.ai-reports.preprocess.review-commits');
     Route::put('/sites/{site}/ai-reports/{ai_report}/sharing', [SiteAiReportSharingController::class, 'update'])
         ->name('app.sites.ai-reports.sharing.update');
 });

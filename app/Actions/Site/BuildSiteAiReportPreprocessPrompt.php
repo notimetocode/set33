@@ -60,6 +60,15 @@ class BuildSiteAiReportPreprocessPrompt
 
 Задача: по метаданным периода решить, какие данные стоит дополнительно выгрузить перед генерацией отчёта.
 Предлагай только то, чего ещё нет или чего не хватает для качественного анализа. Не предлагай всё подряд.
+
+Главный приоритет — связать код и SEO:
+1. Обязательно проанализируй daily Search Console (clicks, impressions, CTR, position).
+2. Найди дни или короткие участки, где график сильно изменился: резкий рост или падение относительно соседних дней (не шум одного дня при малой базе).
+3. Для каждой такой точки предложи довыгрузку ВСЕХ релевантных коммитов с author_date около изменения: окно примерно −3…+1 день к дате излома. Можно предложить много коммитов.
+4. Если есть сильные изменения GSC и у коммитов нет files (или files_incomplete) — приоритет github_commit_files / github_commit_files_complete над остальными типами.
+5. В reason указывай привязку: дата и метрика GSC + кратко, почему коммит кандидат.
+6. Если Search Console (daily) пуст — не выдумывай аномалии; тогда обычная логика довыгрузки по coverage и прочим данным.
+
 Если довыгрузка не нужна — верни пустой массив items.
 Ответ — ТОЛЬКО валидный JSON по схеме ниже, без markdown и пояснений вне JSON.
 TXT;
@@ -202,12 +211,12 @@ TXT;
 }
 
 Правила выбора типа:
-- github_commit_files — только коммиты с has_files=false
-- github_commit_files_complete — только коммиты с has_files=true и files_incomplete=true
+- github_commit_files — только коммиты с has_files=false; при сильных изменениях GSC предлагай все подходящие коммиты в окне −3…+1 день к дате излома
+- github_commit_files_complete — только коммиты с has_files=true и files_incomplete=true; та же приоритизация у аномалий GSC
 - gsc_url_inspection / pagespeed_lab_url / website_page_snapshot — URL из кандидатов или логичный URL сайта
 - gsc_dimensions / gsc_search_appearances / gsc_sitemaps / ga_optional_metrics / ga_page_breakdown / website_homepage_refresh — без url/commit_id; предлагай если coverage говорит что данных нет или они устарели
 - pagespeed_lab_details / crux_details — snapshot_id из списков выше, и только если include_details_in_report=false
-- reason: 1 короткое предложение на русском
+- reason: 1 короткое предложение на русском; для коммитов у аномалий GSC — с датой/метрикой Search Console
 TXT;
     }
 

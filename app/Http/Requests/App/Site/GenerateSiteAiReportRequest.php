@@ -40,6 +40,7 @@ class GenerateSiteAiReportRequest extends FormRequest
                 'min:1',
                 'max:10000',
             ],
+            'commit_review' => ['sometimes', 'nullable', 'string', 'max:50000'],
         ];
     }
 

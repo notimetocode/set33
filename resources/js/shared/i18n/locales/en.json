@@ -273,7 +273,7 @@
                     "fetchFailed": "Failed to fetch some selected items",
                     "fetchProgress": "Fetching {current} of {total}…",
                     "fetching": "Fetching…",
-                    "hint": "AI will review period metadata and suggest what to fetch additionally before generating the report (commits, GSC, GA, PageSpeed, page snapshots).",
+                    "hint": "AI will inspect Search Console, find strong graph changes, and suggest fetching nearby commits (plus other data if needed). After diffs are fetched, AI separately links code changes to SEO.",
                     "message": "Select the data to fetch additionally.",
                     "processing": "Preprocessing…",
                     "reason": "Reason",
@@ -281,6 +281,13 @@
                     "selectedCount": "Selected: {count}",
                     "success": "Selected data fetched.",
                     "title": "Additional data to fetch",
+                    "commitReview": {
+                        "title": "Commit review vs Search Console",
+                        "close": "Close",
+                        "reviewing": "AI is reviewing commits around Search Console change points…",
+                        "error": "Commit review failed",
+                        "readyHint": "The review is saved and will be used when generating the report."
+                    },
                     "types": {
                         "github_commit_files": "GitHub commit diffs",
                         "github_commit_files_complete": "Complete incomplete commit diffs",

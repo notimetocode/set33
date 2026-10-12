@@ -5,11 +5,13 @@ namespace App\Http\Controllers\App;
 use App\Actions\Site\ApplySiteAiReportPreprocessItems;
 use App\Actions\Site\GenerateSiteAiReport;
 use App\Actions\Site\PreprocessSiteAiReport;
+use App\Actions\Site\ReviewSiteAiReportCommits;
 use App\Actions\Site\SaveSiteAiReport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\App\Site\ApplySiteAiReportPreprocessRequest;
 use App\Http\Requests\App\Site\GenerateSiteAiReportRequest;
 use App\Http\Requests\App\Site\PreprocessSiteAiReportRequest;
+use App\Http\Requests\App\Site\ReviewSiteAiReportCommitsRequest;
 use App\Http\Resources\App\SiteAiReportResource;
 use App\Models\AiService;
 use App\Models\Site;
@@ -60,6 +62,7 @@ class SiteAiReportController extends Controller
             $validated['to'],
             (bool) ($validated['use_system_prompt'] ?? true),
             $validated['prompt'] ?? null,
+            $validated['commit_review'] ?? null,
         );
 
         if (! $result['ok'] || ! filled($result['reply'])) {
@@ -142,6 +145,38 @@ class SiteAiReportController extends Controller
             'ok' => $result['ok'],
             'message' => $result['message'],
             'results' => $result['results'],
+        ]);
+    }
+
+    public function reviewCommits(
+        ReviewSiteAiReportCommitsRequest $request,
+        Site $site,
+        ReviewSiteAiReportCommits $review,
+    ): JsonResponse {
+        Gate::authorize('app.sites.view', $site);
+
+        $validated = $request->validated();
+        $aiService = AiService::query()->findOrFail($validated['ai_service_id']);
+
+        Gate::authorize('app.ai-services.generate', $aiService);
+
+        $result = $review->handle(
+            $site,
+            $aiService,
+            $validated['from'],
+            $validated['to'],
+            $validated['commit_ids'],
+        );
+
+        return response()->json([
+            'ok' => $result['ok'],
+            'message' => $result['message'],
+            'retryable' => (bool) ($result['retryable'] ?? false),
+            'period' => $result['period'],
+            'model' => $result['model'],
+            'usage' => $result['usage'],
+            'commit_ids' => $result['commit_ids'],
+            'reply' => $result['reply'],
         ]);
     }
 }

@@ -65,6 +65,7 @@ class GenerateSiteAiReport
         string $to,
         bool $useSystemPrompt = true,
         ?string $customPrompt = null,
+        ?string $commitReview = null,
     ): array {
         $analytics = $this->loadAnalytics($site, $from, $to);
         $searchConsole = $this->loadSearchConsole($site, $from, $to);
@@ -75,6 +76,7 @@ class GenerateSiteAiReport
         $documents = $this->loadDocuments($site);
         $analyticsPages = $this->loadAnalyticsPages($site, $from, $to);
         $pageSnapshots = $this->loadPageSnapshots($site);
+        $normalizedCommitReview = filled($commitReview) ? trim($commitReview) : null;
 
         $dataCounts = [
             'website' => $this->hasWebsiteData($site) ? 1 : 0,
@@ -99,6 +101,13 @@ class GenerateSiteAiReport
         $savedPrompt = $useSystemPrompt
             ? $this->buildPrompt->defaultInstructions()
             : (filled($customPrompt) ? trim($customPrompt) : null);
+
+        if ($normalizedCommitReview !== null) {
+            $reviewSection = $this->buildPrompt->commitReviewSection($normalizedCommitReview);
+            $savedPrompt = filled($savedPrompt)
+                ? trim($savedPrompt)."\n\n".$reviewSection
+                : $reviewSection;
+        }
 
         if ($dataCounts['analytics'] === 0
             && $dataCounts['search_console'] === 0
@@ -139,9 +148,10 @@ class GenerateSiteAiReport
             $events,
             $pageSpeed,
             $documents,
-            $useSystemPrompt ? null : $savedPrompt,
+            $useSystemPrompt ? null : (filled($customPrompt) ? trim($customPrompt) : null),
             $analyticsPages,
             $pageSnapshots,
+            $normalizedCommitReview,
         );
 
         $result = $this->generateContent->handle($aiService, $prompt);
