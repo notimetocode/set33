@@ -98,6 +98,10 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(8)->by((string) $request->ip());
         });
 
+        RateLimiter::for('discover-check', function (Request $request) {
+            return Limit::perMinute(4)->by((string) $request->ip());
+        });
+
         Gate::define('app.profile.view', [AppProfilePolicy::class, 'view']);
         Gate::define('app.profile.update', [AppProfilePolicy::class, 'update']);
 

@@ -23,6 +23,34 @@ class PageSpeedApiClient
     }
 
     /**
+     * Mobile lab and field Core Web Vitals. Requests only the performance category.
+     *
+     * @return array{
+     *     url: string,
+     *     strategy: string,
+     *     performance_score: ?int,
+     *     accessibility_score: ?int,
+     *     best_practices_score: ?int,
+     *     seo_score: ?int,
+     *     lcp_ms: ?int,
+     *     inp_ms: ?int,
+     *     cls: ?float,
+     *     fcp_ms: ?int,
+     *     ttfb_ms: ?int,
+     *     tbt_ms: ?int,
+     *     speed_index_ms: ?int,
+     *     payload: array<string, mixed>,
+     *     crux_origin: ?array<string, mixed>,
+     *     crux_url: ?array<string, mixed>
+     * }
+     */
+    public function runMobilePerformance(string $url): array
+    {
+        return $this->runAudit($url, 'mobile', ['performance']);
+    }
+
+    /**
+     * @param  list<string>|null  $categories
      * @return array{
      *     url: string,
      *     strategy: string,
@@ -68,7 +96,7 @@ class PageSpeedApiClient
      *     }
      * }
      */
-    public function runAudit(string $url, string $strategy): array
+    public function runAudit(string $url, string $strategy, ?array $categories = null): array
     {
         $baseUrl = rtrim((string) config('services.pagespeed.psi_base_url'), '/');
         $apiKey = trim((string) config('services.pagespeed.api_key', ''));
@@ -84,7 +112,7 @@ class PageSpeedApiClient
 
         $queryString = http_build_query($query);
 
-        foreach (self::categories() as $category) {
+        foreach ($categories ?? self::categories() as $category) {
             $queryString .= '&category='.rawurlencode($category);
         }
 

@@ -268,6 +268,9 @@
                         <li>
                             <a href="{{ localized_route('public.terms') }}" class="layout-public__footer-link">{{ __('public.nav.terms') }}</a>
                         </li>
+                        <li>
+                            <a href="{{ localized_route('public.discover-docs.show') }}" class="layout-public__footer-link">{{ __('public.nav.discover_docs') }}</a>
+                        </li>
                     </ul>
                 </nav>
             </div>
