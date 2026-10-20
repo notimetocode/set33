@@ -132,6 +132,17 @@ class Localization
         return $urls;
     }
 
+    public static function fallbackRouteName(): string
+    {
+        $name = Route::currentRouteName();
+
+        if (is_string($name) && str_starts_with($name, 'public.')) {
+            return $name;
+        }
+
+        return self::guessPublicRouteName() ?? 'public.home';
+    }
+
     private static function guessPublicRouteName(): ?string
     {
         $path = '/'.ltrim(request()->path(), '/');
@@ -154,6 +165,8 @@ class Localization
             $path === '/privacy' => 'public.privacy',
             $path === '/terms' => 'public.terms',
             $path === '/check' => 'public.site-audit.show',
+            $path === '/docs/discover' => 'public.discover-docs.show',
+            $path === '/docs/discover.md' => 'public.discover-docs.markdown',
             (bool) preg_match('#^/r/[A-Za-z0-9]{20,64}$#', $path) => 'public.ai-reports.show',
             default => null,
         };

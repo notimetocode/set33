@@ -97,7 +97,7 @@
                         @foreach (\App\Support\Localization::availableLocales() as $locale)
                             <li role="presentation">
                                 <a
-                                    href="{{ $alternateUrls[$locale] ?? localized_route(Route::currentRouteName() ?? 'public.home', [], $locale) }}"
+                                    href="{{ $alternateUrls[$locale] ?? localized_route(\App\Support\Localization::fallbackRouteName(), [], $locale) }}"
                                     class="lang-select__option"
                                     role="option"
                                     aria-selected="{{ $locale === $currentLocale ? 'true' : 'false' }}"
@@ -172,7 +172,7 @@
                         @foreach (\App\Support\Localization::availableLocales() as $locale)
                             <li role="presentation">
                                 <a
-                                    href="{{ $alternateUrls[$locale] ?? localized_route(Route::currentRouteName() ?? 'public.home', [], $locale) }}"
+                                    href="{{ $alternateUrls[$locale] ?? localized_route(\App\Support\Localization::fallbackRouteName(), [], $locale) }}"
                                     class="layout-public__panel-lang-option {{ $locale === $currentLocale ? 'is-active' : '' }}"
                                     role="option"
                                     aria-selected="{{ $locale === $currentLocale ? 'true' : 'false' }}"

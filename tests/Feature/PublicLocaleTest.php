@@ -35,6 +35,19 @@ class PublicLocaleTest extends TestCase
             ->assertSee('Политика конфиденциальности', false);
     }
 
+    public function test_russian_discover_docs_keep_locale_alternates(): void
+    {
+        $this->get('/ru/docs/discover')
+            ->assertOk()
+            ->assertSee('hreflang="en"', false)
+            ->assertSee(url('/docs/discover'), false)
+            ->assertSee(url('/ru/docs/discover.md'), false);
+
+        $this->get('/ru/docs/discover.md')
+            ->assertOk()
+            ->assertSee('# Проверка URL для Google Discover', false);
+    }
+
     public function test_unsupported_locale_prefix_returns_not_found(): void
     {
         $this->get('/de')->assertNotFound();
